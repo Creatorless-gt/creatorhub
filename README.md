@@ -1,7 +1,7 @@
 # The Lost Nemo - HTML Code Repository
 
 ## ⚠️ Disclaimer
-This repository contains HTML, CSS, and JavaScript files from my **Glitch.com** project, which is related to **The Lost Nemo**. However, I do **not** own The Lost Nemo—it's iHemo's property, and I'm not trying to impersonate them! This is just a personal project that shares some elements.
+This repository contains HTML, CSS, and JavaScript files from my **Glitch.com** project, which is related to **The Lost Nemo**. However, I do **not** own The Lost Nemo—it's iHemo's property, and I'm not trying to impersonate them! This is just a personal project that uses the same name for fun.
 
 ## 📂 What’s Inside?
 - Various **HTML files** for different pages

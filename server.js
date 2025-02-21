@@ -9,7 +9,7 @@ import * as storage from './storage.js';
 
 
 /**
- * Main HTTP server used for the bot.
+ * The verification part is not functional for... good reasons...
  */
 
  const app = express();

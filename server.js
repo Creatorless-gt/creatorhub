@@ -9,7 +9,7 @@ import * as storage from './storage.js';
 
 
 /**
- * The verification part is not functional for... good reasons...
+ * Main HTTP server used for the bot.
  */
 
  const app = express();
@@ -151,47 +151,97 @@ const errorMessages = [
     "Oof. Nice try but no cigar. Try Googling the right path next time."
 ];
 
-// Middleware to block API requests based on 'User-Agent' header (which is usually different for bots and APIs)
+
 app.use((req, res, next) => {
     const userAgent = req.get('User-Agent');
 
-    // Check for known API patterns or bot-related strings
+   
     if (userAgent && (userAgent.includes('Postman') || userAgent.includes('curl') || userAgent.includes('bot'))) {
         const randomMessage = errorMessages[Math.floor(Math.random() * errorMessages.length)];
         return res.status(403).send(randomMessage); // Return a playful error message
     }
 
-    next(); // Continue processing for normal users
+    next(); 
 });
 
 
-// Replace with your actual ScraperAPI key
-const SCRAPERAPI_KEY = '##############';
-const SCRAPERAPI_URL = `http://api.scraperapi.com?api_key=${SCRAPERAPI_KEY}&url=`;
 
-// GET /api/gt-data endpoint
-app.get('/api/########', async (req, res) => {
+const validApiKeys = [
+  "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90",
+  "0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
+  "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+  "fedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321",
+  "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+  "0a1b2c3d4e5f60718293a4b5c6d7e8f90f0e1d2c3b4a5968778695a4b3c2d1e0f",
+  "11223344556677889900aabbccddeeff11223344556677889900aabbccddeeff",
+  "ffeeddccbbaa00998877665544332211ffeeddccbbaa00998877665544332211"
+];
+
+
+function verifyApiKey(req, res, next) {
+  const apiKey = req.header('Authorization') || req.query.apiKey;
+  if (!apiKey) {
+    return res.status(401).json({ error: 'API key required' });
+  }
+  if (!validApiKeys.includes(apiKey)) {
+    return res.status(403).json({ error: 'Invalid API key' });
+  }
+  next();
+}
+
+
+app.get('/data', verifyApiKey, async (req, res) => {
   try {
-    // Scrape the entire detail page from Growtopia
-    const response = await axios.get(`${SCRAPERAPI_URL}https://growtopiagame.com/detail`);
-    const html = response.data;
+    // Define all API endpoints
+    const endpoints = {
+      // 1. Bitcoin price from Coindesk
+      bitcoin: 'https://api.coindesk.com/v1/bpi/currentprice.json',
+      // 2. Stocks quotes from Yahoo Finance (AAPL, GOOGL, MSFT)
+      stocks: 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=AAPL,GOOGL,MSFT',
+      // 3. Weather data for New York (latitude=40.71, longitude=-74.01) from Open-Meteo
+      weather: 'https://api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74.01&hourly=temperature_2m',
+      // 4. A random joke from Official Joke API
+      joke: 'https://official-joke-api.appspot.com/random_joke',
+      // 5. A random quote from Quotable
+      quote: 'https://api.quotable.io/random',
+      // 6. A cat fact from Catfact.ninja
+      catFact: 'https://catfact.ninja/fact',
+      // 7. A random dog image from Dog CEO
+      dogImage: 'https://dog.ceo/api/breeds/image/random',
+      // 8. Global COVID-19 stats from disease.sh
+      covid: 'https://disease.sh/v3/covid-19/all',
+      // 9. Latest exchange rates from exchangerate.host
+      exchangeRates: 'https://api.exchangerate.host/latest',
+      // 10. Random advice from adviceslip API
+      advice: 'https://api.adviceslip.com/advice'
+    };
 
-    // Debug: Log the entire HTML response (optional, remove in production)
-    console.log("HTML Response:", html);
+    // Map each endpoint to a fetch promise.
+    const requests = Object.entries(endpoints).map(([key, url]) =>
+      fetch(url).then(response => response.json()).then(data => ({ key, data }))
+    );
 
-    // Respond with the full HTML content
-    res.json({
-      message: 'Full data retrieved successfully',  // Message to confirm successful scraping
-      html_content: html  // Send the entire HTML content as a response
-    });
+    // Await all fetches concurrently.
+    const results = await Promise.all(requests);
+
+    // Aggregate results into an object.
+    const aggregatedData = results.reduce((acc, { key, data }) => {
+      // Some APIs wrap data in an outer property, adjust as needed.
+      if (key === 'advice' && data.slip) {
+        acc[key] = data.slip;
+      } else {
+        acc[key] = data;
+      }
+      return acc;
+    }, {});
+
+    res.json(aggregatedData);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ 
-      message: 'Error scraping data',
-      error: error.message  // Log the error message for debugging
-    });
+    console.error("Error fetching aggregated data:", error);
+    res.status(500).json({ error: "Error fetching aggregated data" });
   }
 });
+
 
 
 
@@ -207,12 +257,10 @@ app.get('/api/########', async (req, res) => {
   <link rel="icon" href="https://s3.eu-west-1.amazonaws.com/cdn.growtopiagame.com/website/resources/assets/images/growtopia.ico" type="image/x-icon">
   <title>The Lost Nemo | Welcome</title>
 
-  <!-- Google Fonts & Bootstrap -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
 
-  <!-- reCaptcha (background execution) -->
   <script src="https://www.google.com/recaptcha/api.js?render=6Le3N9YqAAAAAA4zcPOhyd0DhiPPj8y0ynMWMHCB"></script>
 
   <style>
@@ -360,7 +408,6 @@ app.get('/api/########', async (req, res) => {
     footer .btn-help:hover {
       background: var(--hover-color);
     }
-    /* Hidden containers for background captcha processing */
     #recaptcha-container,
     #turnstile-container {
       display: none;
@@ -372,10 +419,8 @@ app.get('/api/########', async (req, res) => {
     <h1>Welcome to The Lost Nemo</h1>
     <p>Join our community and connect with over 560,000 members!</p>
 
-    <!-- "Verify with Discord" button (disabled until Turnstile is complete) -->
     <button id="verifyDiscord" class="intro-btn" disabled>Verify with Discord</button>
 
-    <!-- Additional content -->
     <div class="feature-box">
       <h3>Exclusive Features</h3>
       <p>Engage with our community for exclusive benefits and updates.</p>
@@ -392,69 +437,57 @@ app.get('/api/########', async (req, res) => {
         <p>Need help? Contact our support team.</p>
         <button class="btn-help">Get Help</button>
       </div>
-      <p>&copy; 2023 The Lost Nemo. All rights reserved.</p>
+      <p>&copy; 2025 The Lost Nemo. All rights reserved.</p>
     </footer>
 
-    <!-- Hidden containers for reCaptcha and Turnstile -->
     <div id="recaptcha-container"></div>
     <div id="turnstile-container"></div>
   </div>
 
-  <!-- Cloudflare Turnstile Script -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
   <script>
-    // Execute reCaptcha in the background
     grecaptcha.ready(function () {
       grecaptcha.execute('6Le3N9YqAAAAAA4zcPOhyd0DhiPPj8y0ynMWMHCB', { action: 'homepage' }).then(function (token) {
         console.log('reCaptcha token:', token);
-        // Optionally, send the token to your backend for verification.
       });
     });
 
-    // Flag to track Turnstile verification status
     let turnstileVerified = false;
 
-    // Callback function for Cloudflare Turnstile
     function onTurnstileSuccess(token) {
       console.log("Turnstile token:", token);
       turnstileVerified = true;
-      // Enable the "Verify with Discord" button once Turnstile is verified.
       document.getElementById('verifyDiscord').disabled = false;
     }
 
-    // Render the Cloudflare Turnstile widget in the hidden container on page load.
     window.addEventListener('load', function () {
       if (typeof turnstile !== "undefined") {
         turnstile.render('#turnstile-container', {
-          sitekey: '########',
+          sitekey: '0x4AAAAAAA8XB90ifMf73CHh',
           callback: onTurnstileSuccess
         });
       }
     });
 
-    // "Verify with Discord" button click handler
     document.getElementById('verifyDiscord').addEventListener('click', function () {
       if (!turnstileVerified) {
         alert("Please complete the CAPTCHA challenge.");
         return;
       }
-      // Redirect to the /verification page
       window.location.href = "/verification";
     });
   </script>
 
-  <!-- Bootstrap JS (optional) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
 
 
-
-
-
 `);
  });
+
+
 
 app.get('/verify', (req, res) => {
    res.send(`<!DOCTYPE html>
@@ -699,10 +732,8 @@ app.get('/verify', (req, res) => {
       Awaiting verification...
     </div>
 
-    <!-- Only Cloudflare Turnstile is used -->
     <div class="captcha-section" id="turnstile-container">
       <h3>Cloudflare Turnstile</h3>
-      <!-- Turnstile will render here -->
     </div>
 
     <button id="submit-button" class="verify-button" disabled>
@@ -730,7 +761,6 @@ app.get('/verify', (req, res) => {
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      // Element references
       const turnstileContainer = document.getElementById("turnstile-container");
       const submitButton = document.getElementById("submit-button");
       const verificationStatus = document.getElementById("verificationStatus");
@@ -738,7 +768,6 @@ app.get('/verify', (req, res) => {
       const resendLink = document.getElementById("resendLink");
       const countdownElement = document.getElementById("countdown");
 
-      // Auto-focus: Move to the next code input when one digit is entered
       const codeInputs = document.querySelectorAll(".code-input");
       codeInputs.forEach((input, index) => {
         input.addEventListener("input", () => {
@@ -748,7 +777,6 @@ app.get('/verify', (req, res) => {
         });
       });
 
-      // Countdown timer for the Resend link
       let countdown = 30;
       const timerInterval = setInterval(() => {
         countdown--;
@@ -761,10 +789,8 @@ app.get('/verify', (req, res) => {
         }
       }, 1000);
 
-      // Track Turnstile CAPTCHA completion
       let turnstileCompleted = false;
 
-      // --- Cloudflare Turnstile ---
       function loadTurnstile() {
         const script = document.createElement("script");
         script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
@@ -781,27 +807,22 @@ app.get('/verify', (req, res) => {
         document.body.appendChild(script);
       }
 
-      // --- CAPTCHA completion callback for Turnstile ---
       window.onTurnstileComplete = function (token) {
         console.log("Turnstile completed with token:", token);
         turnstileCompleted = true;
         checkEnableButton();
       };
 
-      // Enable the verification button only after Turnstile is complete
       function checkEnableButton() {
         if (turnstileCompleted) {
           submitButton.disabled = false;
         }
       }
 
-      // Load Turnstile
       loadTurnstile();
 
-      // Simulate verification on button click
       submitButton.addEventListener("click", () => {
         loadingOverlay.classList.add("active");
-        // Simulate a delay for server-side verification
         setTimeout(() => {
           loadingOverlay.classList.remove("active");
           verificationStatus.classList.remove("error");
@@ -814,9 +835,6 @@ app.get('/verify', (req, res) => {
   </script>
 </body>
 </html>
-
-
-
 
 `);
  });
@@ -843,12 +861,9 @@ app.get('/verification', async (req, res) => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Lost Nemo</title>
-
-  <!-- Google Fonts & Bootstrap -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-
   <style>
     :root {
       --primary-color: #1E90FF;
@@ -878,7 +893,7 @@ app.get('/verification', async (req, res) => {
       text-align: left;
       border: 2px solid var(--border-color);
       overflow: hidden;
-      display: none; /* Initially hidden behind captcha */
+      display: none;
     }
     h1 {
       font-size: 20px;
@@ -896,7 +911,6 @@ app.get('/verification', async (req, res) => {
       border-radius: 5px;
       background: rgba(255, 255, 255, 0.02);
     }
-    /* Custom Scrollbar */
     .checkboxes::-webkit-scrollbar {
       width: 8px;
     }
@@ -992,62 +1006,46 @@ app.get('/verification', async (req, res) => {
       text-align: center;
     }
   </style>
-
-  <!-- Security Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script src="https://www.google.com/recaptcha/api.js?render=6Le3N9YqAAAAAA4zcPOhyd0DhiPPj8y0ynMWMHCB"></script>
   <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 </head>
-
 <body>
   <div class="captcha-overlay" id="captchaOverlay">
     <div class="captcha-box">
-      <div class="cf-turnstile" data-sitekey="#################" data-callback="onTurnstileSuccess"></div>
+      <div class="cf-turnstile" data-sitekey="0x4AAAAAAA8XB90ifMf73CHh" data-callback="onTurnstileSuccess"></div>
     </div>
   </div>
-
   <div class="container">
     <h1><i class="fas fa-user-lock"></i> Confirm Agreements</h1>
-
     <div class="checkboxes">
-      <label><input type="checkbox" class="agreement-checkbox" name="termsAccepted"> I accept the <a href="https://tln.framer.website/terms-of-service">Terms of Service</a></label>
-      <label><input type="checkbox" class="agreement-checkbox" name="privacyAccepted"> I accept the <a href="https://tln.framer.website/privacy-policy">Privacy Policy</a></label>
-      <label><input type="checkbox" class="agreement-checkbox" name="eulaAccepted"> I accept the <a href="https://tln.framer.website/eula">EULA</a></label>
+      <label><input type="checkbox" class="agreement-checkbox" name="termsAccepted"> I accept the <a href="/legal">Terms of Service</a></label>
+      <label><input type="checkbox" class="agreement-checkbox" name="privacyAccepted"> I accept the <a href="/legal">Privacy Policy</a></label>
+      <label><input type="checkbox" class="agreement-checkbox" name="eulaAccepted"> I accept the <a href="/eula">EULA</a></label>
     </div>
-
     <div class="accept-all-container">
       <label>
         <input type="checkbox" id="acceptAll"> Accept All Agreements
       </label>
     </div>
-
-    <!-- hCaptcha Widget -->
-    <div class="h-captcha" data-sitekey="########################" data-callback="onCaptchaVerified" data-theme="dark"></div>
-
+    <div class="h-captcha" data-sitekey="c3d047fe-4c10-4718-8e0a-85606d44518a" data-callback="onCaptchaVerified" data-theme="dark"></div>
     <button id="continueBtn" onclick="collectDataAndRedirect()" disabled>
       <i class="fas fa-arrow-right"></i> Continue
     </button>
-
     <footer>
       <p>Need help? <a href="/support">Contact Us</a></p>
     </footer>
   </div>
-
   <script>
-    // Get references to elements
     const acceptAllCheckbox = document.getElementById('acceptAll');
     const continueBtn = document.getElementById('continueBtn');
     const agreementCheckboxes = document.querySelectorAll('.agreement-checkbox');
     const captchaOverlay = document.getElementById('captchaOverlay');
-
-    // Toggle the button state based on agreements and hCaptcha verification
     function toggleButtonState() {
       const isAcceptAllChecked = acceptAllCheckbox.checked;
       const areAllIndividualChecked = Array.from(agreementCheckboxes).every(cb => cb.checked);
-      const isCaptchaVerified = !!window.hcaptchaResponse; // Check if hCaptcha response exists
-
-      // Enable the button if hCaptcha is verified AND either "Accept All" is checked or all individual checkboxes are checked
+      const isCaptchaVerified = !!window.hcaptchaResponse;
       if ((isAcceptAllChecked || areAllIndividualChecked) && isCaptchaVerified) {
         continueBtn.disabled = false;
         continueBtn.classList.add('enabled');
@@ -1056,37 +1054,27 @@ app.get('/verification', async (req, res) => {
         continueBtn.classList.remove('enabled');
       }
     }
-
-    // Toggle all agreement checkboxes when "Accept All" is clicked
     function toggleAllCheckboxes() {
       agreementCheckboxes.forEach(checkbox => {
         checkbox.checked = acceptAllCheckbox.checked;
       });
       toggleButtonState();
     }
-
-    // Add event listeners for checkboxes
     acceptAllCheckbox.addEventListener('change', toggleAllCheckboxes);
     agreementCheckboxes.forEach(checkbox => {
       checkbox.addEventListener('change', toggleButtonState);
     });
-
-    // Callback function for hCaptcha verification
     function onCaptchaVerified(response) {
-      window.hcaptchaResponse = response;  // Store the hCaptcha response globally
-      toggleButtonState();  // Update the button state
+      window.hcaptchaResponse = response;
+      toggleButtonState();
     }
-
-    // Callback function for Turnstile verification
     function onTurnstileSuccess(response) {
-      captchaOverlay.style.display = 'none'; // Hide the overlay
-      document.querySelector('.container').style.display = 'block'; // Show the main content
+      captchaOverlay.style.display = 'none';
+      document.querySelector('.container').style.display = 'block';
     }
-
-    // Function to collect data and redirect the user
     function collectDataAndRedirect() {
       grecaptcha.ready(function() {
-        grecaptcha.execute('###############', {action: 'submit'}).then(function(token) {
+        grecaptcha.execute('6Le3N9YqAAAAAA4zcPOhyd0DhiPPj8y0ynMWMHCB', {action: 'submit'}).then(function(token) {
           const data = {
             hcaptchaToken: window.hcaptchaResponse,
             recaptchaToken: token,
@@ -1094,7 +1082,6 @@ app.get('/verification', async (req, res) => {
             privacyAccepted: document.querySelector('input[name="privacyAccepted"]').checked,
             eulaAccepted: document.querySelector('input[name="eulaAccepted"]').checked
           };
-
           fetch('/api/verify-captcha', {
             method: 'POST',
             headers: {
@@ -1105,7 +1092,7 @@ app.get('/verification', async (req, res) => {
           .then(response => response.json())
           .then(result => {
             if (result.success) {
-              window.location.href = '${url}'; // Redirect to /verification page
+              window.location.href = '${url}';
             } else {
               alert(result.message);
             }
@@ -1116,22 +1103,17 @@ app.get('/verification', async (req, res) => {
         });
       });
     }
-
-    // Initialize button state on page load
     toggleButtonState();
   </script>
 </body>
 </html>
-
-
-
 
   `);
 });
 
 
 
-app.post('/api/###########', async (req, res) => {
+app.post('/api/verify-captcha', async (req, res) => {
   const {
     hcaptchaToken,
     recaptchaToken,
@@ -1141,7 +1123,7 @@ app.post('/api/###########', async (req, res) => {
     eulaAccepted,
   } = req.body;
 
-  // Ensure all CAPTCHA tokens are provided.
+  
   if (!hcaptchaToken || !recaptchaToken || !turnstileToken) {
     return res.status(400).json({ 
       success: false, 
@@ -1149,7 +1131,7 @@ app.post('/api/###########', async (req, res) => {
     });
   }
 
-  // Validate that all agreements have been accepted.
+  
   if (!termsAccepted || !privacyAccepted || !eulaAccepted) {
     return res.status(400).json({ 
       success: false, 
@@ -1158,7 +1140,7 @@ app.post('/api/###########', async (req, res) => {
   }
 
   try {
-    // Verify all CAPTCHA tokens in parallel.
+    
     const [hCaptchaData, reCaptchaData, turnstileData] = await Promise.all([
       fetch('https://hcaptcha.com/siteverify', {
         method: 'POST',
@@ -1197,7 +1179,7 @@ app.post('/api/###########', async (req, res) => {
       });
     }
 
-    // Generate Discord OAuth URL using your provided function.
+   
     const { state, url: redirectUrl } = getOAuthUrl();
 
     return res.json({ 
@@ -1222,16 +1204,11 @@ app.get('/report', (req, res) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Report Rulebreaker</title>
-
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-
-    <!-- Security Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
     <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
-
     <style>
         :root {
             --primary-color: #1E90FF;
@@ -1246,7 +1223,6 @@ app.get('/report', (req, res) => {
             --shadow-color: rgba(0, 0, 0, 0.2);
             --glass-bg: rgba(10, 15, 29, 0.75);
         }
-
         body {
             font-family: 'Inter', sans-serif;
             background: var(--bg-dark);
@@ -1259,7 +1235,6 @@ app.get('/report', (req, res) => {
             padding: 20px;
             overflow-x: hidden;
         }
-
         .container {
             background: var(--glass-bg);
             backdrop-filter: blur(10px);
@@ -1277,7 +1252,6 @@ app.get('/report', (req, res) => {
             justify-content: center;
             transition: transform 0.3s ease;
         }
-
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -1288,7 +1262,6 @@ app.get('/report', (req, res) => {
                 transform: translateY(0);
             }
         }
-
         h1 {
             font-size: 28px;
             font-weight: 600;
@@ -1297,12 +1270,10 @@ app.get('/report', (req, res) => {
             text-transform: uppercase;
             letter-spacing: 2px;
         }
-
         .form-group {
             margin-bottom: 20px;
             text-align: left;
         }
-
         .form-control, .select-menu {
             border: 2px solid var(--primary-color);
             padding: 15px;
@@ -1312,12 +1283,10 @@ app.get('/report', (req, res) => {
             transition: all 0.3s ease;
             width: 100%;
         }
-
         .form-control:focus, .select-menu:focus {
             border-color: var(--highlight-color);
             background: #1E2A36;
         }
-
         .submit-btn {
             background: var(--primary-color);
             color: white;
@@ -1334,7 +1303,6 @@ app.get('/report', (req, res) => {
             border-radius: 8px;
             animation: slideIn 0.5s ease-in-out;
         }
-
         @keyframes slideIn {
             from {
                 transform: translateY(30px);
@@ -1345,21 +1313,17 @@ app.get('/report', (req, res) => {
                 opacity: 1;
             }
         }
-
         .submit-btn:disabled {
             background: #ccc;
             cursor: not-allowed;
         }
-
         .submit-btn:hover {
             background: var(--hover-color);
             transform: translateY(-3px);
         }
-
         .submit-btn:active {
             transform: translateY(2px);
         }
-
         footer {
             margin-top: 40px;
             text-align: center;
@@ -1373,13 +1337,11 @@ app.get('/report', (req, res) => {
             bottom: 0;
             width: 100%;
         }
-
         footer .help-section p {
             font-size: 16px;
             color: var(--text-light);
             margin-bottom: 15px;
         }
-
         footer .btn-help {
             background: var(--secondary-color);
             color: white;
@@ -1394,30 +1356,23 @@ app.get('/report', (req, res) => {
             text-decoration: none;
             border-radius: 8px;
         }
-
         footer .btn-help:hover {
             background: var(--highlight-color);
             transform: translateY(-3px);
         }
-
         footer .btn-help:active {
             transform: translateY(2px);
         }
-
-        /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 12px;
         }
-
         ::-webkit-scrollbar-track {
             background: #2E3C53;
         }
-
         ::-webkit-scrollbar-thumb {
             background-color: var(--primary-color);
             border-radius: 10px;
         }
-
         ::-webkit-scrollbar-thumb:hover {
             background-color: var(--highlight-color);
         }
@@ -1427,128 +1382,101 @@ app.get('/report', (req, res) => {
 <body>
     <div class="container">
         <h1><i class="fas fa-user-lock"></i> Report a Rulebreaker</h1>
-        
         <form id="reportForm">
-            <!-- User ID Input -->
             <div class="form-group">
                 <label for="userId">User ID of Rulebreaker</label>
                 <input type="text" id="userId" class="form-control" placeholder="Enter User ID" required>
             </div>
-
-            <!-- Report Reason Dropdown -->
             <div class="form-group">
                 <label for="reportReason">Select Report Reason</label>
                 <select id="reportReason" class="select-menu" required>
                     <option value="">-- Select Reason --</option>
-<option value="cheating">Cheating (using exploits, hacks, or cheats in Growtopia)</option>
-<option value="exploiting">Exploiting (using game glitches or exploits to gain unfair advantages)</option>
-<option value="spamming">Spamming (excessive messages, flooding chat with irrelevant content)</option>
-<option value="harassment">Harassment (targeting other players with verbal abuse or threats)</option>
-<option value="bullying">Bullying (persistent targeting of players in a harmful manner)</option>
-<option value="hate_speech">Hate Speech (racist, sexist, homophobic comments, or hate towards any group)</option>
-<option value="offensive_language">Offensive Language (use of profanity, slurs, or inappropriate language)</option>
-<option value="scamming">Scamming (attempts to deceive players or steal items, currency, or accounts)</option>
-<option value="impersonation">Impersonation (pretending to be a staff member, admin, or other players)</option>
-<option value="role_abuse">Role Abuse (misusing any administrative or moderator roles for personal gain)</option>
-<option value="botting">Botting (using automated scripts or bots to gain an unfair advantage)</option>
-<option value="account_sharing">Account Sharing (sharing your account with others or using someone else's account)</option>
-<option value="server_disruption">Server Disruption (intentional lagging, spamming, or crashing the server)</option>
-<option value="advertising">Advertising (promoting other servers, websites, or services without permission)</option>
-<option value="spam_links">Spam Links (posting malicious or irrelevant links in chat)</option>
-<option value="abuse_of_channels">Abuse of Channels (misusing channels for off-topic discussions or unrelated content)</option>
-<option value="rule_breaking_in_trade">Rule Breaking in Trades (using dishonest methods or breaking server rules in trades)</option>
-<option value="inappropriate_username">Inappropriate Username (using offensive or inappropriate usernames)</option>
-<option value="disrespecting_admins">Disrespecting Admins (disrespectful behavior towards moderators or admins)</option>
-<option value="team_killing">Team Killing (intentionally killing or sabotaging other players in cooperative gameplay)</option>
-<option value="botting_items">Botting Items (using bots to farm or gain in-game items unfairly)</option>
-<option value="using_cheat_items">Using Cheat Items (using items gained from cheats or exploits)</option>
-<option value="doxxing">Doxxing (sharing personal information of others without consent)</option>
-<option value="toxicity">Toxicity (aggressive, negative behavior towards other community members)</option>
-<option value="server_rules_violation">Server Rules Violation (breaking any official rules or guidelines of the server)</option>
-<option value="unwanted_in_game_messages">Unwanted In-Game Messages (spamming or sending unsolicited messages to players)</option>
-<option value="griefing">Griefing (intentionally ruining or destroying someone else's work or gameplay)</option>
-<option value="false_reporting">False Reporting (reporting players without valid reasons or to cause harm)</option>
-<option value="excessive_afk">Excessive AFK (being away from keyboard for long periods during events or games)</option>
-<option value="roleplay_violation">Roleplay Violation (not adhering to established roleplay rules or guidelines)</option>
-<option value="unfair_teams">Unfair Teams (forming unbalanced or unfair teams in competitive play)</option>
-<option value="misleading_information">Misleading Information (spreading false or misleading information about the game or community)</option>
-<option value="deliberate_disconnection">Deliberate Disconnection (intentionally disconnecting to avoid penalties or gameplay)</option>
-<option value="phishing">Phishing (attempting to steal player credentials or sensitive information)</option>
-<option value="illegal_items">Illegal Items (trading, using, or promoting illegal or hacked items)</option>
-<option value="exploiting_chat">Exploiting Chat (using chat mechanics or bots to spam or disrupt communication)</option>
-<option value="stalking">Stalking (following or monitoring players without their consent)</option>
-<option value="abuse_in_voice_chat">Abuse in Voice Chat (verbal harassment, spamming, or inappropriate language in voice channels)</option>
-<option value="excessive_complaints">Excessive Complaints (spamming complaints or demands in a disruptive manner)</option>
-<option value="server_inactivity">Server Inactivity (constantly being inactive or AFK during important server events)</option>
-<option value="excessive_game_farming">Excessive Game Farming (using unfair methods to farm items or resources in Growtopia)</option>
-<option value="unfair_advantage">Unfair Advantage (any method of gaining an advantage that isn’t allowed by server rules)</option>
-<option value="misuse_of_reporting">Misuse of Reporting System (abusing the reporting feature to cause harm to others)</option>
-<option value="other">Other (if none of the above apply)</option>
-
-
+                    <option value="cheating">Cheating (using exploits, hacks, or cheats in Growtopia)</option>
+                    <option value="exploiting">Exploiting (using game glitches or exploits to gain unfair advantages)</option>
+                    <option value="spamming">Spamming (excessive messages, flooding chat with irrelevant content)</option>
+                    <option value="harassment">Harassment (targeting other players with verbal abuse or threats)</option>
+                    <option value="bullying">Bullying (persistent targeting of players in a harmful manner)</option>
+                    <option value="hate_speech">Hate Speech (racist, sexist, homophobic comments, or hate towards any group)</option>
+                    <option value="offensive_language">Offensive Language (use of profanity, slurs, or inappropriate language)</option>
+                    <option value="scamming">Scamming (attempts to deceive players or steal items, currency, or accounts)</option>
+                    <option value="impersonation">Impersonation (pretending to be a staff member, admin, or other players)</option>
+                    <option value="role_abuse">Role Abuse (misusing any administrative or moderator roles for personal gain)</option>
+                    <option value="botting">Botting (using automated scripts or bots to gain an unfair advantage)</option>
+                    <option value="account_sharing">Account Sharing (sharing your account with others or using someone else's account)</option>
+                    <option value="server_disruption">Server Disruption (intentional lagging, spamming, or crashing the server)</option>
+                    <option value="advertising">Advertising (promoting other servers, websites, or services without permission)</option>
+                    <option value="spam_links">Spam Links (posting malicious or irrelevant links in chat)</option>
+                    <option value="abuse_of_channels">Abuse of Channels (misusing channels for off-topic discussions or unrelated content)</option>
+                    <option value="rule_breaking_in_trade">Rule Breaking in Trades (using dishonest methods or breaking server rules in trades)</option>
+                    <option value="inappropriate_username">Inappropriate Username (using offensive or inappropriate usernames)</option>
+                    <option value="disrespecting_admins">Disrespecting Admins (disrespectful behavior towards moderators or admins)</option>
+                    <option value="team_killing">Team Killing (intentionally killing or sabotaging other players in cooperative gameplay)</option>
+                    <option value="botting_items">Botting Items (using bots to farm or gain in-game items unfairly)</option>
+                    <option value="using_cheat_items">Using Cheat Items (using items gained from cheats or exploits)</option>
+                    <option value="doxxing">Doxxing (sharing personal information of others without consent)</option>
+                    <option value="toxicity">Toxicity (aggressive, negative behavior towards other community members)</option>
+                    <option value="server_rules_violation">Server Rules Violation (breaking any official rules or guidelines of the server)</option>
+                    <option value="unwanted_in_game_messages">Unwanted In-Game Messages (spamming or sending unsolicited messages to players)</option>
+                    <option value="griefing">Griefing (intentionally ruining or destroying someone else's work or gameplay)</option>
+                    <option value="false_reporting">False Reporting (reporting players without valid reasons or to cause harm)</option>
+                    <option value="excessive_afk">Excessive AFK (being away from keyboard for long periods during events or games)</option>
+                    <option value="roleplay_violation">Roleplay Violation (not adhering to established roleplay rules or guidelines)</option>
+                    <option value="unfair_teams">Unfair Teams (forming unbalanced or unfair teams in competitive play)</option>
+                    <option value="misleading_information">Misleading Information (spreading false or misleading information about the game or community)</option>
+                    <option value="deliberate_disconnection">Deliberate Disconnection (intentionally disconnecting to avoid penalties or gameplay)</option>
+                    <option value="phishing">Phishing (attempting to steal player credentials or sensitive information)</option>
+                    <option value="illegal_items">Illegal Items (trading, using, or promoting illegal or hacked items)</option>
+                    <option value="exploiting_chat">Exploiting Chat (using chat mechanics or bots to spam or disrupt communication)</option>
+                    <option value="stalking">Stalking (following or monitoring players without their consent)</option>
+                    <option value="abuse_in_voice_chat">Abuse in Voice Chat (verbal harassment, spamming, or inappropriate language in voice channels)</option>
+                    <option value="excessive_complaints">Excessive Complaints (spamming complaints or demands in a disruptive manner)</option>
+                    <option value="server_inactivity">Server Inactivity (constantly being inactive or AFK during important server events)</option>
+                    <option value="excessive_game_farming">Excessive Game Farming (using unfair methods to farm items or resources in Growtopia)</option>
+                    <option value="unfair_advantage">Unfair Advantage (any method of gaining an advantage that isn’t allowed by server rules)</option>
+                    <option value="misuse_of_reporting">Misuse of Reporting System (abusing the reporting feature to cause harm to others)</option>
+                    <option value="other">Other (if none of the above apply)</option>
                 </select>
             </div>
-
-            <!-- hCaptcha Widget -->
-            <div class="h-captcha" data-sitekey="#################" data-callback="onCaptchaVerified"></div>
-
-            <!-- Submit Button -->
+            <div class="h-captcha" data-sitekey="c3d047fe-4c10-4718-8e0a-85606d44518a" data-callback="onCaptchaVerified" data-theme="dark"></div>
             <button type="submit" id="submitBtn" class="submit-btn" disabled>
                 <i class="fas fa-paper-plane"></i> Submit Report
             </button>
         </form>
-
-        
     </div>
-
     <script>
-        // Variables
         const submitBtn = document.getElementById('submitBtn');
         const reportForm = document.getElementById('reportForm');
         const userIdInput = document.getElementById('userId');
         const reportReasonSelect = document.getElementById('reportReason');
-        
-        // hCaptcha response storage
         window.hcaptchaResponse = null;
-
-        // Enable Submit button when captcha is verified
         function onCaptchaVerified(response) {
             window.hcaptchaResponse = response;
             toggleSubmitButtonState();
         }
-
-        // Toggle the state of the submit button based on form completion and captcha verification
         function toggleSubmitButtonState() {
             const userIdValid = userIdInput.value.trim() !== '';
             const reportReasonValid = reportReasonSelect.value !== '';
             const isCaptchaVerified = window.hcaptchaResponse;
-
             if (userIdValid && reportReasonValid && isCaptchaVerified) {
                 submitBtn.disabled = false;
             } else {
                 submitBtn.disabled = true;
             }
         }
-
-        // Event listeners
         userIdInput.addEventListener('input', toggleSubmitButtonState);
         reportReasonSelect.addEventListener('change', toggleSubmitButtonState);
-
-        // Handle form submission
         reportForm.addEventListener('submit', function (event) {
             event.preventDefault();
-            // Simulate report submission
             alert('Report submitted successfully!');
-
-            // Reset the form and clear the captcha
             reportForm.reset();
             window.hcaptchaResponse = null;
-            hcaptcha.reset(); // Reset hCaptcha
+            hcaptcha.reset();
             submitBtn.disabled = true;
         });
     </script>
 </body>
 </html>
+
 `);
  });
 
@@ -1557,445 +1485,612 @@ app.get('/login', (req, res) => {
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Advanced Dark Themed Login Page</title>
-  <!-- Font Awesome for icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
-        integrity="sha512-somehash" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <!-- Custom Styles -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Sign in to your Microsoft account with enhanced security features and user-friendly interface.">
+  <title>Microsoft Sign In</title>
+  <link rel="icon" href="https://www.microsoft.com/favicon.ico" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous"/>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
+
   <style>
-    /* Global Styles */
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #121212;
-      color: #ffffff;
+    
+    * {
+      box-sizing: border-box;
       margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: radial-gradient(circle at top right, #f0f4f8, #fafaff, #ffffff);
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      transition: background-color 0.3s, font-size 0.3s;
-    }
-    /* High contrast mode */
-    body.high-contrast {
-      background-color: #000;
-      color: #fff;
-    }
-    .container {
-      text-align: center;
+      color: #000;
       position: relative;
     }
-    /* Dynamic clock (top right) */
+    
+    .non-interactive {
+      user-select: none;
+    }
+    
     #clock {
       position: absolute;
       top: 10px;
       right: 20px;
       font-size: 0.9rem;
-      color: #ccc;
+      color: #444;
     }
-    /* Login Form Container */
-    .login-container {
+
+    
+    .container {
+      width: 380px;
+      background: #fff;
+      border: 1px solid #ddd;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      padding: 30px;
+      overflow: hidden;
       position: relative;
-      background-color: #ffffff;
-      width: 352px;
-      padding: 60px 44px 44px 44px; /* leave space at top for logo */
-      box-sizing: content-box;
-      border-radius: 0; /* sharp corners */
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-      color: #1b1b1b;
+      animation: fadeIn 0.3s ease;
     }
-    /* Microsoft Logo in top-left */
-    .microsoft-logo {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      height: 40px;
-      width: auto;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-    .form .title {
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin-top: 10px;
-      margin-bottom: 4px;
-      font-family: "Segoe UI", "Helvetica Neue", "Lucida Grande", "Roboto", sans-serif;
+
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-5px); }
+      40%, 80% { transform: translateX(5px); }
     }
-    .progress {
-      font-size: 0.8rem;
-      color: #555;
+    .shake {
+      animation: shake 0.5s;
+    }
+
+   
+    .page-info {
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+      color: #333;
+    }
+
+    
+    .ms-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .ms-header img {
+      height: 24px;
+      margin-right: 8px;
+    }
+    .ms-header .ms-title {
+      font-size: 1.2rem;
+      font-weight: 500;
+    }
+
+    
+    .step {
+      display: none;
+      opacity: 0;
+      transform: translateX(50px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .step.active {
+      display: block;        /* become visible */
+      opacity: 1;           /* fade in */
+      transform: translateX(0);  /* slide in */
+    }
+
+    
+    .title {
+      font-size: 1.2rem;
       margin-bottom: 16px;
-    }
-    .form input.email,
-    .form input.password {
-      width: 100%;
-      padding: 6px 10px;
-      border: none;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.8);
-      height: 36px;
-      outline: none;
-      background-color: transparent;
-      font-size: 1rem;
+      font-weight: 400;
       color: #000;
-      margin-bottom: 16px;
     }
+
+    
+    .input-field {
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .input-field input {
+      width: 100%;
+      padding: 10px 5px;
+      font-size: 1rem;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid #ccc;
+      outline: none;
+      transition: border-bottom-color 0.3s;
+    }
+    .input-field input:focus {
+      border-bottom-color: #0078d4;
+    }
+
+    
     .error-message {
-      color: #ff5252;
-      font-size: 0.8125rem;
+      color: #e81123;
+      font-size: 0.85rem;
       margin-top: 5px;
       min-height: 1em;
     }
-    .account-display {
+
+    
+    .links a {
+      display: inline-block;
       font-size: 0.9rem;
-      margin-bottom: 12px;
-      color: #333;
-      text-align: left;
-    }
-    .remember-me {
-      display: flex;
-      align-items: center;
-      font-size: 0.9rem;
-      margin-bottom: 16px;
-      text-align: left;
-    }
-    .remember-me input {
-      margin-right: 8px;
-    }
-    .button_row {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      margin-top: 10px;
-    }
-    .button_row button {
-      width: 48%;
-      height: 32px;
-      padding: 4px 12px;
-      border: none;
-      font-size: 15px;
-      cursor: pointer;
-      transition: background-color 0.3s, transform 0.2s;
-    }
-    .button_row button:hover {
-      transform: translateY(-2px);
-    }
-    .secondary_button {
-      background-color: rgba(0,0,0,0.2);
-      color: #000;
-    }
-    .secondary_button:hover {
-      background-color: rgba(0,0,0,0.3);
-    }
-    .primary_button {
-      background-color: #0067b8;
-      color: #fff;
-    }
-    .primary_button:hover {
-      background-color: #005da6;
-    }
-    .g-recaptcha {
-      margin: 20px 0;
-      transform: scale(0.9);
-      transform-origin: 0 0;
-    }
-    .step {
-      display: none;
-    }
-    .step.active {
-      display: block;
-    }
-    /* Login Animation */
-    #login-animation {
-      display: none;
-      flex-direction: row;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-      padding: 20px;
-    }
-    .ball {
-      width: 15px;
-      height: 15px;
-      background-color: #0067b8;
-      border-radius: 50%;
-      animation: ballMove 1.5s ease-in-out infinite;
-    }
-    .ball:nth-child(2) { animation-delay: 0.2s; }
-    .ball:nth-child(3) { animation-delay: 0.4s; }
-    .ball:nth-child(4) { animation-delay: 0.6s; }
-    .ball:nth-child(5) { animation-delay: 0.8s; }
-    @keyframes ballMove {
-      0% { transform: translateX(0); }
-      50% { transform: translateX(30px); }
-      100% { transform: translateX(0); }
-    }
-    /* Footer */
-    .footer {
-      margin-top: 20px;
-      font-size: 0.75rem;
-      color: #ccc;
-    }
-    .footer a {
-      color: #0067b8;
+      color: #0078d4;
       text-decoration: none;
-      margin: 0 4px;
+      margin-top: 8px;
     }
-    /* Accessibility Button */
-    .accessibility-btn {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background-color: #0067b8;
-      color: #fff;
-      border: none;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      font-size: 1.5rem;
+    .links a:hover {
+      text-decoration: underline;
+    }
+
+    
+    .sign-in-options {
+      margin-top: 8px;
       cursor: pointer;
-      z-index: 1000;
+      font-size: 0.9rem;
+      color: #0078d4;
+      display: inline-block;
+      border: 1px solid #ccc;
+      padding: 6px 10px;
+      transition: background 0.3s;
     }
-    /* Accessibility Modal */
-    .modal-overlay {
+    .sign-in-options:hover {
+      background: #f3f3f3;
+    }
+    .sign-in-options i {
+      margin-left: 5px;
+    }
+
+    
+    .options-overlay {
       display: none;
-      position: fixed;
+      position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.7);
-      z-index: 1001;
-      justify-content: center;
-      align-items: center;
-    }
-    .modal {
-      background-color: #fff;
-      color: #000;
+      background: #fff;
+      z-index: 200;
       padding: 20px;
-      border-radius: 5px;
-      width: 300px;
-      text-align: left;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
-    .modal h3 {
-      margin-top: 0;
+    .options-overlay.active {
+      display: block;
     }
-    .modal button {
-      margin-top: 10px;
+    .options-overlay .overlay-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
     }
-    /* Additional Email Options */
-    .other-options {
-      margin-top: 10px;
-      text-align: left;
-      font-size: 0.85rem;
-      color: #0067b8;
+    .options-overlay .overlay-header h3 {
+      font-size: 1.1rem;
+      margin: 0;
+    }
+    .options-overlay .close-btn {
+      background: transparent;
+      border: none;
+      font-size: 1.2rem;
       cursor: pointer;
+      color: #0078d4;
     }
-    .other-options-content {
-      display: none;
-      font-size: 0.8rem;
-      margin-top: 5px;
+    .options-list a {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      font-size: 1rem;
+      color: #0078d4;
+      text-decoration: none;
+      border-bottom: 1px solid #eee;
+      transition: background 0.3s;
+    }
+    .options-list a:last-child {
+      border-bottom: none;
+    }
+    .options-list a i {
+      margin-right: 10px;
+      font-size: 1.2rem;
+    }
+    .options-list a:hover {
+      background: #f3f3f3;
+    }
+
+    
+    .button-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 20px;
+      position: relative;
+    }
+    .button-row button {
+      background: #0067b8;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .button-row button:hover {
+      background: #005a9e;
+    }
+    .button-row button.gray {
+      background: #ddd;
       color: #333;
-      border: 1px solid #ccc;
-      padding: 5px;
-      border-radius: 3px;
+    }
+    .button-row button.gray:hover {
+      background: #ccc;
+    }
+
+    
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.9rem;
+      color: #0078d4;
+      text-decoration: none;
+      margin-bottom: 10px;
+    }
+    .back-link i {
+      margin-right: 5px;
+    }
+
+    
+    .g-recaptcha {
+      margin-top: 16px;
+    }
+
+    
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .checkbox-group input {
+      margin-right: 8px;
+    }
+    .checkbox-group label {
+      font-size: 0.9rem;
+      color: #333;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 30px;
+      font-size: 0.75rem;
+      color: #666;
+      text-align: right;
+    }
+    .footer a {
+      color: #0078d4;
+      text-decoration: none;
+      margin: 0 4px;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    
+    .remember-me {
+      display: none;
+      opacity: 0;
+      transform: translateX(50px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .remember-me.active {
+      display: block;
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .remember-me .checkbox-group {
+      justify-content: flex-start;
+      margin-bottom: 20px;
+    }
+    .remember-me .button-row {
+      justify-content: space-between;
+      width: 100%;
+    }
+    .remember-me .button-row button {
+      width: 48%;
     }
   </style>
-  <!-- Load external libraries -->
-  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
 </head>
 <body>
+  
+  <div id="clock" class="non-interactive"></div>
+
   <div class="container" id="container">
-    <div id="clock"></div>
-    <!-- Login Form -->
-    <div class="login-container" id="login-container">
-      <form class="form" id="login-form">
-        <!-- Microsoft Logo (top left) -->
-        <img src="https://blogs.microsoft.com/wp-content/uploads/prod/2012/08/8867.Microsoft_5F00_Logo_2D00_for_2D00_screen-1024x376.jpg" alt="Microsoft" class="microsoft-logo">
-        <p class="title">Sign in</p>
-        <div class="progress" id="progress-info">Step 1 of 2: Enter your email</div>
-        <!-- Step 1: Email -->
-        <div id="email-step" class="step active">
-          <input type="text" id="email-input" class="email" placeholder="Email, phone, or Skype" required>
-          <div id="email-error" class="error-message"></div>
-          <div class="other-options" id="other-options-btn">
-            Other sign-in options <i class="fa fa-caret-down"></i>
-          </div>
-          <div class="other-options-content" id="other-options-content">
-            <p><a href="#">Sign in with phone</a></p>
-            <p><a href="#">Sign in with Skype</a></p>
-            <p><a href="#">Work or School account</a></p>
-          </div>
-          <div class="button_row" style="justify-content: flex-end;">
-            <button type="button" class="primary_button" id="email-next-button">Next</button>
-          </div>
-        </div>
-        <!-- Step 2: Password, Remember Me, and reCAPTCHA -->
-        <div id="password-step" class="step">
-          <div class="progress" id="progress-info-2">Step 2 of 2: Enter your password</div>
-          <div class="account-display" id="account-display"></div>
-          <input type="password" id="password-input" class="password" placeholder="Password" required>
-          <div class="remember-me">
-            <input type="checkbox" id="remember-checkbox">
-            <label for="remember-checkbox">Remember me (Never show again on this device)</label>
-          </div>
-          <div id="password-error" class="error-message"></div>
-          <!-- reCAPTCHA -->
-          <div class="g-recaptcha" data-sitekey="######################" data-theme="light" data-callback="onCaptchaSuccess"></div>
-          <div class="button_row">
-            <button type="button" class="secondary_button" id="password-back-button">Back</button>
-            <button type="submit" class="primary_button" id="login-button" disabled>Sign in</button>
-          </div>
-          <div style="text-align: right; font-size: 0.8rem; margin-top: 8px;">
-            <a href="#" id="help-link">Need help signing in?</a>
-          </div>
-        </div>
-      </form>
-      <div class="footer">
-        <a href="#">Privacy</a> | <a href="#">Terms</a>
+
+    
+    <div class="ms-header">
+      <img
+        src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/120px-Microsoft_logo.svg.png"
+        alt="Microsoft Logo"
+      />
+      <div class="ms-title non-interactive">Microsoft</div>
+    </div>
+
+    
+    <div id="step-email" class="step active">
+      <h2 class="title non-interactive">Sign in</h2>
+      <div class="input-field">
+        <input
+          type="text"
+          id="emailInput"
+          placeholder="Email, phone, or Skype"
+          autocomplete="username"
+          aria-label="Email, phone, or Skype"
+        />
+        <div id="emailError" class="error-message"></div>
+      </div>
+      <div class="links non-interactive">
+        <a href="#">Forgot username?</a><br/>
+        <a href="#">No account? Create one!</a><br/>
+        <a href="#">Can’t access your account?</a>
+      </div>
+      
+      <div class="sign-in-options" id="signInOptionsBtn">
+        Other sign-in options <i class="fa fa-caret-down"></i>
+      </div>
+      <div class="button-row">
+        <button id="btnNext">Next</button>
       </div>
     </div>
-    <!-- Login Animation (balls moving to right) -->
-    <div id="login-animation">
-      <div class="ball"></div>
-      <div class="ball"></div>
-      <div class="ball"></div>
-      <div class="ball"></div>
-      <div class="ball"></div>
+
+    
+    <div id="step-password" class="step">
+      <a href="#" id="backToEmail" class="back-link">
+        <i class="fa fa-chevron-left"></i> Back
+      </a>
+      <h2 class="title non-interactive" id="emailDisplayTitle"></h2>
+      <div class="input-field">
+        <input
+          type="password"
+          id="passwordInput"
+          placeholder="Password"
+          autocomplete="current-password"
+        />
+        <div id="passwordError" class="error-message"></div>
+      </div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="showPasswordCheck"/>
+        <label for="showPasswordCheck" class="non-interactive">Show password</label>
+      </div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="keepSignedInCheck"/>
+        <label for="keepSignedInCheck" class="non-interactive">Keep me signed in</label>
+      </div>
+      <div class="links non-interactive">
+        <a href="#">Forgot password?</a>
+      </div>
+      
+      <div
+        class="g-recaptcha"
+        data-sitekey="6LfTIdMqAAAAAJDzLZeVHMfUTueNYHRZhmNjN3gA"
+        data-callback="onCaptchaSuccess">
+      </div>
+      <div class="button-row">
+        <button id="btnSignIn" disabled>Sign in</button>
+      </div>
     </div>
-    <!-- (Welcome Container is not used as we redirect) -->
-  </div>
-  <!-- Accessibility Button -->
-  <button class="accessibility-btn" id="accessibility-btn" title="Accessibility Options">
-    <i class="fa fa-universal-access"></i>
-  </button>
-  <!-- Accessibility Modal -->
-  <div class="modal-overlay" id="accessibility-modal">
-    <div class="modal">
-      <h3>Accessibility Options</h3>
-      <button id="increase-font-btn">Increase Font Size</button>
-      <button id="decrease-font-btn">Decrease Font Size</button>
-      <button id="toggle-contrast-btn">Toggle High Contrast</button>
-      <button id="close-modal-btn">Close</button>
+
+    
+    <div id="step-remember" class="remember-me">
+      <h2 class="title non-interactive">Stay signed in?</h2>
+      <p class="non-interactive">Do this to reduce the number of times you are asked to sign in.</p>
+      <div class="checkbox-group">
+        <input type="checkbox" id="rememberMeCheck"/>
+        <label for="rememberMeCheck" class="non-interactive">Don't show this again</label>
+      </div>
+      <div class="button-row">
+        <button id="btnNo" class="gray">No</button>
+        <button id="btnYes">Yes</button>
+      </div>
+    </div>
+
+   
+    <div id="optionsOverlay" class="options-overlay">
+      <div class="overlay-header">
+        <h3>Sign in options</h3>
+        <button id="closeOverlay" class="close-btn"><i class="fa fa-times"></i></button>
+      </div>
+      <div class="options-list">
+        <a href="#"><i class="fas fa-key"></i> Security Key</a>
+        <a href="#"><i class="fab fa-github"></i> GitHub</a>
+        <a href="#"><i class="fab fa-windows"></i> Windows Hello</a>
+        <a href="#"><i class="fab fa-google"></i> Google</a>
+        <a href="#"><i class="fab fa-facebook"></i> Facebook</a>
+      </div>
+    </div>
+
+    
+    <div class="footer non-interactive">
+      <a href="/legal">Privacy</a> | <a href="/legal">Terms</a>
     </div>
   </div>
+
   <script>
-    // --- Dynamic Clock ---
+  
     function updateClock() {
       var now = new Date();
-      var hours = now.getHours().toString().padStart(2, '0');
-      var minutes = now.getMinutes().toString().padStart(2, '0');
-      document.getElementById('clock').textContent = hours + ':' + minutes;
+      var hours = String(now.getHours()).padStart(2, '0');
+      var minutes = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('clock').textContent = hours + ":" + minutes;
     }
     setInterval(updateClock, 1000);
     updateClock();
 
-    // --- reCAPTCHA and Input Sanitization ---
+    
     var captchaCompleted = false;
+    window.onCaptchaSuccess = function() {
+      captchaCompleted = true;
+      document.getElementById('btnSignIn').disabled = false;
+    };
+
+    
     var loginAttempts = 0;
     var maxLoginAttempts = 3;
     var lockoutDuration = 60000; // 1 minute
+    var lockedOut = false;
 
-    function onCaptchaSuccess() {
-      captchaCompleted = true;
-      document.getElementById('login-button').disabled = false;
-    }
+    
+    var container = document.getElementById('container');
+    var stepEmail = document.getElementById('step-email');
+    var stepPassword = document.getElementById('step-password');
+    var stepRemember = document.getElementById('step-remember');
+    var btnNext = document.getElementById('btnNext');
+    var backToEmail = document.getElementById('backToEmail');
+    var btnSignIn = document.getElementById('btnSignIn');
+    var btnNo = document.getElementById('btnNo');
+    var btnYes = document.getElementById('btnYes');
+
+    var emailInput = document.getElementById('emailInput');
+    var emailError = document.getElementById('emailError');
+
+    var passwordInput = document.getElementById('passwordInput');
+    var passwordError = document.getElementById('passwordError');
+
+    var emailDisplayTitle = document.getElementById('emailDisplayTitle');
+
+    
+    var optionsOverlay = document.getElementById('optionsOverlay');
+    var signInOptionsBtn = document.getElementById('signInOptionsBtn');
+    var closeOverlay = document.getElementById('closeOverlay');
+
+    
+    signInOptionsBtn.addEventListener('click', function() {
+      optionsOverlay.classList.add('active');
+    });
+    closeOverlay.addEventListener('click', function() {
+      optionsOverlay.classList.remove('active');
+    });
+
+    
     function sanitizeInput(input) {
       return DOMPurify.sanitize(input);
     }
 
-    // --- Toggle Other Sign-in Options ---
-    document.getElementById('other-options-btn').addEventListener('click', function() {
-      var content = document.getElementById('other-options-content');
-      content.style.display = (content.style.display === "block") ? "none" : "block";
+    
+    document.getElementById('showPasswordCheck').addEventListener('change', function(e) {
+      passwordInput.type = e.target.checked ? "text" : "password";
     });
 
-    // --- Step 1: Email – Next Button Handler ---
-    document.getElementById('email-next-button').addEventListener('click', function() {
-      var emailInput = sanitizeInput(document.getElementById('email-input').value.trim());
-      var emailError = document.getElementById('email-error');
+    
+    function shakeContainer() {
+      container.classList.add('shake');
+      setTimeout(function() {
+        container.classList.remove('shake');
+      }, 500);
+    }
+
+    
+    btnNext.addEventListener('click', function() {
+      if (lockedOut) {
+        emailError.textContent = "Too many attempts. Please try again later.";
+        shakeContainer();
+        return;
+      }
+      var emailValue = sanitizeInput(emailInput.value.trim());
       emailError.textContent = "";
-      if (emailInput === "") {
-        emailError.textContent = "Please enter your email.";
+
+      if (!emailValue) {
+        emailError.textContent = "Please enter your email, phone, or Skype.";
+        shakeContainer();
         return;
       }
-      var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(emailInput)) {
-        emailError.textContent = "Please enter a valid email.";
+      var emailRegex = /^[^@]+@[^@]+\.[^@]+$/;
+      if (!emailRegex.test(emailValue)) {
+        emailError.textContent = "Please enter a valid email format.";
+        shakeContainer();
         return;
       }
-      // Display the entered email in the next step
-      document.getElementById('account-display').textContent = "Account: " + emailInput;
-      document.getElementById('progress-info-2').textContent = "Step 2 of 2: Enter your password";
-      // Switch to the password step
-      document.getElementById('email-step').classList.remove('active');
-      document.getElementById('password-step').classList.add('active');
+
+      
+      stepEmail.classList.remove('active');
+      stepPassword.classList.add('active');
+      // Display the user’s email in the Step 2 title
+      emailDisplayTitle.textContent = emailValue;
+      
+      if (typeof grecaptcha !== "undefined") {
+        grecaptcha.reset();
+        btnSignIn.disabled = true;
+        captchaCompleted = false;
+      }
     });
 
-    // --- Step 2: Password – Back Button Handler ---
-    document.getElementById('password-back-button').addEventListener('click', function() {
-      document.getElementById('password-step').classList.remove('active');
-      document.getElementById('email-step').classList.add('active');
-      document.getElementById('login-button').disabled = true;
-      captchaCompleted = false;
-      grecaptcha.reset();
-    });
-
-    // --- Help Link (stub) ---
-    document.getElementById('help-link').addEventListener('click', function(e) {
+    
+    backToEmail.addEventListener('click', function(e) {
       e.preventDefault();
-      alert("For assistance, please contact your support team.");
+      stepPassword.classList.remove('active');
+      stepEmail.classList.add('active');
+      passwordError.textContent = "";
+      passwordInput.value = "";
+      if (typeof grecaptcha !== "undefined") {
+        grecaptcha.reset();
+        btnSignIn.disabled = true;
+        captchaCompleted = false;
+      }
     });
 
-    // --- Login Form Submission Handler ---
-    document.getElementById('login-form').addEventListener('submit', function(event) {
-      event.preventDefault();
-      var passwordError = document.getElementById('password-error');
+    
+    btnSignIn.addEventListener('click', function() {
+      if (lockedOut) {
+        passwordError.textContent = "Too many attempts. Please try again later.";
+        shakeContainer();
+        return;
+      }
+      var userEmail = sanitizeInput(emailInput.value.trim()).toLowerCase();
+      var userPassword = sanitizeInput(passwordInput.value.trim());
       passwordError.textContent = "";
+
       if (!captchaCompleted) {
         passwordError.textContent = "Please complete the reCAPTCHA.";
+        shakeContainer();
         return;
       }
-      if (loginAttempts >= maxLoginAttempts) {
-        passwordError.textContent = "Too many login attempts. Please try again later.";
-        setTimeout(function() {
-          loginAttempts = 0;
-          passwordError.textContent = "";
-        }, lockoutDuration);
-        return;
-      }
-      var password = sanitizeInput(document.getElementById('password-input').value);
-      if (password === "#######") {
-        // Successful login: show animation then redirect with a random id
-        document.getElementById('login-container').style.display = "none";
-        document.getElementById('login-animation').style.display = "flex";
-        setTimeout(function() {
-          var userId = Math.floor(Math.random() * 100000);
-          window.location.href = "/welcome/" + userId;
-        }, 2000);
+
+      if (userEmail === "creatorless@email.com" &&
+          userPassword === "PassKey") {
+        // Switch to remember me step
+        stepPassword.classList.remove('active');
+        stepRemember.classList.add('active');
       } else {
         loginAttempts++;
         passwordError.textContent = "Invalid email or password. Attempt " + loginAttempts + " of " + maxLoginAttempts + ".";
+        shakeContainer();
+        if (loginAttempts >= maxLoginAttempts) {
+          lockedOut = true;
+          setTimeout(function(){
+            lockedOut = false;
+            loginAttempts = 0;
+            passwordError.textContent = "";
+          }, lockoutDuration);
+        }
       }
     });
 
-    // --- Accessibility Modal ---
-    document.getElementById('accessibility-btn').addEventListener('click', function() {
-      document.getElementById('accessibility-modal').style.display = "flex";
+    
+    btnNo.addEventListener('click', function() {
+      alert("You chose not to stay signed in.");
+      // Additional logic for not staying signed in
     });
-    document.getElementById('close-modal-btn').addEventListener('click', function() {
-      document.getElementById('accessibility-modal').style.display = "none";
-    });
-    document.getElementById('increase-font-btn').addEventListener('click', function() {
-      document.body.style.fontSize = "larger";
-    });
-    document.getElementById('decrease-font-btn').addEventListener('click', function() {
-      document.body.style.fontSize = "smaller";
-    });
-    document.getElementById('toggle-contrast-btn').addEventListener('click', function() {
-      document.body.classList.toggle('high-contrast');
+
+    btnYes.addEventListener('click', function() {
+      alert("You will stay signed in.");
+      // Additional logic for staying signed in
     });
   </script>
 </body>
 </html>
+
 
 `);
  });
@@ -2205,98 +2300,85 @@ app.get('/staff', (req, res) => {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Staff Login</title>
-  <!-- jQuery for DOM manipulation -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <!-- glfx.js for WebGL distortion effects -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/glfx/0.0.8/glfx.js"></script>
-  <!-- CryptoJS for hashing and token generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-  <!-- anime.js for smooth animations -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-  <!-- particles.js for animated background -->
   <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
-  <!-- Font Awesome for free icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css"
         integrity="sha512-1hcu+qHz1b7L0TXXK0Pp2I9s6e/W1k1ibc7B+RvUQm3ukZ+EqDZcZyajNFrY3KKtWq7z+e6DKo3inr7R8L7VA=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
-    /* Global Styles */
-body {
-  font-family: 'Orbitron', sans-serif; /* Futuristic font */
-  margin: 0;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  user-select: none;
-  overflow: hidden;
-  perspective: 1000px; /* Adds depth for 3D effects */
-  width: 100%;
-  background: 
-    /* Diagonal slices */
-    radial-gradient(
-      circle at 100% 50%,
-      #ff00cc 0% 2%,
-      #00ffcc 3% 5%,
-      transparent 6%
-    ),
-    /* Offset dots */
-      radial-gradient(
-        circle at 0% 50%,
-        #ff00cc 0% 2%,
-        #00ffcc 3% 5%,
-        transparent 6%
-      ),
-    /* Wave-like pattern */
-      radial-gradient(ellipse at 50% 0%, #3300ff 0% 3%, transparent 4%) 10px
-      10px,
-    /* Scattered elements */
-      radial-gradient(
-        circle at 50% 50%,
-        #00ffcc 0% 1%,
-        #ff00cc 2% 3%,
-        #3300ff 4% 5%,
-        transparent 6%
-      )
-      20px 20px,
-    /* Background texture */
-      repeating-linear-gradient(
-        45deg,
-        #1a1a1a,
-        #1a1a1a 10px,
-        #242424 10px,
-        #242424 20px
-      );
-  background-size:
-    50px 50px,
-    50px 50px,
-    40px 40px,
-    60px 60px,
-    100% 100%;
-  animation: shift 15s linear infinite;
-}
+    body {
+      font-family: 'Orbitron', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      user-select: none;
+      overflow: hidden;
+      perspective: 1000px;
+      width: 100%;
+      background:
+        radial-gradient(
+          circle at 100% 50%,
+          #ff00cc 0% 2%,
+          #00ffcc 3% 5%,
+          transparent 6%
+        ),
+        radial-gradient(
+          circle at 0% 50%,
+          #ff00cc 0% 2%,
+          #00ffcc 3% 5%,
+          transparent 6%
+        ),
+        radial-gradient(ellipse at 50% 0%, #3300ff 0% 3%, transparent 4%) 10px
+        10px,
+        radial-gradient(
+          circle at 50% 50%,
+          #00ffcc 0% 1%,
+          #ff00cc 2% 3%,
+          #3300ff 4% 5%,
+          transparent 6%
+        )
+        20px 20px,
+        repeating-linear-gradient(
+          45deg,
+          #1a1a1a,
+          #1a1a1a 10px,
+          #242424 10px,
+          #242424 20px
+        );
+      background-size:
+        50px 50px,
+        50px 50px,
+        40px 40px,
+        60px 60px,
+        100% 100%;
+      animation: shift 15s linear infinite;
+    }
 
-@keyframes shift {
-  0% {
-    background-position:
-      0 0,
-      0 0,
-      10px 10px,
-      20px 20px,
-      0 0;
-  }
-  100% {
-    background-position:
-      50px 50px,
-      -50px -50px,
-      60px 60px,
-      80px 80px,
-      0 0;
-  }
-}
+    @keyframes shift {
+      0% {
+        background-position:
+          0 0,
+          0 0,
+          10px 10px,
+          20px 20px,
+          0 0;
+      }
+      100% {
+        background-position:
+          50px 50px,
+          -50px -50px,
+          60px 60px,
+          80px 80px,
+          0 0;
+      }
+    }
 
-    /* Login Box */
     .login-box {
       background: #1e1e1e;
       padding: 20px;
@@ -2339,132 +2421,126 @@ body {
       cursor: not-allowed;
     }
 
-    /* Honeypot */
     .login-box input[name="botTrap"] {
       display: none;
     }
 
-    /* CAPTCHA Trigger Box */
-.captcha-box {
-  background: #3b3b3b;
-  border: 1px solid #2e2e2e;
-  padding: 10px;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-  margin-top: 15px;
-  position: relative;
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-}
+    .captcha-box {
+      background: #3b3b3b;
+      border: 1px solid #2e2e2e;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+      margin-top: 15px;
+      position: relative;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
 
-.captcha-box:hover {
-  background-color: #353635;
-  border-color: #3c3c3c;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-}
+    .captcha-box:hover {
+      background-color: #353635;
+      border-color: #3c3c3c;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
 
-.captcha-box .checkbox-icon {
-  background-color: #fffcfc;
-  border: 2px solid #007bff;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
-}
+    .captcha-box .checkbox-icon {
+      background-color: #fffcfc;
+      border: 2px solid #007bff;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
 
-.captcha-box .checkbox-icon i {
-  color: #757575;
-  font-size: 12px;
-}
+    .captcha-box .checkbox-icon i {
+      color: #757575;
+      font-size: 12px;
+    }
 
-/* Checked State */
-.captcha-box.checked .checkbox-icon {
-  background-color: #007bff;
-  border-color: #005bb5;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
-}
+    .captcha-box.checked .checkbox-icon {
+      background-color: #007bff;
+      border-color: #005bb5;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
 
-.captcha-box.checked .checkbox-icon::before {
-  content: "✔";
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: bold;
-  transition: color 0.3s ease, transform 0.3s ease;
-}
+    .captcha-box.checked .checkbox-icon::before {
+      content: "✔";
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: bold;
+      transition: color 0.3s ease, transform 0.3s ease;
+    }
 
-.captcha-box.checked .checkbox-icon::before {
-  transform: scale(1.2);
-}
+    .captcha-box.checked .checkbox-icon::before {
+      transform: scale(1.2);
+    }
 
-/* Failed State */
-.captcha-box.failed .checkbox-icon {
-  background-color: #ff0000;
-  border-color: #b30000;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
-}
+    .captcha-box.failed .checkbox-icon {
+      background-color: #ff0000;
+      border-color: #b30000;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
 
-.captcha-box.failed .checkbox-icon::before {
-  content: "✖";
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: bold;
-  transition: color 0.3s ease, transform 0.3s ease;
-}
+    .captcha-box.failed .checkbox-icon::before {
+      content: "✖";
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: bold;
+      transition: color 0.3s ease, transform 0.3s ease;
+    }
 
-.captcha-box.failed .checkbox-icon::before {
-  transform: scale(1.2);
-}
+    .captcha-box.failed .checkbox-icon::before {
+      transform: scale(1.2);
+    }
 
-.captcha-box .captcha-label {
-  flex: 1;
-  font-size: 14px;
-  color: #ffffff;
-  font-weight: 500;
-  margin-left: 8px;
-  line-height: 1.4;
-  user-select: none; /* Prevent text selection */
-}
+    .captcha-box .captcha-label {
+      flex: 1;
+      font-size: 14px;
+      color: #ffffff;
+      font-weight: 500;
+      margin-left: 8px;
+      line-height: 1.4;
+      user-select: none;
+    }
 
-.captcha-box .shield-icon {
-  display: flex;
-  align-items: center;
-  margin-left: auto;
-  text-decoration: none; /* Remove underline from link */
-}
+    .captcha-box .shield-icon {
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+      text-decoration: none;
+    }
 
-.captcha-box .logo-image {
-  width: 35px; /* Adjust the width as needed */
-  height: auto;
-  transition: transform 0.3s ease;
-}
+    .captcha-box .logo-image {
+      width: 35px;
+      height: auto;
+      transition: transform 0.3s ease;
+    }
 
-.captcha-box .shield-icon i {
-  font-size: 16px;
-  color: #007bff;
-  transition: color 0.3s ease;
-}
+    .captcha-box .shield-icon i {
+      font-size: 16px;
+      color: #007bff;
+      transition: color 0.3s ease;
+    }
 
-.captcha-box .shield-icon:hover .logo-image {
-  transform: scale(1.05);
-}
+    .captcha-box .shield-icon:hover .logo-image {
+      transform: scale(1.05);
+    }
 
-.captcha-box.checked .shield-icon {
-  color: #0056b3;
-}
+    .captcha-box.checked .shield-icon {
+      color: #0056b3;
+    }
 
-.captcha-box.failed .shield-icon {
-  color: #f44336;
-}
+    .captcha-box.failed .shield-icon {
+      color: #f44336;
+    }
 
-
-    /* CAPTCHA Challenge Container */
     .captcha-container {
       background: #fff;
       padding: 20px;
@@ -2482,76 +2558,75 @@ body {
       border-radius: 8px;
     }
 
-  .captcha-text {
-  font-size: 14px;
-  margin-bottom: 16px;
-  font-weight: bold;
-  background: linear-gradient(135deg, #00838f, #00acc1);
-  color: #fff;
-  padding: 6px 10px;
-  border-radius: 0;
-  display: inline-block;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
+    .captcha-text {
+      font-size: 14px;
+      margin-bottom: 16px;
+      font-weight: bold;
+      background: linear-gradient(135deg, #00838f, #00acc1);
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 0;
+      display: inline-block;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
 
-.captcha-text:hover {
-  transform: scale(1.02);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
-}
+    .captcha-text:hover {
+      transform: scale(1.02);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+    }
 
     #target-theme {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 120px;
-  height: 120px;
-  background-color: #00838f;
-  border-radius: 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 36px;
-  transition: all 0.3s ease-in-out;
-}
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 120px;
+      height: 120px;
+      background-color: #00838f;
+      border-radius: 0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      transition: all 0.3s ease-in-out;
+    }
 
-#target-theme:hover {
-  transform: scale(1.03);
-  background-color: #00acc1;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-}
+    #target-theme:hover {
+      transform: scale(1.03);
+      background-color: #00acc1;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
 
-.captcha-header {
-  background: linear-gradient(135deg, #007bff, #0056b3);
-  color: #fff;
-  padding: 12px 20px;
-  border-radius: 12px 12px 0 0;
-  font-size: 18px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
+    .captcha-header {
+      background: linear-gradient(135deg, #007bff, #0056b3);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 12px 12px 0 0;
+      font-size: 18px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
 
-.captcha-header:hover {
-  background: linear-gradient(135deg, #0056b3, #007bff);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-  transform: translateY(-3px);
-}
+    .captcha-header:hover {
+      background: linear-gradient(135deg, #0056b3, #007bff);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+      transform: translateY(-3px);
+    }
 
-    /* CAPTCHA Grid */
-.captcha-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr); /* Reduced number of columns */
-  grid-template-rows: repeat(4, 1fr); /* Reduced rows */
-  gap: 8px;
-  margin: 12px 0; /* Reduced margin */
-}
+    .captcha-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      gap: 8px;
+      margin: 12px 0;
+    }
 
-      .captcha-grid img {
+    .captcha-grid img {
       width: 100%;
       height: 100%;
       border: 1px solid #e0e0e0;
@@ -2568,58 +2643,57 @@ body {
       border-radius: 0;
     }
 
-#captcha-info {
-  color: #fff;
-  font-size: 12px;
-  margin: 6px 0; /* Reduced margin for compactness */
-  background-color: #00838f;
-  padding: 8px 12px; /* Reduced padding for a more compact look */
-  display: inline-block;
-  border-radius: 0px; /* No rounded corners for a smoother look */
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); /* Soft shadow for text */
-  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth hover effect */
-}
+    #captcha-info {
+      color: #fff;
+      font-size: 12px;
+      margin: 6px 0;
+      background-color: #00838f;
+      padding: 8px 12px;
+      display: inline-block;
+      border-radius: 0px;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
 
-#captcha-info:hover {
-  transform: scale(1.03); /* Slightly enlarges the element on hover */
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2); /* Subtle shadow effect on hover */
-  background-color: #00acc1; /* Change background color on hover */
-}
+    #captcha-info:hover {
+      transform: scale(1.03);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+      background-color: #00acc1;
+    }
 
     #challenge-dots {
-  margin: 16px 0;
-  text-align: center;
-}
+      margin: 16px 0;
+      text-align: center;
+    }
 
-#challenge-dots .dot {
-  display: inline-block;
-  width: 16px; /* Increased size for better visibility */
-  height: 16px;
-  margin: 0 8px; /* Increased spacing between dots */
-  background: #e0e0e0;
-  border-radius: 50%;
-  transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Added subtle shadow for depth */
-}
+    #challenge-dots .dot {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      margin: 0 8px;
+      background: #e0e0e0;
+      border-radius: 50%;
+      transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
 
-#challenge-dots .dot.active {
-  background: #00838f; /* Active color */
-  transform: scale(1.3); /* Larger scale when active */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Slightly more prominent shadow */
-}
+    #challenge-dots .dot.active {
+      background: #00838f;
+      transform: scale(1.3);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
 
-#challenge-dots .dot:hover {
-  background: #00acc1; /* Hover color for better contrast */
-  transform: scale(1.2); /* Slight zoom effect on hover */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15); /* Subtle hover shadow for more emphasis */
-}
+    #challenge-dots .dot:hover {
+      background: #00acc1;
+      transform: scale(1.2);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    }
 
-#challenge-dots .dot:active {
-  background: #00838f; /* Confirmed active color when clicked */
-  transform: scale(1.1); /* Slight shrink on active state */
-}
-
+    #challenge-dots .dot:active {
+      background: #00838f;
+      transform: scale(1.1);
+    }
 
     .button-group {
       margin-top: 16px;
@@ -2690,310 +2764,260 @@ body {
       background: #e0e0e0;
     }
 
-    /* Help Menu */
-#help-menu {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #ffffff;
-  border: 1px solid #e0e0e0;
-  color: #333;
-  padding: 20px;
-  z-index: 1002;
-  display: none;
-  width: 320px;
-  text-align: left;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-radius: 0;
-  transition: transform 0.3s ease, opacity 0.3s ease;
-  opacity: 0;
-  max-height: 300px; /* Limit the height of the menu */
-  overflow-y: auto; /* Make the menu scrollable */
-  position: center; /* Fixing the position to relative inside the menu */
-}
+    #help-menu {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      color: #333;
+      padding: 20px;
+      z-index: 1002;
+      display: none;
+      width: 320px;
+      text-align: left;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-radius: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      opacity: 0;
+      max-height: 300px;
+      overflow-y: auto;
+      position: center;
+    }
 
+    #help-menu.visible {
+      display: block;
+      opacity: 1;
+    }
 
-/* Help Menu visible state */
-#help-menu.visible {
-  display: block;
-  opacity: 1;
-}
+    #help-menu h2 {
+      margin-top: 0;
+      font-size: 20px;
+      border-bottom: 2px solid #00838f;
+      padding-bottom: 10px;
+      color: #00838f;
+      font-weight: bold;
+    }
 
-/* Help Menu Heading */
-#help-menu h2 {
-  margin-top: 0;
-  font-size: 20px;
-  border-bottom: 2px solid #00838f;
-  padding-bottom: 10px;
-  color: #00838f;
-  font-weight: bold;
-}
+    #help-menu p {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #555;
+      margin-bottom: 10px;
+    }
 
-/* Help Menu Paragraphs */
-#help-menu p {
-  font-size: 16px;
-  line-height: 1.6;
-  color: #555;
-  margin-bottom: 10px;
-}
+    #help-menu h3 {
+      font-size: 18px;
+      color: #00838f;
+      margin-top: 20px;
+      font-weight: bold;
+    }
 
-/* Section Heading */
-#help-menu h3 {
-  font-size: 18px;
-  color: #00838f;
-  margin-top: 20px;
-  font-weight: bold;
-}
+    #help-menu ul {
+      list-style-type: none;
+      padding-left: 0;
+    }
 
-/* FAQ List */
-#help-menu ul {
-  list-style-type: none;
-  padding-left: 0;
-}
+    #help-menu ul li {
+      margin-bottom: 10px;
+    }
 
-#help-menu ul li {
-  margin-bottom: 10px;
-}
+    #help-menu button {
+      background: #00838f;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      margin-top: 10px;
+      border-radius: 0;
+      transition: background-color 0.3s ease;
+    }
 
-/* Help Menu Buttons */
-#help-menu button {
-  background: #00838f;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  cursor: pointer;
-  margin-top: 10px; /* Adjust space between buttons */
-  border-radius: 0;
-  transition: background-color 0.3s ease;
-}
+    #support-btn {
+      background: #00838f;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      align-self: flex-end;
+      margin-top: 0;
+      border-radius: 0;
+      transition: background-color 0.3s ease;
+    }
 
-/* Support button specific (Position it on the right side) */
-#support-btn {
-  background: #00838f;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  cursor: pointer;
-  align-self: flex-end; /* Align it to the right */
-  margin-top: 0; /* Remove any extra margin */
-  border-radius: 0;
-  transition: background-color 0.3s ease;
-}
+    #support-btn:hover {
+      background-color: #006c75;
+    }
 
-#support-btn:hover {
-  background-color: #006c75;
-}
+    #help-close-btn {
+      background: #00838f;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      margin-top: 10px;
+      border-radius: 0;
+      transition: background-color 0.3s ease;
+    }
 
-/* Close Button (Position it at the bottom right) */
-#help-close-btn {
-  background: #00838f;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  cursor: pointer;
-  margin-top: 10px; /* Space between buttons */
-  border-radius: 0;
-  transition: background-color 0.3s ease;
-}
+    #help-close-btn:hover {
+      background-color: #006c75;
+    }
 
-#help-close-btn:hover {
-  background-color: #006c75;
-}
+    #help-menu::-webkit-scrollbar {
+      width: 8px;
+    }
 
-/* Custom Scrollbar for Help Menu */
-#help-menu::-webkit-scrollbar {
-  width: 8px; /* Width of the scrollbar */
-}
+    #help-menu::-webkit-scrollbar-thumb {
+      background-color: #00838f;
+      border-radius: 4px;
+    }
 
-#help-menu::-webkit-scrollbar-thumb {
-  background-color: #00838f; /* Color of the scrollbar thumb */
-  border-radius: 4px;
-}
+    #help-menu::-webkit-scrollbar-thumb:hover {
+      background-color: #006c75;
+    }
 
-#help-menu::-webkit-scrollbar-thumb:hover {
-  background-color: #006c75; /* Hover color of the scrollbar thumb */
-}
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      position: relative;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 10px;
+      box-sizing: border-box;
+    }
 
+    .spinner::before {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-top-color: #007bff;
+      border-bottom-color: #007bff;
+      animation: spin 0.8s linear infinite;
+      box-sizing: border-box;
+    }
 
-
-
-    /* Spinner */
-.spinner {
-  width: 20px; /* Increased size for better visibility */
-  height: 20px;
-  border-radius: 50%;
-  position: relative;
-  display: inline-block;
-  vertical-align: middle;
-  margin-right: 10px; /* Adjusted margin to move it slightly to the right */
-  box-sizing: border-box;
-}
-
-.spinner::before {
-  content: '';
-  position: absolute;
-  top: 2px; /* Adjusted position for better centering */
-  left: 2px;
-  width: 16px; /* Reduced size for inner circle */
-  height: 16px;
-  border-radius: 50%;
-  border: 3px solid transparent; /* Increased border width */
-  border-top-color: #007bff; /* Changed to a more vibrant blue */
-  border-bottom-color: #007bff; /* Added bottom color for symmetry */
-  animation: spin 0.8s linear infinite; /* Faster and smoother spin */
-  box-sizing: border-box;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
   </style>
 </head>
 <script src="https://www.google.com/recaptcha/api.js?render=6Le3N9YqAAAAAA4zcPOhyd0DhiPPj8y0ynMWMHCB"></script>
 <body>
-  <!-- Login Form -->
   <div class="login-box">
     <h2>Staff Login</h2>
     <input type="text" placeholder="Username" />
     <input type="password" placeholder="Password" />
-    <!-- Honeypot field for bots -->
     <input type="hidden" name="botTrap" value="" />
-    <!-- CAPTCHA Trigger Box -->
     <div class="captcha-box" id="captcha-box">
-  <span class="checkbox-icon">
-    <i class="fa-solid fa-robot"></i>
-  </span>
-  <span class="captcha-label">I'm not a robot</span>
-  <a href="/ihemo-eye" target="_blank" class="shield-icon">
-    <img src="https://cdn.discordapp.com/avatars/1094406775932985508/45f42510e3d90a420ecc4f3aca02c187.png" alt="hCaptcha Logo" class="logo-image">
-  </a>
-</div>
-    
+      <span class="checkbox-icon">
+        <i class="fa-solid fa-robot"></i>
+      </span>
+      <span class="captcha-label">I'm not a robot</span>
+      <a href="/ihemo-eye" target="_blank" class="shield-icon">
+        <img src="https://cdn.discordapp.com/avatars/1094406775932985508/45f42510e3d90a420ecc4f3aca02c187.png" alt="hCaptcha Logo" class="logo-image">
+      </a>
+    </div>
     <button class="login-btn" id="login-btn" disabled>Login</button>
   </div>
-
-  <!-- CAPTCHA Challenge Container (centered, draggable) -->
-<div class="captcha-container" id="captcha-container">
-  <!-- Particle Background -->
-  <div id="particles-js"></div>
-  <!-- Content Overlay -->
-  <div class="captcha-content">
-    <p class="captcha-text">
-      <span class="captcha-instruction">Choose all images that fit the theme.</span><br>
-      <span class="captcha-subtext">If there are no correct images, press "Skip".</span>
-    </p>
-    <div id="target-theme"></div>
-    <p id="captcha-info"></p>
-    <div id="challenge-dots">
-      <span class="dot"></span>
-      <span class="dot"></span>
-      <span class="dot"></span>
-      <span class="dot"></span>
-      <span class="dot"></span>
-    </div>
-    <div class="captcha-grid" id="captcha-grid"></div>
-    <div class="button-group">
-      <button class="captcha-button" id="refresh-btn">Refresh</button>
-      <button class="captcha-button" id="help-btn" onclick="toggleHelpMenu()">?</button>
-      <button class="captcha-button" id="submit-btn">Skip</button>
+  <div class="captcha-container" id="captcha-container">
+    <div id="particles-js"></div>
+    <div class="captcha-content">
+      <p class="captcha-text">
+        <span class="captcha-instruction">Choose all images that fit the theme.</span><br>
+        <span class="captcha-subtext">If there are no correct images, press "Skip".</span>
+      </p>
+      <div id="target-theme"></div>
+      <p id="captcha-info"></p>
+      <div id="challenge-dots">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
+      <div class="captcha-grid" id="captcha-grid"></div>
+      <div class="button-group">
+        <button class="captcha-button" id="refresh-btn">Refresh</button>
+        <button class="captcha-button" id="help-btn" onclick="toggleHelpMenu()">?</button>
+        <button class="captcha-button" id="submit-btn">Skip</button>
+      </div>
     </div>
   </div>
-</div>
-
-
-  <!-- Help Menu Overlay -->
-<div id="help-menu">
-  <h2>Help</h2>
-
-  <!-- General Instructions -->
-  <section>
-    <h3>How to Complete the CAPTCHA</h3>
-    <p>
-      This CAPTCHA requires you to select all tiles that match the given theme. 
-      For example, if the theme is "cars," click on all the tiles that contain images of cars.
-    </p>
-    <p>
-      If you are unsure or cannot find any matching images, press the "Skip" button to move to the next challenge.
-    </p>
-  </section>
-
-  <!-- Marker Explanation -->
-  <section>
-    <h3>What is the Green Marker?</h3>
-    <p>
-      When you click on a tile, a small green marker will appear in the top-right corner of the tile. 
-      This marker indicates that the tile has been selected. If you make a mistake, the marker will disappear once the challenge is completed.
-    </p>
-  </section>
-
-  <!-- Failure and Retry -->
-  <section>
-    <h3>If You Fail the Challenge</h3>
-    <p>
-      If you select incorrect tiles or fail to meet the criteria, the CAPTCHA box will disappear. 
-      You will be prompted to try again with a new set of images.
-    </p>
-  </section>
-
-  <!-- Time Limit Explanation -->
-  <section>
-    <h3>Time Limit Before Expiration</h3>
-    <p>
-      The CAPTCHA has a time limit. If you take too long to complete the challenge, it will expire, and you will need to try again.
-      We recommend completing the challenge within 2-3 minutes to avoid expiration.
-    </p>
-    <p>
-      A countdown timer may be visible during the CAPTCHA process to help you track the remaining time.
-    </p>
-  </section>
-
-  <!-- Troubleshooting Section -->
-  <section>
-    <h3>Troubleshooting</h3>
-    <p>
-      If you're having trouble completing the CAPTCHA, make sure your browser is up to date, and try refreshing the page. 
-      If you're still experiencing issues, please contact support for further assistance.
-    </p>
-  </section>
-
-  <!-- FAQ Section -->
-  <section>
-    <h3>Frequently Asked Questions (FAQ)</h3>
-    <ul>
-      <li><strong>Q:</strong> What happens if I select the wrong tile?</li>
-      <li><strong>A:</strong> The selected tile will be deselected, and you can try again.</li>
-      
-      <li><strong>Q:</strong> Can I skip the CAPTCHA?</li>
-      <li><strong>A:</strong> Yes, there is a "Skip" button if no correct images are available.</li>
-      
-      <li><strong>Q:</strong> Why am I being asked to complete this CAPTCHA?</li>
-      <li><strong>A:</strong> CAPTCHA helps protect websites from bots by ensuring a human is interacting with the page.</li>
-    </ul>
-  </section>
-
-  <!-- Close and Support Buttons -->
-  <button id="help-close-btn" onclick="toggleHelpMenu()">Close</button>
-  <button id="support-btn" onclick="openSupport()">Support</button>
-</div>
-
-
-
-
+  <div id="help-menu">
+    <h2>Help</h2>
+    <section>
+      <h3>How to Complete the CAPTCHA</h3>
+      <p>
+        This CAPTCHA requires you to select all tiles that match the given theme.
+        For example, if the theme is "cars," click on all the tiles that contain images of cars.
+      </p>
+      <p>
+        If you are unsure or cannot find any matching images, press the "Skip" button to move to the next challenge.
+      </p>
+    </section>
+    <section>
+      <h3>What is the Green Marker?</h3>
+      <p>
+        When you click on a tile, a small green marker will appear in the top-right corner of the tile.
+        This marker indicates that the tile has been selected. If you make a mistake, the marker will disappear once the challenge is completed.
+      </p>
+    </section>
+    <section>
+      <h3>If You Fail the Challenge</h3>
+      <p>
+        If you select incorrect tiles or fail to meet the criteria, the CAPTCHA box will disappear.
+        You will be prompted to try again with a new set of images.
+      </p>
+    </section>
+    <section>
+      <h3>Time Limit Before Expiration</h3>
+      <p>
+        The CAPTCHA has a time limit. If you take too long to complete the challenge, it will expire, and you will need to try again.
+        We recommend completing the challenge within 2-3 minutes to avoid expiration.
+      </p>
+      <p>
+        A countdown timer may be visible during the CAPTCHA process to help you track the remaining time.
+      </p>
+    </section>
+    <section>
+      <h3>Troubleshooting</h3>
+      <p>
+        If you're having trouble completing the CAPTCHA, make sure your browser is up to date, and try refreshing the page.
+        If you're still experiencing issues, please contact support for further assistance.
+      </p>
+    </section>
+    <section>
+      <h3>Frequently Asked Questions (FAQ)</h3>
+      <ul>
+        <li><strong>Q:</strong> What happens if I select the wrong tile?</li>
+        <li><strong>A:</strong> The selected tile will be deselected, and you can try again.</li>
+        <li><strong>Q:</strong> Can I skip the CAPTCHA?</li>
+        <li><strong>A:</strong> Yes, there is a "Skip" button if no correct images are available.</li>
+        <li><strong>Q:</strong> Why am I being asked to complete this CAPTCHA?</li>
+        <li><strong>A:</strong> CAPTCHA helps protect websites from bots by ensuring a human is interacting with the page.</li>
+      </ul>
+    </section>
+    <button id="help-close-btn" onclick="toggleHelpMenu()">Close</button>
+    <button id="support-btn" onclick="openSupport()">Support</button>
+  </div>
   <script>
-  
     function toggleHelpMenu() {
-    var helpMenu = document.getElementById("help-menu");
-    helpMenu.classList.toggle("visible");
-  } 
-  
-    /***** Global Variables *****/
+      var helpMenu = document.getElementById("help-menu");
+      helpMenu.classList.toggle("visible");
+    }
     let currentRound = 1;
     const maxRounds = 5;
     let attemptsLeft = 10;
@@ -3009,32 +3033,28 @@ body {
     let keyPresses = [];
     let clickPatterns = [];
     let sessionStartTime = Date.now();
-    const sessionTimeout = 15 * 60 * 1000; // 15 minutes
+    const sessionTimeout = 15 * 60 * 1000;
     const maxAttemptsPerIP = 10;
     let attemptCount = 0;
-
-    // Expanded emoji themes with distinct emojis
     const emojiThemes = {
-      shapes: ["🔵", "🟠", "🟡", "🟢", "🔴", "🟣", "🟤", "⚪", "⚫", "🔶", "🏀", "🏐", "🏈", "⚾", "🎾"],
-      animals: ["🐶", "🐱", "🐭", "🐰", "🦊", "🦁", "🐯", "🐻", "🐷", "🐸", "🐵", "🦓", "🦒", "🦄", "🦏"],
+      shapes: ["🔵", "🟠", "🟡", "🟢", "🔴", "🟣", "🟤", "⚪", "⚫"],
+      animals: ["🐶", "🐱", "🐭", "🐰", "🦊", "🦁", "🐯", "🐻", "🐷", "🐵", "🦓", "🦒", "🦄", "🦏"],
       food: ["🍏", "🍎", "🍊", "🍋", "🍌", "🍍", "🍒", "🍓", "🍑", "🍉", "🍇", "🍈", "🥑", "🥕", "🌽"],
       people: ["👨", "👩", "👧", "👦", "🧑", "👵", "👴", "👶", "🧓", "👨‍🦱", "👩‍🦰", "🧑‍🦳", "🧑‍🦲", "👩‍🦳"],
       technology: ["💻", "📱", "🖥️", "🖨️", "⌨️", "🖱️", "💾", "📶", "📡", "📞", "☎️", "🎧", "🕹️", "🎮", "📷"],
       tools: ["🔨", "🛠️", "🧰", "⚙️", "🔧", "🔩", "🔪", "📏", "🧮", "🪓", "⛏️", "🪛", "🪚", "🪜", "🪝"],
-      sports: ["⚽", "🏀", "🏈", "⚾", "🎾", "🏐", "🏉", "🎱", "🥏", "🏓", "🏸", "🥊", "🥋", "🛹", "⛸️"],
+      sports: ["⚽", "🏀", "🏈", "⚾", "🎾", "🏐", "🏉", "🎱", "🥏", "🏓", "🏸", "🥊", "🥋", "🛹️", "⛸️"],
       buildings: ["🏠", "🏡", "🏢", "🏣", "🏤", "🏥", "🏦", "🏨", "🏩", "🏪", "🏫", "🏬", "🏭", "🏯", "🏰"],
       vehicles: ["🚗", "🚕", "🚌", "🚎", "🚑", "🚒", "🚓", "🚚", "🚛", "🚜", "🏎️", "🏍️", "🛵", "🚲", "🛴"],
       nature: ["🌲", "🌳", "🌴", "🌵", "🌾", "🌿", "☘️", "🍀", "🍁", "🍂", "🍃", "🌺", "🌻", "🌼", "🌷"],
       weather: ["☀️", "🌤️", "⛅", "🌥️", "☁️", "🌦️", "🌧️", "⛈️", "🌩️", "❄️", "🌨️", "🌪️", "🌬️", "🌀", "🌈"],
       symbols: ["❤️", "🧡", "💛", "💚", "💙", "💜", "🤎", "🖤", "🤍", "💔", "💯", "💢", "💬", "💭", "💤"],
       clothing: ["👕", "👖", "🧥", "👗", "👔", "👙", "🩳", "👘", "🥼", "🥻", "🩱", "🧦", "🧤", "🎩", "🧢"],
-      musical: ["🎹", "🎸", "🎺", "🎻", "🥁", "🎷", "🪗", "🪘", "🎼", "🎵", "🎶", "🎤", "🎧", "📯", "🎚️"],
+      musical: ["🎹", "🎸", "🎺", "🎻", "🥁", "🎷", "🪗", "🪘", "🎼", "🎵", "🎤", "🎧", "📯", "🎚️"],
       travel: ["🛫", "🚄", "🚢", "🏨", "🗺️", "🌆", "🏞️", "🏜️", "🏝️", "🏖️"],
       office: ["📈", "📉", "📊", "📋", "📅", "📆", "🗂️", "🗃️", "🗳️", "🗄️"],
       emotions: ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍"],
     };
-
-    // Mapping for theme images (distorted emojis)
     const themeImages = {
       shapes: ["🔵", "🔴", "🟣", "🟤", "⚪", "⚫"],
       animals: ["🐶", "🐱", "🐭", "🐰", "🦊"],
@@ -3054,9 +3074,6 @@ body {
       office: ["📈", "📉", "📊", "📋", "📅"],
       emotions: ["😀", "😃", "😄", "😁", "😆"],
     };
-
-    /***** Utility Functions *****/
-    // Draw a "money bill" style watermark (wave overlay)
     function drawWatermark(ctx, width, height) {
       ctx.save();
       ctx.globalAlpha = 0.15;
@@ -3077,8 +3094,6 @@ body {
       }
       ctx.restore();
     }
-
-    // Draw an extra repeating watermark ("SECURE") over the tile.
     function drawExtraWatermark(ctx, width, height) {
       ctx.save();
       ctx.globalAlpha = 0.1;
@@ -3091,21 +3106,6 @@ body {
       }
       ctx.restore();
     }
-    // Draw an extra repeating watermark ("SECURE") over the tile.
-    function drawExtraWatermark(ctx, width, height) {
-      ctx.save();
-      ctx.globalAlpha = 0.1;
-      ctx.font = "10px Arial";
-      ctx.fillStyle = "#ff0000";
-      for (let y = 10; y < height; y += 15) {
-        for (let x = 0; x < width; x += 30) {
-          ctx.fillText("SECURE", x, y);
-        }
-      }
-      ctx.restore();
-    }
-    
-    // Draw an additional sine–wave distortion across the tile.
     function drawWaveDistortion(ctx, width, height) {
       ctx.save();
       ctx.globalAlpha = 0.2;
@@ -3123,27 +3123,6 @@ body {
       ctx.stroke();
       ctx.restore();
     }
-    
-    // Draw an additional sine–wave distortion across the tile.
-    function drawWaveDistortion(ctx, width, height) {
-      ctx.save();
-      ctx.globalAlpha = 0.2;
-      ctx.strokeStyle = "#888";
-      ctx.lineWidth = 0.8;
-      const amplitude = 3 + Math.random() * 3;
-      const frequency = 2 * Math.PI / width;
-      const offset = Math.random() * 2 * Math.PI;
-      ctx.beginPath();
-      for (let x = 0; x <= width; x++) {
-        let y = height / 2 + Math.sin(x * frequency + offset) * amplitude;
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // Draw circles in circles distortion
     function drawCircleDistortion(ctx, width, height) {
       ctx.save();
       ctx.globalAlpha = 0.2;
@@ -3160,18 +3139,15 @@ body {
       }
       ctx.restore();
     }
-
-    // Draw colored lines distortion
     function drawColoredLinesDistortion(ctx, width, height) {
       ctx.save();
       ctx.globalAlpha = 0.2;
       ctx.lineWidth = 0.8;
       const numLines = 10 + Math.floor(Math.random() * 10);
       for (let i = 0; i < numLines; i++) {
-        const color = "rgba(" + Math.floor(Math.random() * 256) + ", " + 
-                     Math.floor(Math.random() * 256) + ", " + 
+        const color = "rgba(" + Math.floor(Math.random() * 256) + ", " +
+                     Math.floor(Math.random() * 256) + ", " +
                      Math.floor(Math.random() * 256) + ", 0.5)";
-
         ctx.strokeStyle = color;
         ctx.beginPath();
         ctx.moveTo(Math.random() * width, Math.random() * height);
@@ -3180,17 +3156,11 @@ body {
       }
       ctx.restore();
     }
-
-    // Draw an individual CAPTCHA tile.
     function drawTile(canvas, emoji, isSelected, rotation, backgroundColor) {
       const ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Base background color.
       ctx.fillStyle = backgroundColor;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Draw the emoji with random rotation.
       ctx.save();
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate(rotation * 2);
@@ -3200,13 +3170,10 @@ body {
       ctx.fillStyle = "#000";
       ctx.fillText(emoji, 0, 0);
       ctx.restore();
-
-      // Manual distortions: random lines, dots, and circles.
-      for (let i = 0; i < 8; i++) {
-        ctx.strokeStyle = "rgba(" + Math.floor(Math.random() * 256) + ", " + 
-                           Math.floor(Math.random() * 256) + ", " + 
+      for (let i = 0; i < 20; i++) {
+        ctx.strokeStyle = "rgba(" + Math.floor(Math.random() * 256) + ", " +
+                           Math.floor(Math.random() * 256) + ", " +
                            Math.floor(Math.random() * 256) + ", 0.2)";
-
         ctx.lineWidth = Math.random() * 2 + 0.5;
         ctx.beginPath();
         ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
@@ -3214,10 +3181,9 @@ body {
         ctx.stroke();
       }
       for (let i = 0; i < 12; i++) {
-        ctx.fillStyle = "rgba(" + Math.floor(Math.random() * 256) + ", " + 
-                         Math.floor(Math.random() * 256) + ", " + 
+        ctx.fillStyle = "rgba(" + Math.floor(Math.random() * 256) + ", " +
+                         Math.floor(Math.random() * 256) + ", " +
                          Math.floor(Math.random() * 256) + ", 0.3)";
-
         let x = Math.random() * canvas.width;
         let y = Math.random() * canvas.height;
         let radius = Math.random() * 2 + 1;
@@ -3225,11 +3191,10 @@ body {
         ctx.arc(x, y, radius, 0, Math.PI * 2);
         ctx.fill();
       }
-      for (let i = 0; i < 8; i++) {
-        ctx.strokeStyle = "rgba(" + Math.floor(Math.random() * 256) + ", " + 
-                           Math.floor(Math.random() * 256) + ", " + 
+      for (let i = 0; i < 40; i++) {
+        ctx.strokeStyle = "rgba(" + Math.floor(Math.random() * 256) + ", " +
+                           Math.floor(Math.random() * 256) + ", " +
                            Math.floor(Math.random() * 256) + ", 0.25)";
-
         ctx.lineWidth = Math.random() + 0.5;
         let x = Math.random() * canvas.width;
         let y = Math.random() * canvas.height;
@@ -3238,118 +3203,30 @@ body {
         ctx.arc(x, y, radius, 0, Math.PI * 2);
         ctx.stroke();
       }
-
-      // Two overlapping watermark overlays.
       drawWatermark(ctx, canvas.width, canvas.height);
       ctx.save();
       ctx.globalAlpha = 0.1;
       ctx.strokeStyle = "#aaa";
       drawWatermark(ctx, canvas.width, canvas.height);
       ctx.restore();
-      
-      
-
-      // Extra wave distortion.
       drawWaveDistortion(ctx, canvas.width, canvas.height);
-      
-
-      // Circles in circles distortion.
       drawCircleDistortion(ctx, canvas.width, canvas.height);
-      
-      
-
-      // Colored lines distortion.
       drawColoredLinesDistortion(ctx, canvas.width, canvas.height);
-      // Colored lines distortion.
       drawColoredLinesDistortion(ctx, canvas.width, canvas.height);
-      // Colored lines distortion.
       drawColoredLinesDistortion(ctx, canvas.width, canvas.height);
-      // Colored lines distortion.
       drawColoredLinesDistortion(ctx, canvas.width, canvas.height);
-      // Colored lines distortion.
       drawColoredLinesDistortion(ctx, canvas.width, canvas.height);
-      
-      
-      
-      // Draw a "money bill" style watermark (wave overlay)
-    function drawWatermark(ctx, width, height) {
-      ctx.save();
-      ctx.globalAlpha = 0.15;
-      ctx.strokeStyle = "#ccc";
-      ctx.lineWidth = 1;
-      const amplitude = 5;
-      const frequency = 2 * Math.PI / width;
-      const phase = Math.random() * 2 * Math.PI;
-      for (let j = 0; j < 3; j++) {
-        let offsetY = (height / 4) * (j + 1) - amplitude;
-        ctx.beginPath();
-        ctx.moveTo(0, offsetY + Math.sin(phase) * amplitude);
-        for (let x = 0; x <= width; x += 1) {
-          let y = offsetY + Math.sin(frequency * x + phase) * amplitude;
-          ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-      
-      // Manual distortions: random lines, dots, and circles.
-      for (let i = 0; i < 2; i++) {
-        ctx.strokeStyle = "rgba(" + Math.floor(Math.random() * 256) + ", " + 
-                           Math.floor(Math.random() * 256) + ", " + 
-                           Math.floor(Math.random() * 256) + ", 0.2)";
-
-        ctx.lineWidth = Math.random() * 2 + 0.5;
-        ctx.beginPath();
-        ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
-        ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
-        ctx.stroke();
-      }
-      for (let i = 0; i < 2; i++) {
-        ctx.fillStyle = "rgba(" + Math.floor(Math.random() * 256) + ", " + 
-                         Math.floor(Math.random() * 256) + ", " + 
-                         Math.floor(Math.random() * 256) + ", 0.3)";
-
-        let x = Math.random() * canvas.width;
-        let y = Math.random() * canvas.height;
-        let radius = Math.random() * 2 + 1;
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      for (let i = 0; i < 48; i++) {
-        ctx.strokeStyle = "rgba(" + Math.floor(Math.random() * 256) + ", " + 
-                           Math.floor(Math.random() * 256) + ", " + 
-                           Math.floor(Math.random() * 256) + ", 0.25)";
-
-        ctx.lineWidth = Math.random() + 0.5;
-        let x = Math.random() * canvas.width;
-        let y = Math.random() * canvas.height;
-        let radius = Math.random() * 10 + 5;
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-      
-      
-      // Border.
       ctx.lineWidth = 1;
       ctx.strokeStyle = "#ddd";
       ctx.strokeRect(0, 0, canvas.width, canvas.height);
-
       if (isSelected) {
-        // Draw a bigger ball
         const ballRadius = 10;
         const ballX = canvas.width - ballRadius - 3;
         const ballY = ballRadius + 3;
-
-        // Draw the ball
         ctx.beginPath();
         ctx.arc(ballX, ballY, ballRadius, 0, 2 * Math.PI);
         ctx.fillStyle = "#00838f";
         ctx.fill();
-
-        // Draw the checkmark inside the ball
         ctx.strokeStyle = "#fff";
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -3358,8 +3235,6 @@ body {
         ctx.lineTo(ballX + 5, ballY - 4);
         ctx.stroke();
       }
-
-      // Apply glfx.js effects if available.
       if (window.fx) {
         try {
           let img = new Image();
@@ -3374,14 +3249,12 @@ body {
               .update();
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(fxCanvas, 0, 0, canvas.width, canvas.height);
-            // Redraw selection marker.
             if (isSelected) {
               ctx.beginPath();
               ctx.arc(canvas.width - 8, 8, 5, 0, 2 * Math.PI);
               ctx.fillStyle = "#4CAF50";
               ctx.fill();
             }
-            // Draw extra watermark.
             drawExtraWatermark(ctx, canvas.width, canvas.height);
           };
         } catch (e) {
@@ -3391,58 +3264,24 @@ body {
         drawExtraWatermark(ctx, canvas.width, canvas.height);
       }
     }
-
-    // Draw the theme image with wave distortion.
     function drawThemeImage(canvas, emoji) {
       const ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Base white background.
       ctx.fillStyle = "#fff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Draw the emoji without rotation.
       ctx.font = "40px Arial";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillStyle = "#000";
       ctx.fillText(emoji, canvas.width / 2, canvas.height / 2);
-
-      // Apply wave distortion.
       drawWatermark(ctx, canvas.width, canvas.height);
-      // Apply wave distortion.
       drawWatermark(ctx, canvas.width, canvas.height);
-      // Apply wave distortion.
       drawWatermark(ctx, canvas.width, canvas.height);
-      // Apply wave distortion.
       drawWatermark(ctx, canvas.width, canvas.height);
-      
-      
-
-      // Draw circles in circles distortion
-    function drawCircleDistortion(ctx, width, height) {
-      ctx.save();
-      ctx.globalAlpha = 0.2;
-      ctx.strokeStyle = "#888";
-      ctx.lineWidth = 0.8;
-      const numCircles = 5 + Math.floor(Math.random() * 5);
-      for (let i = 0; i < numCircles; i++) {
-        const radius = 10 + Math.random() * 20;
-        const x = width / 2 + (Math.random() - 0.5) * width * 0.2;
-        const y = height / 2 + (Math.random() - 0.5) * height * 0.2;
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, 2 * Math.PI);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-      
-      // Manual distortions: random lines, dots, and circles.
       for (let i = 0; i < 12; i++) {
-        ctx.strokeStyle = "rgba(" + Math.floor(Math.random() * 256) + ", " + 
-                           Math.floor(Math.random() * 256) + ", " + 
+        ctx.strokeStyle = "rgba(" + Math.floor(Math.random() * 256) + ", " +
+                           Math.floor(Math.random() * 256) + ", " +
                            Math.floor(Math.random() * 256) + ", 0.2)";
-
         ctx.lineWidth = Math.random() * 2 + 0.5;
         ctx.beginPath();
         ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
@@ -3450,10 +3289,9 @@ body {
         ctx.stroke();
       }
       for (let i = 0; i < 12; i++) {
-        ctx.fillStyle = "rgba(" + Math.floor(Math.random() * 256) + ", " + 
-                         Math.floor(Math.random() * 256) + ", " + 
+        ctx.fillStyle = "rgba(" + Math.floor(Math.random() * 256) + ", " +
+                         Math.floor(Math.random() * 256) + ", " +
                          Math.floor(Math.random() * 256) + ", 0.3)";
-
         let x = Math.random() * canvas.width;
         let y = Math.random() * canvas.height;
         let radius = Math.random() * 2 + 1;
@@ -3462,10 +3300,9 @@ body {
         ctx.fill();
       }
       for (let i = 0; i < 18; i++) {
-        ctx.strokeStyle = "rgba(" + Math.floor(Math.random() * 256) + ", " + 
-                           Math.floor(Math.random() * 256) + ", " + 
+        ctx.strokeStyle = "rgba(" + Math.floor(Math.random() * 256) + ", " +
+                           Math.floor(Math.random() * 256) + ", " +
                            Math.floor(Math.random() * 256) + ", 0.25)";
-
         ctx.lineWidth = Math.random() + 0.5;
         let x = Math.random() * canvas.width;
         let y = Math.random() * canvas.height;
@@ -3474,19 +3311,11 @@ body {
         ctx.arc(x, y, radius, 0, Math.PI * 2);
         ctx.stroke();
       }
-
-      // Apply colored lines distortion.
       drawColoredLinesDistortion(ctx, canvas.width, canvas.height);
-      // Apply colored lines distortion.
       drawColoredLinesDistortion(ctx, canvas.width, canvas.height);
-      // Apply colored lines distortion.
       drawColoredLinesDistortion(ctx, canvas.width, canvas.height);
-      // Apply colored lines distortion.
       drawColoredLinesDistortion(ctx, canvas.width, canvas.height);
-  
     }
-
-    // Add hover and click animations to tiles using anime.js.
     function addTileAnimations(canvas) {
       canvas.addEventListener('mouseenter', function () {
         anime({
@@ -3513,18 +3342,13 @@ body {
         });
       });
     }
-
-    // Update challenge info and progress dots.
     function updateChallengeInfo() {
-      document.getElementById("captcha-info").textContent =  
+      document.getElementById("captcha-info").textContent =
     "Challenge " + currentRound + " of " + maxRounds + ". Attempts left: " + attemptsLeft;
-
       document.querySelectorAll("#challenge-dots .dot").forEach((dot, idx) => {
         dot.classList.toggle("active", idx < currentRound - 1);
       });
     }
-
-    // Shuffle an array.
     function shuffle(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -3532,54 +3356,35 @@ body {
       }
       return array;
     }
-
-    // Generate a secure random token.
     function generateToken() {
       return CryptoJS.SHA256(Math.random().toString() + Date.now().toString()).toString();
     }
-
-    // Generate the CAPTCHA challenge.
     function generateCaptcha() {
       selectedTiles.clear();
       correctTiles.clear();
       tileData = [];
       const captchaGrid = document.getElementById("captcha-grid");
       captchaGrid.innerHTML = "";
-
-      // Generate new token and record the generation time.
       captchaToken = generateToken();
       captchaStartTime = Date.now();
-
       const themes = Object.keys(emojiThemes);
       currentTheme = themes[Math.floor(Math.random() * themes.length)];
       const emojis = emojiThemes[currentTheme];
-
-      // Display theme emoji with wave distortion.
+      const targetTheme = document.getElementById("target-theme");
+      targetTheme.innerHTML = "";
       const themeCanvas = document.createElement("canvas");
       themeCanvas.width = 100;
       themeCanvas.height = 100;
       drawThemeImage(themeCanvas, themeImages[currentTheme][Math.floor(Math.random() * themeImages[currentTheme].length)]);
-      const targetTheme = document.getElementById("target-theme");
-      targetTheme.innerHTML = "";
       targetTheme.appendChild(themeCanvas);
-
-      // Choose between 1 and 4 correct tiles.
       const correctCount = Math.floor(Math.random() * 4) + 1;
       while (correctTiles.size < correctCount) {
         correctTiles.add(Math.floor(Math.random() * totalTiles));
       }
-
-      // Hash the token + sorted correct tile indices.
       expectedHash = CryptoJS.SHA256(captchaToken + JSON.stringify([...correctTiles].sort())).toString();
-
-      // Select correct emojis from the theme.
       let correctEmojisForTiles = shuffle([...emojis]).slice(0, correctCount);
-
-      // Wrong emojis: from all emojis not in the chosen theme.
       const allEmojis = Object.values(emojiThemes).flat();
       const wrongEmojis = allEmojis.filter(e => !emojis.includes(e));
-
-      // Create 20 tile canvases.
       for (let i = 0; i < totalTiles; i++) {
         const canvas = document.createElement("canvas");
         canvas.width = 60;
@@ -3609,8 +3414,6 @@ body {
       }
       updateChallengeInfo();
     }
-
-    // Update the submit button text based on selected tiles.
     function updateSubmitButton() {
       const submitBtn = document.getElementById("submit-btn");
       if (selectedTiles.size > 0) {
@@ -3619,102 +3422,80 @@ body {
         submitBtn.textContent = "Skip";
       }
     }
-
     const CaptchaController = (() => {
-  // Cache DOM elements for better performance and easier error handling.
-  const refreshBtn = document.getElementById("refresh-btn");
-  const helpBtn = document.getElementById("help-btn");
-  const helpMenu = document.getElementById("help-menu");
-  const helpCloseBtn = document.getElementById("help-close-btn");
-  const submitBtn = document.getElementById("submit-btn");
-  const captchaBox = document.getElementById("captcha-box");
-  const loginBtn = document.getElementById("login-btn");
-  const captchaContainer = document.getElementById("captcha-container");
-
-  // Helper function to safely update innerHTML for an element inside captchaBox.
-  function updateCheckboxIcon(iconHTML) {
-    if (captchaBox) {
-      const checkboxIcon = captchaBox.querySelector(".checkbox-icon");
-      if (checkboxIcon) {
-        checkboxIcon.innerHTML = iconHTML;
-      }
-    }
-  }
-
-  // Attach event listener to refresh button.
-  if (refreshBtn) {
-    refreshBtn.addEventListener("click", () => {
-      generateCaptcha();
-    });
-  }
-
-  // Attach event listeners for showing/hiding the help menu.
-  if (helpBtn && helpMenu) {
-    helpBtn.addEventListener("click", () => {
-      helpMenu.style.display = "block";
-    });
-  }
-
-  if (helpCloseBtn && helpMenu) {
-    helpCloseBtn.addEventListener("click", () => {
-      helpMenu.style.display = "none";
-    });
-  }
-
-  // Attach event listener for captcha submission.
-  if (submitBtn) {
-    submitBtn.addEventListener("click", () => {
-      // Check if captcha is older than 5 minutes.
-      if (Date.now() - captchaStartTime > 5 * 60 * 1000) {
-        alert("Captcha expired. Please refresh.");
-        generateCaptcha();
-        return;
-      }
-
-      // Compute the hash from the captcha token and sorted selected tiles.
-      const sortedTiles = Array.from(selectedTiles).sort();
-      const selectedHash = CryptoJS.SHA256(captchaToken + JSON.stringify(sortedTiles)).toString();
-
-      // Compare computed hash with expected hash.
-      if (selectedHash === expectedHash) {
-        if (currentRound < maxRounds) {
-          currentRound++;
-          updateChallengeInfo();
-          alert("Correct! Proceeding to the next challenge.");
-          generateCaptcha();
-        } else {
-          updateCheckboxIcon('<i class="fa-solid fa-check"></i>');
-          if (captchaBox) captchaBox.classList.add("checked");
-          if (loginBtn) loginBtn.disabled = false;
-          if (captchaContainer) captchaContainer.style.display = "none";
-          alert("All challenges completed successfully!");
-        }
-      } else {
-        // Wrong answer: decrement attempts.
-        attemptsLeft--;
-        if (attemptsLeft <= 0) {
-          alert("No attempts remaining. Captcha challenge will now disappear.");
-          if (refreshBtn) refreshBtn.disabled = true;
-          submitBtn.disabled = true;
-          updateCheckboxIcon('<i class="fa-solid fa-xmark"></i>');
-          if (captchaBox) captchaBox.classList.add("failed");
-          if (captchaContainer) captchaContainer.style.display = "none";
-        } else {
-          alert("Incorrect selection, please try again!");
-          generateCaptcha();
+      const refreshBtn = document.getElementById("refresh-btn");
+      const helpBtn = document.getElementById("help-btn");
+      const helpMenu = document.getElementById("help-menu");
+      const helpCloseBtn = document.getElementById("help-close-btn");
+      const submitBtn = document.getElementById("submit-btn");
+      const captchaBox = document.getElementById("captcha-box");
+      const loginBtn = document.getElementById("login-btn");
+      const captchaContainer = document.getElementById("captcha-container");
+      function updateCheckboxIcon(iconHTML) {
+        if (captchaBox) {
+          const checkboxIcon = captchaBox.querySelector(".checkbox-icon");
+          if (checkboxIcon) {
+            checkboxIcon.innerHTML = iconHTML;
+          }
         }
       }
-    });
-  }
-
-  // Optionally, expose methods if needed.
-  return {
-    refreshCaptcha: generateCaptcha
-  };
-})();
-
-
-    // When the CAPTCHA trigger box is clicked, show spinner then load challenge.
+      if (refreshBtn) {
+        refreshBtn.addEventListener("click", () => {
+          generateCaptcha();
+        });
+      }
+      if (helpBtn && helpMenu) {
+        helpBtn.addEventListener("click", () => {
+          helpMenu.style.display = "block";
+        });
+      }
+      if (helpCloseBtn && helpMenu) {
+        helpCloseBtn.addEventListener("click", () => {
+          helpMenu.style.display = "none";
+        });
+      }
+      if (submitBtn) {
+        submitBtn.addEventListener("click", () => {
+          if (Date.now() - captchaStartTime > 5 * 60 * 1000) {
+            alert("Captcha expired. Please refresh.");
+            generateCaptcha();
+            return;
+          }
+          const sortedTiles = Array.from(selectedTiles).sort();
+          const selectedHash = CryptoJS.SHA256(captchaToken + JSON.stringify(sortedTiles)).toString();
+          if (selectedHash === expectedHash) {
+            if (currentRound < maxRounds) {
+              currentRound++;
+              updateChallengeInfo();
+              alert("Correct! Proceeding to the next challenge.");
+              generateCaptcha();
+            } else {
+              updateCheckboxIcon('<i class="fa-solid fa-check"></i>');
+              if (captchaBox) captchaBox.classList.add("checked");
+              if (loginBtn) loginBtn.disabled = false;
+              if (captchaContainer) captchaContainer.style.display = "none";
+              alert("All challenges completed successfully!");
+            }
+          } else {
+            attemptsLeft--;
+            if (attemptsLeft <= 0) {
+              alert("No attempts remaining. Captcha challenge will now disappear.");
+              if (refreshBtn) refreshBtn.disabled = true;
+              submitBtn.disabled = true;
+              updateCheckboxIcon('<i class="fa-solid fa-xmark"></i>');
+              if (captchaBox) captchaBox.classList.add("failed");
+              if (captchaContainer) captchaContainer.style.display = "none";
+            } else {
+              alert("Incorrect selection, please try again!");
+              generateCaptcha();
+            }
+          }
+        });
+      }
+      return {
+        refreshCaptcha: generateCaptcha
+      };
+    })();
     document.getElementById("captcha-box").addEventListener("click", function () {
       const box = document.getElementById("captcha-box");
       if (box.classList.contains("checked") || box.classList.contains("failed")) return;
@@ -3722,8 +3503,6 @@ body {
       spinner.classList.add('spinner');
       box.querySelector(".checkbox-icon").innerHTML = '';
       box.querySelector(".checkbox-icon").appendChild(spinner);
-
-      // Artificial delay (300ms) for added security.
       setTimeout(() => {
         currentRound = 1;
         attemptsLeft = 10;
@@ -3732,13 +3511,9 @@ body {
         generateCaptcha();
       }, 300);
     });
-
-    // Make the CAPTCHA container draggable.
     let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
     const captchaContainer = document.getElementById("captcha-container");
-
     captchaContainer.addEventListener("mousedown", dragMouseDown);
-
     function dragMouseDown(e) {
       e.preventDefault();
       pos3 = e.clientX;
@@ -3746,7 +3521,6 @@ body {
       document.onmouseup = closeDragElement;
       document.onmousemove = elementDrag;
     }
-
     function elementDrag(e) {
       e.preventDefault();
       pos1 = pos3 - e.clientX;
@@ -3756,272 +3530,199 @@ body {
       captchaContainer.style.top = (captchaContainer.offsetTop - pos2) + "px";
       captchaContainer.style.left = (captchaContainer.offsetLeft - pos1) + "px";
     }
-
     function closeDragElement() {
       document.onmouseup = null;
       document.onmousemove = null;
     }
-
-   const BotDetector = (() => {
-  // Data stores with configurable maximum sizes
-  const mouseMovements = [];
-  const keyPresses = [];
-  const clickPatterns = [];
-  const MAX_MOUSE_EVENTS = 100;
-  const MAX_KEY_EVENTS = 50;
-  const MAX_CLICK_EVENTS = 50;
-
-  // Helper functions
-  const average = (arr) => (arr.length ? arr.reduce((sum, val) => sum + val, 0) / arr.length : 0);
-  const variance = (arr, mean) =>
-    arr.length ? arr.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / arr.length : 0;
-
-  // Advanced mouse movement tracking (includes a cap to prevent memory bloat)
-  function trackMouseMove(event) {
-    mouseMovements.push({ x: event.clientX, y: event.clientY, time: Date.now() });
-    if (mouseMovements.length > MAX_MOUSE_EVENTS) {
-      mouseMovements.shift();
-    }
-  }
-
-  // Advanced key press tracking
-  function trackKeyPress(event) {
-    keyPresses.push({ key: event.key, time: Date.now() });
-    if (keyPresses.length > MAX_KEY_EVENTS) {
-      keyPresses.shift();
-    }
-  }
-
-  // Advanced click pattern tracking
-  function trackClickPatterns(event) {
-    clickPatterns.push({ x: event.clientX, y: event.clientY, time: Date.now() });
-    if (clickPatterns.length > MAX_CLICK_EVENTS) {
-      clickPatterns.shift();
-    }
-  }
-
-  // Compute the angular variability of the mouse path.
-  // Low angular variability (i.e. nearly straight or overly consistent paths)
-  // may indicate synthetic movements.
-  function computeAngularVariability() {
-    if (mouseMovements.length < 3) return null;
-    const angles = [];
-    for (let i = 2; i < mouseMovements.length; i++) {
-      const dx1 = mouseMovements[i - 1].x - mouseMovements[i - 2].x;
-      const dy1 = mouseMovements[i - 1].y - mouseMovements[i - 2].y;
-      const dx2 = mouseMovements[i].x - mouseMovements[i - 1].x;
-      const dy2 = mouseMovements[i].y - mouseMovements[i - 1].y;
-      const angle1 = Math.atan2(dy1, dx1);
-      const angle2 = Math.atan2(dy2, dx2);
-      let diff = Math.abs(angle2 - angle1);
-      if (diff > Math.PI) diff = 2 * Math.PI - diff;
-      angles.push(diff);
-    }
-    return average(angles);
-  }
-
-  // Analyze the collected data for bot-like behavior using multiple heuristics.
-  function analyzeBotBehavior() {
-    let botScore = 0;
-    const issues = [];
-
-    // --- Mouse Movement Analysis ---
-    if (mouseMovements.length > 1) {
-      // Timing between mouse moves
-      const intervals = [];
-      for (let i = 1; i < mouseMovements.length; i++) {
-        intervals.push(mouseMovements[i].time - mouseMovements[i - 1].time);
-      }
-      const avgInterval = average(intervals);
-      if (avgInterval < 20) {
-        botScore += 2;
-        issues.push("Low average mouse move interval");
-      }
-      const intervalVar = variance(intervals, avgInterval);
-      if (intervalVar < 50) {
-        botScore += 1;
-        issues.push("Mouse move intervals are overly uniform");
-      }
-      // Angular variability check
-      const angVar = computeAngularVariability();
-      if (angVar !== null && angVar < 0.1) {
-        botScore += 2;
-        issues.push("Low angular variability in mouse movement");
-      }
-    }
-
-    // --- Key Press Analysis ---
-    if (keyPresses.length > 1) {
-      const keyIntervals = [];
-      for (let i = 1; i < keyPresses.length; i++) {
-        keyIntervals.push(keyPresses[i].time - keyPresses[i - 1].time);
-      }
-      const avgKeyInterval = average(keyIntervals);
-      if (avgKeyInterval < 40) {
-        botScore += 2;
-        issues.push("Rapid key presses detected");
-      }
-      const keyIntervalVar = variance(keyIntervals, avgKeyInterval);
-      if (keyIntervalVar < 30) {
-        botScore += 1;
-        issues.push("Key press intervals are overly uniform");
-      }
-      // Excessive repetition of a single key (e.g., holding a key down)
-      const keyCounts = {};
-      keyPresses.forEach((entry) => {
-        keyCounts[entry.key] = (keyCounts[entry.key] || 0) + 1;
-      });
-      for (let key in keyCounts) {
-        if (keyCounts[key] / keyPresses.length > 0.8) {
-          botScore += 1;
-          issues.push("Excessive repetition of key: " + key);
+    const BotDetector = (() => {
+      const mouseMovements = [];
+      const keyPresses = [];
+      const clickPatterns = [];
+      const MAX_MOUSE_EVENTS = 100;
+      const MAX_KEY_EVENTS = 50;
+      const MAX_CLICK_EVENTS = 50;
+      const average = (arr) => (arr.length ? arr.reduce((sum, val) => sum + val, 0) / arr.length : 0);
+      const variance = (arr, mean) =>
+        arr.length ? arr.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / arr.length : 0;
+      function trackMouseMove(event) {
+        mouseMovements.push({ x: event.clientX, y: event.clientY, time: Date.now() });
+        if (mouseMovements.length > MAX_MOUSE_EVENTS) {
+          mouseMovements.shift();
         }
       }
-    }
-
-    // --- Click Pattern Analysis ---
-    if (clickPatterns.length > 1) {
-      const clickIntervals = [];
-      for (let i = 1; i < clickPatterns.length; i++) {
-        clickIntervals.push(clickPatterns[i].time - clickPatterns[i - 1].time);
+      function trackKeyPress(event) {
+        keyPresses.push({ key: event.key, time: Date.now() });
+        if (keyPresses.length > MAX_KEY_EVENTS) {
+          keyPresses.shift();
+        }
       }
-      const avgClickInterval = average(clickIntervals);
-      if (avgClickInterval < 100) {
-        botScore += 2;
-        issues.push("Clicks occur too rapidly");
+      function trackClickPatterns(event) {
+        clickPatterns.push({ x: event.clientX, y: event.clientY, time: Date.now() });
+        if (clickPatterns.length > MAX_CLICK_EVENTS) {
+          clickPatterns.shift();
+        }
       }
-      // Check for spatial clustering (if clicks are nearly at the same point)
-      const xs = clickPatterns.map((p) => p.x);
-      const ys = clickPatterns.map((p) => p.y);
-      const avgX = average(xs);
-      const avgY = average(ys);
-      const distances = clickPatterns.map((p) => Math.hypot(p.x - avgX, p.y - avgY));
-      if (average(distances) < 5) {
-        botScore += 2;
-        issues.push("Clicks are spatially clustered");
+      function computeAngularVariability() {
+        if (mouseMovements.length < 3) return null;
+        const angles = [];
+        for (let i = 2; i < mouseMovements.length; i++) {
+          const dx1 = mouseMovements[i - 1].x - mouseMovements[i - 2].x;
+          const dy1 = mouseMovements[i - 1].y - mouseMovements[i - 2].y;
+          const dx2 = mouseMovements[i].x - mouseMovements[i - 1].x;
+          const dy2 = mouseMovements[i].y - mouseMovements[i - 1].y;
+          const angle1 = Math.atan2(dy1, dx1);
+          const angle2 = Math.atan2(dy2, dx2);
+          let diff = Math.abs(angle2 - angle1);
+          if (diff > Math.PI) diff = 2 * Math.PI - diff;
+          angles.push(diff);
+        }
+        return average(angles);
       }
-    }
-
-    // --- Final Decision ---
-    const DETECTION_THRESHOLD = 4; // Adjust based on testing & requirements
-    if (botScore >= DETECTION_THRESHOLD) {
-      console.warn("Bot-like behavior detected:", issues.join("; "));
-      alert("Bot-like behavior detected! Verification failed.");
-      return false;
-    }
-    return true;
-  }
-
-  // Expose the tracking and analysis functions
-  return {
-    trackMouseMove,
-    trackKeyPress,
-    trackClickPatterns,
-    analyzeBotBehavior,
-  };
-})();
-
+      function analyzeBotBehavior() {
+        let botScore = 0;
+        const issues = [];
+        if (mouseMovements.length > 1) {
+          const intervals = [];
+          for (let i = 1; i < mouseMovements.length; i++) {
+            intervals.push(mouseMovements[i].time - mouseMovements[i - 1].time);
+          }
+          const avgInterval = average(intervals);
+          if (avgInterval < 20) {
+            botScore += 2;
+            issues.push("Low average mouse move interval");
+          }
+          const intervalVar = variance(intervals, avgInterval);
+          if (intervalVar < 50) {
+            botScore += 1;
+            issues.push("Mouse move intervals are overly uniform");
+          }
+          const angVar = computeAngularVariability();
+          if (angVar !== null && angVar < 0.1) {
+            botScore += 2;
+            issues.push("Low angular variability in mouse movement");
+          }
+        }
+        if (keyPresses.length > 1) {
+          const keyIntervals = [];
+          for (let i = 1; i < keyPresses.length; i++) {
+            keyIntervals.push(keyPresses[i].time - keyPresses[i - 1].time);
+          }
+          const avgKeyInterval = average(keyIntervals);
+          if (avgKeyInterval < 40) {
+            botScore += 2;
+            issues.push("Rapid key presses detected");
+          }
+          const keyIntervalVar = variance(keyIntervals, avgKeyInterval);
+          if (keyIntervalVar < 30) {
+            botScore += 1;
+            issues.push("Key press intervals are overly uniform");
+          }
+          const keyCounts = {};
+          keyPresses.forEach((entry) => {
+            keyCounts[entry.key] = (keyCounts[entry.key] || 0) + 1;
+          });
+          for (let key in keyCounts) {
+            if (keyCounts[key] / keyPresses.length > 0.8) {
+              botScore += 1;
+              issues.push("Excessive repetition of key: " + key);
+            }
+          }
+        }
+        if (clickPatterns.length > 1) {
+          const clickIntervals = [];
+          for (let i = 1; i < clickPatterns.length; i++) {
+            clickIntervals.push(clickPatterns[i].time - clickPatterns[i - 1].time);
+          }
+          const avgClickInterval = average(clickIntervals);
+          if (avgClickInterval < 100) {
+            botScore += 2;
+            issues.push("Clicks occur too rapidly");
+          }
+          const xs = clickPatterns.map((p) => p.x);
+          const ys = clickPatterns.map((p) => p.y);
+          const avgX = average(xs);
+          const avgY = average(ys);
+          const distances = clickPatterns.map((p) => Math.hypot(p.x - avgX, p.y - avgY));
+          if (average(distances) < 5) {
+            botScore += 2;
+            issues.push("Clicks are spatially clustered");
+          }
+        }
+        const DETECTION_THRESHOLD = 4;
+        if (botScore >= DETECTION_THRESHOLD) {
+          console.warn("Bot-like behavior detected:", issues.join("; "));
+          alert("Bot-like behavior detected! Verification failed.");
+          return false;
+        }
+        return true;
+      }
+      return {
+        trackMouseMove,
+        trackKeyPress,
+        trackClickPatterns,
+        analyzeBotBehavior,
+      };
+    })();
     function checkSessionTimeout() {
-  if (Date.now() - sessionStartTime > sessionTimeout) {
-    // Show a message to the user about the session expiration
-    showSessionExpiredMessage();
-
-    // Refresh the page after a short delay (to allow the user to see the message)
-    setTimeout(function() {
-      window.location.reload(); // Refresh the page
-    }, 1500); // 1.5-second delay to give the user time to see the message
-  }
-}
-
-// Function to show a session expired message
-function showSessionExpiredMessage() {
-  const messageContainer = document.getElementById("session-message");
-  messageContainer.textContent = "Your session has expired due to inactivity. The page will refresh.";
-  messageContainer.classList.add("error"); // Add a class for styling (error message)
-  
-  // Optionally, you can hide the message after a few seconds
-  setTimeout(() => {
-    messageContainer.classList.remove("error");
-    messageContainer.textContent = ""; // Clear message
-  }, 5000); // 5 seconds for the user to see the message
-}
-
+      if (Date.now() - sessionStartTime > sessionTimeout) {
+        showSessionExpiredMessage();
+        setTimeout(function() {
+          window.location.reload();
+        }, 1500);
+      }
+    }
+    function showSessionExpiredMessage() {
+      const messageContainer = document.getElementById("session-message");
+      messageContainer.textContent = "Your session has expired due to inactivity. The page will refresh.";
+      messageContainer.classList.add("error");
+      setTimeout(() => {
+        messageContainer.classList.remove("error");
+        messageContainer.textContent = "";
+      }, 5000);
+    }
     const RateLimiter = (() => {
-  // Configuration constants.
-  const MAX_TOKENS = 5;             // Maximum allowed attempts (tokens) per IP.
-  const REFILL_INTERVAL = 60 * 1000;  // Refill tokens every 1 minute.
-  const BLOCK_DURATION = 5 * 60 * 1000; // Block IP for 5 minutes when exhausted.
-
-  // Storage for each IP's token bucket data.
-  // Each entry is structured as:
-  // { tokens: number, lastRefill: timestamp, blockedUntil: timestamp }
-  const buckets = new Map();
-
-  /**
-   * Performs rate limiting for the given IP address.
-   *
-   * @param {string} ip - The IP address of the client.
-   * @returns {boolean} - Returns true if the attempt is allowed, false otherwise.
-   */
-  function rateLimitAttempts(ip) {
-    const now = Date.now();
-
-    // Initialize the bucket for new IP addresses.
-    if (!buckets.has(ip)) {
-      buckets.set(ip, { tokens: MAX_TOKENS, lastRefill: now, blockedUntil: 0 });
-    }
-    const bucket = buckets.get(ip);
-
-    // If the IP is currently blocked, reject the attempt.
-    if (bucket.blockedUntil > now) {
-      alert("Too many attempts. Please try again later.");
-      return false;
-    }
-
-    // Refill tokens based on the elapsed time since the last refill.
-    const elapsed = now - bucket.lastRefill;
-    if (elapsed >= REFILL_INTERVAL) {
-      // Calculate how many full intervals have passed.
-      const tokensToAdd = Math.floor(elapsed / REFILL_INTERVAL);
-      bucket.tokens = Math.min(MAX_TOKENS, bucket.tokens + tokensToAdd);
-      bucket.lastRefill = now;
-    }
-
-    // Allow the attempt if tokens are available.
-    if (bucket.tokens > 0) {
-      bucket.tokens--;
-      return true;
+      const MAX_TOKENS = 5;
+      const REFILL_INTERVAL = 60 * 1000;
+      const BLOCK_DURATION = 5 * 60 * 1000;
+      const buckets = new Map();
+      function rateLimitAttempts(ip) {
+        const now = Date.now();
+        if (!buckets.has(ip)) {
+          buckets.set(ip, { tokens: MAX_TOKENS, lastRefill: now, blockedUntil: 0 });
+        }
+        const bucket = buckets.get(ip);
+        if (bucket.blockedUntil > now) {
+          alert("Too many attempts. Please try again later.");
+          return false;
+        }
+        const elapsed = now - bucket.lastRefill;
+        if (elapsed >= REFILL_INTERVAL) {
+          const tokensToAdd = Math.floor(elapsed / REFILL_INTERVAL);
+          bucket.tokens = Math.min(MAX_TOKENS, bucket.tokens + tokensToAdd);
+          bucket.lastRefill = now;
+        }
+        if (bucket.tokens > 0) {
+          bucket.tokens--;
+          return true;
+        } else {
+          bucket.blockedUntil = now + BLOCK_DURATION;
+          alert("Too many attempts. Please try again later.");
+          return false;
+        }
+      }
+      return { rateLimitAttempts };
+    })();
+    const clientIP = "192.168.1.100";
+    if (RateLimiter.rateLimitAttempts(clientIP)) {
+      console.log("Attempt allowed.");
     } else {
-      // No tokens available: block the IP for a set duration.
-      bucket.blockedUntil = now + BLOCK_DURATION;
-      alert("Too many attempts. Please try again later.");
-      return false;
+      console.log("Attempt blocked.");
     }
-  }
-
-  return { rateLimitAttempts };
-})();
-
-// Example usage:
-// Assume you have a way to retrieve the client's IP (e.g., from a server request).
-// For demonstration purposes, we'll use a placeholder IP.
-const clientIP = "192.168.1.100";
-if (RateLimiter.rateLimitAttempts(clientIP)) {
-  // Process the request.
-  console.log("Attempt allowed.");
-} else {
-  // Block the request.
-  console.log("Attempt blocked.");
-}
-
-
     document.addEventListener("mousemove", trackMouseMove);
     document.addEventListener("keydown", trackKeyPress);
     document.addEventListener("click", trackClickPatterns);
-
     function validateCaptcha() {
       if (!analyzeBotBehavior() || !rateLimitAttempts()) return;
-
       let userHash = CryptoJS.SHA256(captchaToken + JSON.stringify([...selectedTiles].sort())).toString();
       if (userHash === expectedHash) {
         alert("Captcha passed!");
@@ -4033,8 +3734,6 @@ if (RateLimiter.rateLimitAttempts(clientIP)) {
         }
       }
     }
-
-    // Initialize particles.js inside the CAPTCHA container.
     particlesJS("particles-js", {
       "particles": {
         "number": { "value": 30, "density": { "enable": true, "value_area": 400 } },
@@ -4051,12 +3750,11 @@ if (RateLimiter.rateLimitAttempts(clientIP)) {
       },
       "retina_detect": true
     });
-
-    // Periodically check for session timeout
-    setInterval(checkSessionTimeout, 6000); // Check every minute
+    setInterval(checkSessionTimeout, 6000);
   </script>
 </body>
 </html>
+
 `);
  });
 
@@ -4372,1663 +4070,37 @@ app.get('/news', (req, res) => {
  });
 
 app.get('/ihemo-eye', (req, res) => {
-    res.send(`<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="iHemo's Eye is your trusted market moderator bot for The Lost Nemo community.">
-    <title>iHemo's Eye - Market Moderator Bot</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <!-- Add FontAwesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Roboto', sans-serif;
-        }
+    res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="description" content="iHemo's Eye is your trusted market moderator bot for The Lost Nemo community."><title>iHemo's Eye - Market Moderator Bot</title><link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"><style>*{margin:0;padding:0;box-sizing:border-box;font-family:'Roboto',sans-serif}body{background-color:#1f1f1f;color:white}.container{width:80%;margin:0 auto}header{background:#333;padding:50px 0;text-align:center}h1{font-size:3rem;margin-bottom:20px}.tagline{font-size:1.2rem;margin-bottom:30px}.bot-pfp img{width:120px;height:120px;border-radius:50%;border:4px solid #FFD700;box-shadow:0 0 10px rgba(0,0,0,0.3)}nav{background:#222;padding:15px 0;position:fixed;top:0;width:100%;z-index:100}nav .container{display:flex;justify-content:space-between;align-items:center}nav .logo h2{font-size:1.6rem;color:#FFD700}nav ul{list-style:none;display:flex}nav ul li{margin-left:20px}nav ul li a{color:white;text-decoration:none;font-size:1.1rem}nav ul li a:hover{color:#FFD700}.section{padding:60px 0;background:#282828}.features-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:30px}.feature-item{text-align:center}.feature-item i{font-size:2rem;color:#FFD700;margin-bottom:10px}.command-item{background:#333;padding:20px;margin-bottom:10px;border-radius:10px}.command-item .command-name{font-weight:bold;color:#FFD700}.cta-button{padding:15px 30px;background:#FFD700;color:black;border-radius:30px;font-size:1.2rem;text-decoration:none}.cta-button:hover{background:#FFB700}footer{background:#222;padding:20px 0;text-align:center}#scroll-top{position:fixed;bottom:20px;right:20px;background:#FFD700;padding:10px;border-radius:50%;font-size:1.5rem;color:black;cursor:pointer}#scroll-top:hover{background:#FFB700}.command-item p{color:#bbb}.commands-list{margin-top:30px}#support .cta-wrapper{margin-top:20px;text-align:center}#support .cta-button{padding:15px 30px;background:#FFD700;color:black;border-radius:30px;font-size:1.2rem;text-decoration:none;display:inline-block}#support .cta-button:hover{background:#FFB700}</style></head><script src="https://www.google.com/recaptcha/api.js?render=6Le3N9YqAAAAAA4zcPOhyd0DhiPPj8y0ynMWMHCB"></script><body><nav><div class="container"><div class="logo"><h2><i class="fas fa-eye"></i> iHemo's Eye</h2></div><ul class="nav-links"><li><a href="#intro">Introduction</a></li><li><a href="#features">Features</a></li><li><a href="#commands">Commands</a></li><li><a href="#support">Support</a></li></ul></div></nav><header id="intro"><div class="container"><h1>Welcome to iHemo's Eye</h1><p>Your trusted market moderator bot for The Lost Nemo community</p><div class="bot-pfp"><img src="https://cdn.discordapp.com/avatars/1094406775932985508/45f42510e3d90a420ecc4f3aca02c187.webp?size=4096" alt="iHemo's Eye Bot"></div><p class="tagline">Manage your market, warnings, and more with ease!</p><a href="#commands" class="cta-button">View Commands</a></div></header><section id="features" class="section"><div class="container"><h2>Key Features</h2><div class="features-grid"><div class="feature-item"><i class="fas fa-cogs"></i><h3>Advanced Moderation</h3><p>Set up your warning and audit logs, mute users, and manage bans with ease.</p></div><div class="feature-item"><i class="fas fa-users-cog"></i><h3>Staff Tools</h3><p>Access the staff guide, view your stats, and make informed decisions with the bot’s help.</p></div><div class="feature-item"><i class="fas fa-ban"></i><h3>Ban Management</h3><p>Easily manage permanent or temporary bans with custom lists for your server.</p></div><div class="feature-item"><i class="fas fa-clock"></i><h3>Time-based Actions</h3><p>Mute users or set temporary bans, ensuring time-based moderation for any situation.</p></div></div></div></section><section id="commands" class="section"><div class="container"><h2>Bot Commands</h2><p>Below are some of the essential commands you can use with iHemo's Eye:</p><div class="commands-list"><div class="command-item"><span class="command-name">/get-quota</span><p>Get the warning quota for a specific house and date.</p></div><div class="command-item"><span class="command-name">/mute</span><p>Mute a user for a specified duration.</p></div><div class="command-item"><span class="command-name">/remove-all-warns</span><p>Remove all warnings of a user in a specific group.</p></div><div class="command-item"><span class="command-name">/remove-warn</span><p>Remove a specific warning of a user by its ID.</p></div><div class="command-item"><span class="command-name">/set-audit-log</span><p>Set the audit log ID for the server.</p></div><div class="command-item"><span class="command-name">/set-ban-list</span><p>Set the ban list ID for permanent/soft bans.</p></div><div class="command-item"><span class="command-name">/set-muted-role</span><p>Set the muted role for your server.</p></div><div class="command-item"><span class="command-name">/staff-guide</span><p>Get the staff guide for everything you need to know.</p></div><div class="command-item"><span class="command-name">/staff-profile</span><p>Get your staff stats.</p></div><div class="command-item"><span class="command-name">/unmute</span><p>Remove a mute from a member.</p></div><div class="command-item"><span class="command-name">/warnings</span><p>View all warnings of a specific user.</p></div></div></div></section><section id="support" class="section"><div class="container"><h2>Need Help?</h2><p>If you need assistance or have any questions, feel free to contact our support team.</p><div class="cta-wrapper"><a href="https://discord.gg/uMfzd7UYhe" class="cta-button">Join Support Server</a></div></div></section><footer><div class="container"><p>&copy; 2025 iHemo's Eye Bot - All Rights Reserved</p></div></footer><div id="scroll-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'});"><i class="fas fa-arrow-up"></i></div><script>window.addEventListener('scroll',function(){const scrollTopButton=document.getElementById('scroll-top');if(document.body.scrollTop>300||document.documentElement.scrollTop>300){scrollTopButton.style.display='block'}else{scrollTopButton.style.display='none'}})</script></body></html>
 
-        body {
-            background-color: #1f1f1f;
-            color: white;
-        }
-
-        .container {
-            width: 80%;
-            margin: 0 auto;
-        }
-
-        header {
-            background: #333;
-            padding: 50px 0;
-            text-align: center;
-        }
-
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 20px;
-        }
-
-        .tagline {
-            font-size: 1.2rem;
-            margin-bottom: 30px;
-        }
-
-        .bot-pfp img {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            border: 4px solid #FFD700;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-        }
-
-        nav {
-            background: #222;
-            padding: 15px 0;
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 100;
-        }
-
-        nav .container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        nav .logo h2 {
-            font-size: 1.6rem;
-            color: #FFD700;
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-        }
-
-        nav ul li {
-            margin-left: 20px;
-        }
-
-        nav ul li a {
-            color: white;
-            text-decoration: none;
-            font-size: 1.1rem;
-        }
-
-        nav ul li a:hover {
-            color: #FFD700;
-        }
-
-        .section {
-            padding: 60px 0;
-            background: #282828;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 30px;
-        }
-
-        .feature-item {
-            text-align: center;
-        }
-
-        .feature-item i {
-            font-size: 2rem;
-            color: #FFD700;
-            margin-bottom: 10px;
-        }
-
-        .command-item {
-            background: #333;
-            padding: 20px;
-            margin-bottom: 10px;
-            border-radius: 10px;
-        }
-
-        .command-item .command-name {
-            font-weight: bold;
-            color: #FFD700;
-        }
-
-        .cta-button {
-            padding: 15px 30px;
-            background: #FFD700;
-            color: black;
-            border-radius: 30px;
-            font-size: 1.2rem;
-            text-decoration: none;
-        }
-
-        .cta-button:hover {
-            background: #FFB700;
-        }
-
-        footer {
-            background: #222;
-            padding: 20px 0;
-            text-align: center;
-        }
-
-        #scroll-top {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #FFD700;
-            padding: 10px;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            color: black;
-            cursor: pointer;
-        }
-
-        #scroll-top:hover {
-            background: #FFB700;
-        }
-
-        .command-item p {
-            color: #bbb;
-        }
-
-        .commands-list {
-            margin-top: 30px;
-        }
-        
-        #support .cta-wrapper {
-    margin-top: 20px; /* Add some space between text and the button */
-    text-align: center; /* Center align the button */
-}
-
-#support .cta-button {
-    padding: 15px 30px;
-    background: #FFD700;
-    color: black;
-    border-radius: 30px;
-    font-size: 1.2rem;
-    text-decoration: none;
-    display: inline-block; /* Ensure the button is treated as a block element */
-}
-
-#support .cta-button:hover {
-    background: #FFB700;
-}
-
-    </style>
-</head>
-<script src="https://www.google.com/recaptcha/api.js?render=6Le3N9YqAAAAAA4zcPOhyd0DhiPPj8y0ynMWMHCB"></script>
-<body>
-
-<!-- Navigation Section -->
-<nav>
-    <div class="container">
-        <div class="logo">
-            <h2><i class="fas fa-eye"></i> iHemo's Eye</h2>
-        </div>
-        <ul class="nav-links">
-            <li><a href="#intro">Introduction</a></li>
-            <li><a href="#features">Features</a></li>
-            <li><a href="#commands">Commands</a></li>
-            <li><a href="#support">Support</a></li>
-        </ul>
-    </div>
-</nav>
-
-<!-- Hero Section -->
-<header id="intro">
-    <div class="container">
-        <h1>Welcome to iHemo's Eye</h1>
-        <p>Your trusted market moderator bot for The Lost Nemo community</p>
-        <div class="bot-pfp">
-            <img src="https://cdn.discordapp.com/avatars/1094406775932985508/45f42510e3d90a420ecc4f3aca02c187.webp?size=4096" alt="iHemo's Eye Bot">
-        </div>
-        <p class="tagline">Manage your market, warnings, and more with ease!</p>
-        <a href="#commands" class="cta-button">View Commands</a>
-    </div>
-</header>
-
-<!-- Features Section -->
-<section id="features" class="section">
-    <div class="container">
-        <h2>Key Features</h2>
-        <div class="features-grid">
-            <div class="feature-item">
-                <i class="fas fa-cogs"></i>
-                <h3>Advanced Moderation</h3>
-                <p>Set up your warning and audit logs, mute users, and manage bans with ease.</p>
-            </div>
-            <div class="feature-item">
-                <i class="fas fa-users-cog"></i>
-                <h3>Staff Tools</h3>
-                <p>Access the staff guide, view your stats, and make informed decisions with the bot’s help.</p>
-            </div>
-            <div class="feature-item">
-                <i class="fas fa-ban"></i>
-                <h3>Ban Management</h3>
-                <p>Easily manage permanent or temporary bans with custom lists for your server.</p>
-            </div>
-            <div class="feature-item">
-                <i class="fas fa-clock"></i>
-                <h3>Time-based Actions</h3>
-                <p>Mute users or set temporary bans, ensuring time-based moderation for any situation.</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Commands Section -->
-<section id="commands" class="section">
-    <div class="container">
-        <h2>Bot Commands</h2>
-        <p>Below are some of the essential commands you can use with iHemo's Eye:</p>
-        <div class="commands-list">
-            <div class="command-item">
-                <span class="command-name">/get-quota</span>
-                <p>Get the warning quota for a specific house and date.</p>
-            </div>
-            <div class="command-item">
-                <span class="command-name">/mute</span>
-                <p>Mute a user for a specified duration.</p>
-            </div>
-            <div class="command-item">
-                <span class="command-name">/remove-all-warns</span>
-                <p>Remove all warnings of a user in a specific group.</p>
-            </div>
-            <div class="command-item">
-                <span class="command-name">/remove-warn</span>
-                <p>Remove a specific warning of a user by its ID.</p>
-            </div>
-            <div class="command-item">
-                <span class="command-name">/set-audit-log</span>
-                <p>Set the audit log ID for the server.</p>
-            </div>
-            <div class="command-item">
-                <span class="command-name">/set-ban-list</span>
-                <p>Set the ban list ID for permanent/soft bans.</p>
-            </div>
-            <div class="command-item">
-                <span class="command-name">/set-muted-role</span>
-                <p>Set the muted role for your server.</p>
-            </div>
-            <div class="command-item">
-                <span class="command-name">/staff-guide</span>
-                <p>Get the staff guide for everything you need to know.</p>
-            </div>
-            <div class="command-item">
-                <span class="command-name">/staff-profile</span>
-                <p>Get your staff stats.</p>
-            </div>
-            <div class="command-item">
-                <span class="command-name">/unmute</span>
-                <p>Remove a mute from a member.</p>
-            </div>
-            <div class="command-item">
-                <span class="command-name">/warnings</span>
-                <p>View all warnings of a specific user.</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Support Section -->
-<section id="support" class="section">
-    <div class="container">
-        <h2>Need Help?</h2>
-        <p>If you need assistance or have any questions, feel free to contact our support team.</p>
-        <div class="cta-wrapper">
-            <a href="https://discord.gg/uMfzd7UYhe" class="cta-button">Join Support Server</a>
-        </div>
-    </div>
-</section>
-
-<!-- Footer Section -->
-<footer>
-    <div class="container">
-        <p>&copy; 2025 iHemo's Eye Bot - All Rights Reserved</p>
-    </div>
-</footer>
-
-<!-- Scroll to Top Button -->
-<div id="scroll-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'});">
-    <i class="fas fa-arrow-up"></i>
-</div>
-
-<script>
-    // Scroll to Top
-    window.addEventListener('scroll', function() {
-        const scrollTopButton = document.getElementById('scroll-top');
-        if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
-            scrollTopButton.style.display = 'block';
-        } else {
-            scrollTopButton.style.display = 'none';
-        }
-    });
-</script>
-
-</body>
-</html>
 
 `);
  });
 
 app.get('/advertising', (req, res) => {
-    res.send(`<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Advertisement Creation</title>
-    <script src="https://hcaptcha.com/1/api.js" async defer></script>
-    <style>
-        :root {
-            --primary-color: #1E90FF;
-            --secondary-color: #FF6347;
-            --bg-dark: #0A0F1D;
-            --bg-light: #101826;
-            --text-light: #E0E6F1;
-            --text-muted: #8892B0;
-            --border-color: #1E90FF;
-            --highlight-color: #FFD700;
-            --hover-color: #187bcd;
-            --shadow-color: rgba(0, 0, 0, 0.2);
-            --glass-bg: rgba(10, 15, 29, 0.75);
-        }
+    res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta http-equiv="X-UA-Compatible" content="ie=edge"><title>Advertisement Creation</title><script src="https://hcaptcha.com/1/api.js" async defer></script><style>:root{--primary-color:#1E90FF;--secondary-color:#FF6347;--bg-dark:#0A0F1D;--bg-light:#101826;--text-light:#E0E6F1;--text-muted:#8892B0;--border-color:#1E90FF;--highlight-color:#FFD700;--hover-color:#187bcd;--shadow-color:rgba(0,0,0,0.2);--glass-bg:rgba(10,15,29,0.75)}body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-light);display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;padding:20px;overflow-x:hidden}.container{background:var(--glass-bg);backdrop-filter:blur(10px);border:2px solid var(--border-color);border-radius:10px;padding:40px;max-width:700px;width:100%;text-align:center;position:relative;box-shadow:0 4px 20px var(--shadow-color);animation:fadeIn 0.5s ease-in-out;display:flex;flex-direction:column;justify-content:center;transition:transform 0.3s ease}@keyframes fadeIn{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:translateY(0)}}h1{font-size:28px;font-weight:600;margin-bottom:30px;color:var(--highlight-color);text-transform:uppercase;letter-spacing:2px}.form-group{margin-bottom:20px;text-align:left}.form-control,.select-menu{border:2px solid var(--primary-color);padding:15px;background:#2E3C53;color:var(--text-light);border-radius:5px;transition:all 0.3s ease;width:100%}.form-control:focus,.select-menu:focus{border-color:var(--highlight-color);background:#1E2A36}.submit-btn{background:var(--primary-color);color:white;border:none;padding:16px;font-size:18px;width:100%;cursor:pointer;transition:all 0.3s ease;font-weight:600;text-transform:uppercase;margin-top:20px;box-shadow:0 4px 15px var(--shadow-color);border-radius:8px;animation:slideIn 0.5s ease-in-out}@keyframes slideIn{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}.submit-btn:disabled{background:#ccc;cursor:not-allowed}.submit-btn:hover{background:var(--hover-color);transform:translateY(-3px)}.submit-btn:active{transform:translateY(2px)}footer{margin-top:40px;text-align:center;font-size:12px;color:var(--text-muted);padding:10px;background:#2E3C53;box-shadow:0px 6px 20px var(--shadow-color);border-radius:10px;position:relative}footer a{color:var(--primary-color);text-decoration:none}footer a:hover{text-decoration:underline}footer .btn-help{display:none}::-webkit-scrollbar{width:12px}::-webkit-scrollbar-track{background:#2E3C53}::-webkit-scrollbar-thumb{background-color:var(--primary-color);border-radius:10px}::-webkit-scrollbar-thumb:hover{background-color:var(--highlight-color)}textarea{resize:none}.preview-box{background:#2E3C53;color:var(--text-light);border-radius:8px;padding:20px;margin-top:20px;box-shadow:0 4px 15px var(--shadow-color)}.preview-title{font-size:22px;font-weight:600;color:var(--highlight-color)}.preview-content{margin-top:10px}</style></head><script src="https://www.google.com/recaptcha/api.js?render=6Le3N9YqAAAAAA4zcPOhyd0DhiPPj8y0ynMWMHCB"></script><body><div class="container"><h1>Create Your Advertisement</h1><form id="adForm"><div class="form-group"><label for="adTitle">Ad Title</label><input type="text" id="adTitle" class="form-control" placeholder="Enter your ad title" required></div><div class="form-group"><label for="adContent">Ad Content</label><textarea id="adContent" class="form-control" placeholder="Enter your ad content" rows="6" required></textarea></div><div class="form-group"><label for="frequency">Post Frequency</label><select id="frequency" class="select-menu" required><option value="2 hours">Every 2 Hours</option><option value="4 hours">Every 4 Hours</option><option value="6 hours">Every 6 Hours</option><option value="12 hours">Every 12 Hours</option></select></div><div class="form-group"><label for="duration">Ad Duration</label><select id="duration" class="select-menu" required><option value="1 day">1 Day</option><option value="3 days">3 Days</option><option value="7 days">7 Days</option><option value="30 days">30 Days</option></select></div><div class="form-group"><div class="h-captcha" data-sitekey="c3d047fe-4c10-4718-8e0a-85606d44518a" data-theme="dark"></div></div><div class="preview-box"><h3 class="preview-title">Ad Preview</h3><div class="preview-content"><strong>Title:</strong> <span id="previewTitle"></span><br><strong>Content:</strong> <span id="previewContent"></span><br><strong>Frequency:</strong> <span id="previewFrequency"></span><br><strong>Duration:</strong> <span id="previewDuration"></span></div></div><button type="submit" class="submit-btn" id="submitBtn" disabled>Create Advertisement</button></form></div><footer><p>Need help? Visit our <a href="/support">Support Section</a> for assistance.</p></footer><script>let isCaptchaCompleted=false;function onCaptchaCompleted(){isCaptchaCompleted=true;document.getElementById('submitBtn').disabled=false}document.getElementById('adForm').addEventListener('submit',function(e){e.preventDefault();if(!isCaptchaCompleted){alert("Please complete the CAPTCHA to proceed.");return}var title=document.getElementById('adTitle').value;var content=document.getElementById('adContent').value;var frequency=document.getElementById('frequency').value;var duration=document.getElementById('duration').value;document.getElementById('previewTitle').textContent=title;document.getElementById('previewContent').textContent=content;document.getElementById('previewFrequency').textContent=frequency;document.getElementById('previewDuration').textContent=duration;alert("Your ad has been scheduled to post every "+frequency+" for "+duration+".");});</script></body></html>
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-light);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            overflow-x: hidden;
-        }
-
-        .container {
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border: 2px solid var(--border-color);
-            border-radius: 10px;
-            padding: 40px;
-            max-width: 700px;
-            width: 100%;
-            text-align: center;
-            position: relative;
-            box-shadow: 0 4px 20px var(--shadow-color);
-            animation: fadeIn 0.5s ease-in-out;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            transition: transform 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        h1 {
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 30px;
-            color: var(--highlight-color);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-
-        .form-control, .select-menu {
-            border: 2px solid var(--primary-color);
-            padding: 15px;
-            background: #2E3C53;
-            color: var(--text-light);
-            border-radius: 5px;
-            transition: all 0.3s ease;
-            width: 100%;
-        }
-
-        .form-control:focus, .select-menu:focus {
-            border-color: var(--highlight-color);
-            background: #1E2A36;
-        }
-
-        .submit-btn {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 16px;
-            font-size: 18px;
-            width: 100%;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin-top: 20px;
-            box-shadow: 0 4px 15px var(--shadow-color);
-            border-radius: 8px;
-            animation: slideIn 0.5s ease-in-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateY(30px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .submit-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        .submit-btn:hover {
-            background: var(--hover-color);
-            transform: translateY(-3px);
-        }
-
-        .submit-btn:active {
-            transform: translateY(2px);
-        }
-
-        footer {
-            margin-top: 40px;
-            text-align: center;
-            font-size: 12px;
-            color: var(--text-muted);
-            padding: 10px;
-            background: #2E3C53;
-            box-shadow: 0px 6px 20px var(--shadow-color);
-            border-radius: 10px;
-            position: relative;
-        }
-
-        footer a {
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-
-        footer .btn-help {
-            display: none;
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 12px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #2E3C53;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background-color: var(--primary-color);
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background-color: var(--highlight-color);
-        }
-
-        /* Remove resizing */
-        textarea {
-            resize: none;
-        }
-
-        .preview-box {
-            background: #2E3C53;
-            color: var(--text-light);
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 20px;
-            box-shadow: 0 4px 15px var(--shadow-color);
-        }
-
-        .preview-title {
-            font-size: 22px;
-            font-weight: 600;
-            color: var(--highlight-color);
-        }
-
-        .preview-content {
-            margin-top: 10px;
-        }
-    </style>
-</head>
-<script src="https://www.google.com/recaptcha/api.js?render=6Le3N9YqAAAAAA4zcPOhyd0DhiPPj8y0ynMWMHCB"></script>
-<body>
-
-    <div class="container">
-        <h1>Create Your Advertisement</h1>
-
-        <form id="adForm">
-            <div class="form-group">
-                <label for="adTitle">Ad Title</label>
-                <input type="text" id="adTitle" class="form-control" placeholder="Enter your ad title" required>
-            </div>
-
-            <div class="form-group">
-                <label for="adContent">Ad Content</label>
-                <textarea id="adContent" class="form-control" placeholder="Enter your ad content" rows="6" required></textarea>
-            </div>
-
-            <div class="form-group">
-                <label for="frequency">Post Frequency</label>
-                <select id="frequency" class="select-menu" required>
-                    <option value="2 hours">Every 2 Hours</option>
-                    <option value="4 hours">Every 4 Hours</option>
-                    <option value="6 hours">Every 6 Hours</option>
-                    <option value="12 hours">Every 12 Hours</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="duration">Ad Duration</label>
-                <select id="duration" class="select-menu" required>
-                    <option value="1 day">1 Day</option>
-                    <option value="3 days">3 Days</option>
-                    <option value="7 days">7 Days</option>
-                    <option value="30 days">30 Days</option>
-                </select>
-            </div>
-
-            <!-- hCaptcha -->
-            <div class="form-group">
-                <div class="h-captcha" data-sitekey="#################"></div>
-            </div>
-
-            <!-- Ad Preview Section -->
-            <div class="preview-box">
-                <h3 class="preview-title">Ad Preview</h3>
-                <div class="preview-content">
-                    <strong>Title:</strong> <span id="previewTitle"></span><br>
-                    <strong>Content:</strong> <span id="previewContent"></span><br>
-                    <strong>Frequency:</strong> <span id="previewFrequency"></span><br>
-                    <strong>Duration:</strong> <span id="previewDuration"></span>
-                </div>
-            </div>
-
-            <button type="submit" class="submit-btn" id="submitBtn" disabled>Create Advertisement</button>
-        </form>
-    </div>
-
-    <footer>
-        <p>Need help? Visit our <a href="/support">Support Section</a> for assistance.</p>
-    </footer>
-
-    <script>
-        // Enable the submit button if captcha is completed
-        let isCaptchaCompleted = false;
-
-        function onCaptchaCompleted() {
-            isCaptchaCompleted = true;
-            document.getElementById('submitBtn').disabled = false;
-        }
-
-        // Form Submission
-        document.getElementById('adForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            // Ensure captcha is completed
-            if (!isCaptchaCompleted) {
-                alert("Please complete the CAPTCHA to proceed.");
-                return;
-            }
-
-            // Retrieve input values
-            var title = document.getElementById('adTitle').value;
-            var content = document.getElementById('adContent').value;
-            var frequency = document.getElementById('frequency').value;
-            var duration = document.getElementById('duration').value;
-
-            // Display the preview
-            document.getElementById('previewTitle').textContent = title;
-            document.getElementById('previewContent').textContent = content;
-            document.getElementById('previewFrequency').textContent = frequency;
-            document.getElementById('previewDuration').textContent = duration;
-
-            // Alert user
-            alert("Your ad has been scheduled to post every " + frequency + " for " + duration + ".");
-        });
-    </script>
-</body>
-</html>
 
 
 `);
  });
 
 app.get('/suggestions', (req, res) => {
-    res.send(`<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Submit a Suggestion</title>
-    <script src="https://hcaptcha.com/1/api.js" async defer></script>
-    <style>
-        :root {
-            --primary-color: #1E90FF;
-            --secondary-color: #FF6347;
-            --bg-dark: #0A0F1D;
-            --bg-light: #101826;
-            --text-light: #E0E6F1;
-            --text-muted: #8892B0;
-            --border-color: #1E90FF;
-            --highlight-color: #FFD700;
-            --hover-color: #187bcd;
-            --shadow-color: rgba(0, 0, 0, 0.2);
-            --glass-bg: rgba(10, 15, 29, 0.75);
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-light);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            overflow-x: hidden;
-        }
-
-        .container {
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border: 2px solid var(--border-color);
-            border-radius: 10px;
-            padding: 40px;
-            max-width: 700px;
-            width: 100%;
-            text-align: center;
-            position: relative;
-            box-shadow: 0 4px 20px var(--shadow-color);
-            animation: fadeIn 0.5s ease-in-out;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            transition: transform 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        h1 {
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: var(--highlight-color);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-
-        .form-control {
-            border: 2px solid var(--primary-color);
-            padding: 15px;
-            background: #2E3C53;
-            color: var(--text-light);
-            border-radius: 5px;
-            transition: all 0.3s ease;
-            width: 100%;
-        }
-
-        .form-control:focus {
-            border-color: var(--highlight-color);
-            background: #1E2A36;
-        }
-
-        textarea {
-            resize: none;
-            height: 120px;
-        }
-
-        .submit-btn {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 16px;
-            font-size: 18px;
-            width: 100%;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin-top: 20px;
-            box-shadow: 0 4px 15px var(--shadow-color);
-            border-radius: 8px;
-            animation: slideIn 0.5s ease-in-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateY(30px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .submit-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        .submit-btn:hover {
-            background: var(--hover-color);
-            transform: translateY(-3px);
-        }
-
-        .submit-btn:active {
-            transform: translateY(2px);
-        }
-
-        footer {
-            margin-top: 15px;
-            font-size: 12px;
-            color: var(--text-muted);
-            padding: 5px;
-            background: transparent;
-            box-shadow: none;
-            position: relative;
-        }
-
-        footer a {
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 12px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #2E3C53;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background-color: var(--primary-color);
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background-color: var(--highlight-color);
-        }
-
-        /* Remove resizing */
-        textarea {
-            resize: none;
-        }
-    </style>
-</head>
-<script src="https://www.google.com/recaptcha/api.js?render=#################"></script>
-<body>
-
-    <div class="container">
-        <h1>Submit a Suggestion</h1>
-
-        <form id="suggestionForm">
-            <div class="form-group">
-                <label for="suggestionTitle">Suggestion Title</label>
-                <input type="text" id="suggestionTitle" class="form-control" placeholder="Enter your suggestion title" required>
-            </div>
-
-            <div class="form-group">
-                <label for="suggestionContent">Suggestion Details</label>
-                <textarea id="suggestionContent" class="form-control" placeholder="Enter your suggestion details" rows="6" required></textarea>
-            </div>
-
-            <!-- hCaptcha -->
-            <div class="form-group">
-                <div class="h-captcha" data-sitekey="#########################"></div>
-            </div>
-
-            <button type="submit" class="submit-btn" id="submitBtn" disabled>Submit Suggestion</button>
-        </form>
-    </div>
-
-    <script>
-        // Enable the submit button if captcha is completed
-        let isCaptchaCompleted = false;
-
-        function onCaptchaCompleted() {
-            isCaptchaCompleted = true;
-            document.getElementById('submitBtn').disabled = false;
-        }
-
-        // Form Submission
-        document.getElementById('suggestionForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            // Ensure captcha is completed
-            if (!isCaptchaCompleted) {
-                alert("Please complete the CAPTCHA to submit your suggestion.");
-                return;
-            }
-
-            // Retrieve input values
-            var title = document.getElementById('suggestionTitle').value;
-            var content = document.getElementById('suggestionContent').value;
-
-            // Show confirmation message
-            alert("Your suggestion has been submitted. Thank you!");
-
-            // Optionally reset the form
-            document.getElementById('suggestionForm').reset();
-            isCaptchaCompleted = false;
-            document.getElementById('submitBtn').disabled = true;
-        });
-    </script>
-</body>
-</html>
+    res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta http-equiv="X-UA-Compatible" content="ie=edge"><title>Submit a Suggestion</title><script src="https://hcaptcha.com/1/api.js" async defer></script><style>:root{--primary-color:#1E90FF;--secondary-color:#FF6347;--bg-dark:#0A0F1D;--bg-light:#101826;--text-light:#E0E6F1;--text-muted:#8892B0;--border-color:#1E90FF;--highlight-color:#FFD700;--hover-color:#187bcd;--shadow-color:rgba(0,0,0,0.2);--glass-bg:rgba(10,15,29,0.75)}body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-light);display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;padding:20px;overflow-x:hidden}.container{background:var(--glass-bg);backdrop-filter:blur(10px);border:2px solid var(--border-color);border-radius:10px;padding:40px;max-width:700px;width:100%;text-align:center;position:relative;box-shadow:0 4px 20px var(--shadow-color);animation:fadeIn 0.5s ease-in-out;display:flex;flex-direction:column;justify-content:center;transition:transform 0.3s ease}@keyframes fadeIn{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:translateY(0)}}h1{font-size:28px;font-weight:600;margin-bottom:20px;color:var(--highlight-color);text-transform:uppercase;letter-spacing:2px}.form-group{margin-bottom:20px;text-align:left}.form-control{border:2px solid var(--primary-color);padding:15px;background:#2E3C53;color:var(--text-light);border-radius:5px;transition:all 0.3s ease;width:100%}.form-control:focus{border-color:var(--highlight-color);background:#1E2A36}textarea{resize:none;height:120px}.submit-btn{background:var(--primary-color);color:white;border:none;padding:16px;font-size:18px;width:100%;cursor:pointer;transition:all 0.3s ease;font-weight:600;text-transform:uppercase;margin-top:20px;box-shadow:0 4px 15px var(--shadow-color);border-radius:8px;animation:slideIn 0.5s ease-in-out}@keyframes slideIn{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}.submit-btn:disabled{background:#ccc;cursor:not-allowed}.submit-btn:hover{background:var(--hover-color);transform:translateY(-3px)}.submit-btn:active{transform:translateY(2px)}footer{margin-top:15px;font-size:12px;color:var(--text-muted);padding:5px;background:transparent;box-shadow:none;position:relative}footer a{color:var(--primary-color);text-decoration:none}footer a:hover{text-decoration:underline}::-webkit-scrollbar{width:12px}::-webkit-scrollbar-track{background:#2E3C53}::-webkit-scrollbar-thumb{background-color:var(--primary-color);border-radius:10px}::-webkit-scrollbar-thumb:hover{background-color:var(--highlight-color)}textarea{resize:none}</style></head><script src="https://www.google.com/recaptcha/api.js?render=6Le3N9YqAAAAAA4zcPOhyd0DhiPPj8y0ynMWMHCB"></script><body><div class="container"><h1>Submit a Suggestion</h1><form id="suggestionForm"><div class="form-group"><label for="suggestionTitle">Suggestion Title</label><input type="text" id="suggestionTitle" class="form-control" placeholder="Enter your suggestion title" required></div><div class="form-group"><label for="suggestionContent">Suggestion Details</label><textarea id="suggestionContent" class="form-control" placeholder="Enter your suggestion details" rows="6" required></textarea></div><div class="form-group"><div class="h-captcha" data-sitekey="c3d047fe-4c10-4718-8e0a-85606d44518a" data-theme="dark"></div></div><button type="submit" class="submit-btn" id="submitBtn" disabled>Submit Suggestion</button></form></div><script>let isCaptchaCompleted=false;function onCaptchaCompleted(){isCaptchaCompleted=true;document.getElementById('submitBtn').disabled=false}document.getElementById('suggestionForm').addEventListener('submit',function(e){e.preventDefault();if(!isCaptchaCompleted){alert("Please complete the CAPTCHA to submit your suggestion.");return}var title=document.getElementById('suggestionTitle').value;var content=document.getElementById('suggestionContent').value;alert("Your suggestion has been submitted. Thank you!");document.getElementById('suggestionForm').reset();isCaptchaCompleted=false;document.getElementById('submitBtn').disabled=true});</script></body></html>
 
 `);
  });
 
 app.get('/support', (req, res) => {
-    res.send(`
-        <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Support Center</title>
-    <style>
-        :root {
-            --primary-color: #1E90FF;
-            --bg-dark: #0A0F1D;
-            --bg-light: #101826;
-            --text-light: #E0E6F1;
-            --text-muted: #8892B0;
-            --border-color: #1E90FF;
-        }
+    res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Support Center</title><style>:root{--primary-color:#1E90FF;--bg-dark:#0A0F1D;--bg-light:#101826;--text-light:#E0E6F1;--text-muted:#8892B0;--border-color:#1E90FF}body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-light);display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;padding:20px}.container{background:var(--bg-light);padding:25px;border-radius:0;max-width:450px;width:100%;text-align:left;border:2px solid var(--border-color);overflow:hidden}h1{font-size:22px;font-weight:600;text-align:center;margin-bottom:18px}.contact-options{display:flex;flex-direction:column;gap:12px;margin-bottom:15px}.contact-options a{background:var(--primary-color);color:white;text-decoration:none;padding:10px;text-align:center;font-weight:bold;border-radius:5px;transition:0.3s ease}.contact-options a:hover{background:#187bcd}.faq-container{border:1px solid var(--border-color);padding:12px;border-radius:5px;background:rgba(255,255,255,0.02);margin-top:10px;max-height:350px;overflow-y:auto}.faq-container::-webkit-scrollbar{width:8px}.faq-container::-webkit-scrollbar-thumb{background:var(--primary-color);border-radius:5px}.faq-container::-webkit-scrollbar-track{background:#202A3C}.faq-item{margin-bottom:10px}.faq-question{background:none;border:none;color:var(--text-light);font-size:14px;text-align:left;width:100%;cursor:pointer;padding:8px;font-weight:bold;border-bottom:1px solid var(--border-color)}.faq-question:hover{color:var(--primary-color)}.faq-answer{display:none;font-size:13px;color:var(--text-muted);padding:8px;border-left:3px solid var(--primary-color);margin-top:5px}.faq-item.active .faq-answer{display:block}footer{margin-top:15px;font-size:12px;text-align:center;color:var(--text-muted)}footer a{color:var(--primary-color);text-decoration:none}footer a:hover{text-decoration:underline}</style></head><script src="https://www.google.com/recaptcha/api.js?render=6Le3N9YqAAAAAA4zcPOhyd0DhiPPj8y0ynMWMHCB"></script><body><div class="container"><h1>Support Center</h1><div class="contact-options"><a href="mailto:support@thelostnemo.glitch.me">📧 Email Support</a><a href="https://discord.gg/thelostnemo" target="_blank">💬 Discord Support</a><a href="/tickets">🎫 Submit a Ticket</a></div><div class="faq-container"><h2 style="font-size:18px;text-align:center;">Frequently Asked Questions</h2><div class="faq-item"><button class="faq-question">❓ How long does support take?</button><div class="faq-answer">We usually respond within 24 hours, but during high-volume periods, it may take up to 48 hours.</div></div><div class="faq-item"><button class="faq-question">🔑 I lost my account access. What should I do?</button><div class="faq-answer">If you've lost access, contact support with your account email and proof of ownership.</div></div><div class="faq-item"><button class="faq-question">🚫 Why was my account banned?</button><div class="faq-answer">Your account may have been banned for violating our rules. Please check our <a href="/rules">rules page</a> and contact support if you believe it's a mistake.</div></div><div class="faq-item"><button class="faq-question">🔒 How can I secure my account?</button><div class="faq-answer">Enable 2FA, use a strong password, and never share your login details with anyone.</div></div><div class="faq-item"><button class="faq-question">🛠️ Can I request a feature?</button><div class="faq-answer">Yes! Feature requests are welcome. Submit your ideas in our <a href="/suggestions">suggestions page</a>.</div></div><div class="faq-item"><button class="faq-question">💰 Can I get a refund?</button><div class="faq-answer">Refunds depend on our policy. Please read our <a href="/refund-policy">Refund Policy</a> before requesting.</div></div><div class="faq-item"><button class="faq-question">📜 Where can I read the rules?</button><div class="faq-answer">Check out our <a href="/rules">rules page</a> for community guidelines.</div></div><div class="faq-item"><button class="faq-question">📢 Where can I get updates?</button><div class="faq-answer">Join our <a href="https://discord.gg/thelostnemo">Discord server</a> or follow our social media for the latest updates.</div></div><div class="faq-item"><button class="faq-question">🆔 How do I change my username?</button><div class="faq-answer">You can change your username in your account settings. If you need help, visit <a href="/account-settings">Account Settings</a>.</div></div><div class="faq-item"><button class="faq-question">⚠️ What should I do if I encounter a bug?</button><div class="faq-answer">If you find a bug, report it via our <a href="/bug-report">Bug Report Form</a> or in our <a href="https://discord.gg/thelostnemo">Discord server</a>.</div></div><div class="faq-item"><button class="faq-question">🔨 Can I become a moderator?</button><div class="faq-answer">Moderator applications open occasionally. Check the <a href="/mod-application">Mod Application Page</a> or join our Discord for announcements.</div></div><div class="faq-item"><button class="faq-question">📧 Why am I not receiving emails from support?</button><div class="faq-answer">Check your spam folder and ensure that support@thelostnemo.glitch.me is not blocked. If the issue persists, contact us via Discord.</div></div><div class="faq-item"><button class="faq-question">💳 What payment methods do you accept?</button><div class="faq-answer">We accept PayPal, credit/debit cards, and some cryptocurrencies. See our <a href="/payment-options">Payment Options</a> page for details.</div></div><div class="faq-item"><button class="faq-question">🛑 How do I delete my account?</button><div class="faq-answer">If you wish to delete your account permanently, please submit a request at <a href="/account-deletion">Account Deletion</a>.</div></div><div class="faq-item"><button class="faq-question">🚀 Do you have a VIP or premium membership?</button><div class="faq-answer">Yes! We offer premium plans with exclusive perks. Check out our <a href="/premium">Premium Membership</a> page for details.</div></div><div class="faq-item"><button class="faq-question">🔄 Can I transfer my account to another email?</button><div class="faq-answer">Yes, you can request an email change by verifying ownership. Visit <a href="/account-transfer">Account Transfer</a> for details.</div></div><div class="faq-item"><button class="faq-question">⏳ Why is my order taking so long?</button><div class="faq-answer">Orders usually process within 24 hours. If it's delayed, check <a href="/order-status">Order Status</a> or contact support.</div></div><div class="faq-item"><button class="faq-question">📢 Can I advertise my server/project?</button><div class="faq-answer">We allow advertisements in specific channels. Please check our <a href="/advertising-rules">Advertising Rules</a> before posting.</div></div><div class="faq-item"><button class="faq-question">💰 How do I cancel my subscription?</button><div class="faq-answer">You can cancel your subscription in your account settings. See <a href="/subscription-management">Subscription Management</a> for details.</div></div><div class="faq-item"><button class="faq-question">❌ Someone is harassing me. What should I do?</button><div class="faq-answer">Report harassment to our support team or use the <a href="/report-user">Report User</a> form for immediate action.</div></div><div class="faq-item"><button class="faq-question">⚙️ Can I change my password?</button><div class="faq-answer">Yes! You can reset your password at <a href="/reset-password">Reset Password</a>.</div></div><div class="faq-item"><button class="faq-question">📁 How can I back up my data?</button><div class="faq-answer">You can request a data backup from our support team. Learn more at <a href="/data-backup">Data Backup</a>.</div></div><div class="faq-item"><button class="faq-question">🌍 Do you support multiple languages?</button><div class="faq-answer">Yes! Our platform is available in multiple languages. You can change your language in <a href="/settings">Settings</a>.</div></div><div class="faq-item"><button class="faq-question">🚀 How do I speed up my support ticket response?</button><div class="faq-answer">To get a faster response, provide as many details as possible in your ticket. Screenshots and error logs help a lot!</div></div><div class="faq-item"><button class="faq-question">🔁 Can I have multiple accounts?</button><div class="faq-answer">No, we do not allow multiple accounts per user unless explicitly permitted. Violations may result in bans.</div></div><div class="faq-item"><button class="faq-question">📌 How do I report a scam?</button><div class="faq-answer">If someone is scamming or impersonating us, report it immediately via our <a href="/report-scam">Scam Report Form</a>.</div></div><div class="faq-item"><button class="faq-question">📩 Can I opt out of promotional emails?</button><div class="faq-answer">Yes! You can manage your email preferences in <a href="/email-preferences">Email Preferences</a>.</div></div><div class="faq-item"><button class="faq-question">💾 How do I clear my cache to fix issues?</button><div class="faq-answer">If you're experiencing loading issues, clear your browser cache or reset your app settings.</div></div><div class="faq-item"><button class="faq-question">👤 How do I verify my identity?</button><div class="faq-answer">For security reasons, we may require ID verification. Follow the instructions at <a href="/verify">Verification Page</a>.</div></div><div class="faq-item"><button class="faq-question">📆 Do you have a roadmap for upcoming features?</button><div class="faq-answer">Yes! You can check our development roadmap at <a href="/roadmap">Roadmap</a> to see what's coming next.</div></div><div class="faq-item"><button class="faq-question">🔗 Can I connect my account to other platforms?</button><div class="faq-answer">Yes! You can link your account to platforms like Discord, Steam, and more via <a href="/linked-accounts">Linked Accounts</a>.</div></div><div class="faq-item"><button class="faq-question">🎁 Do you offer giveaways or events?</button><div class="faq-answer">Yes! Join our <a href="https://discord.gg/thelostnemo">Discord server</a> to participate in exclusive giveaways and community events.</div></div><div class="faq-item"><button class="faq-question">📜 Where can I find legal policies?</button><div class="faq-answer">You can find our Terms of Service, Privacy Policy, and other legal documents at <a href="/legal">Legal</a>.</div></div><div class="faq-item"><button class="faq-question">⏳ How long do refunds take to process?</button><div class="faq-answer">Refunds typically take 3-7 business days, depending on your payment method. Check <a href="/refund-status">Refund Status</a> for more info.</div></div><div class="faq-item"><button class="faq-question">🛠️ Do you offer API access for developers?</button><div class="faq-answer">Yes! Developers can access our API by visiting <a href="/api">API Documentation</a>.</div></div><div class="faq-item"><button class="faq-question">⚡ How can I reduce lag or slow performance?</button><div class="faq-answer">Try closing background apps, clearing your cache, or checking your internet connection. If issues persist, contact support.</div></div><div class="faq-item"><button class="faq-question">🏆 How do I become a verified user?</button><div class="faq-answer">Verified users receive special perks! Apply for verification at <a href="/verified">Verification Page</a>.</div></div></div><footer>Need more help? <a href="mailto:support@thelostnemo.glitch.me">Contact Support</a>.</footer></div><script>document.querySelectorAll('.faq-question').forEach(button=>{button.addEventListener('click',()=>{const faqItem=button.parentElement;faqItem.classList.toggle('active');});});</script></body></html>
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-light);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            background: var(--bg-light);
-            padding: 25px;
-            border-radius: 0;
-            max-width: 450px;
-            width: 100%;
-            text-align: left;
-            border: 2px solid var(--border-color);
-            overflow: hidden;
-        }
-
-        h1 {
-            font-size: 22px;
-            font-weight: 600;
-            text-align: center;
-            margin-bottom: 18px;
-        }
-
-        .contact-options {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-
-        .contact-options a {
-            background: var(--primary-color);
-            color: white;
-            text-decoration: none;
-            padding: 10px;
-            text-align: center;
-            font-weight: bold;
-            border-radius: 5px;
-            transition: 0.3s ease;
-        }
-
-        .contact-options a:hover {
-            background: #187bcd;
-        }
-
-        .faq-container {
-            border: 1px solid var(--border-color);
-            padding: 12px;
-            border-radius: 5px;
-            background: rgba(255, 255, 255, 0.02);
-            margin-top: 10px;
-            max-height: 350px;
-            overflow-y: auto;
-        }
-
-        /* Custom Scrollbar */
-        .faq-container::-webkit-scrollbar {
-            width: 8px;
-        }
-        .faq-container::-webkit-scrollbar-thumb {
-            background: var(--primary-color);
-            border-radius: 5px;
-        }
-        .faq-container::-webkit-scrollbar-track {
-            background: #202A3C;
-        }
-
-        .faq-item {
-            margin-bottom: 10px;
-        }
-
-        .faq-question {
-            background: none;
-            border: none;
-            color: var(--text-light);
-            font-size: 14px;
-            text-align: left;
-            width: 100%;
-            cursor: pointer;
-            padding: 8px;
-            font-weight: bold;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .faq-question:hover {
-            color: var(--primary-color);
-        }
-
-        .faq-answer {
-            display: none;
-            font-size: 13px;
-            color: var(--text-muted);
-            padding: 8px;
-            border-left: 3px solid var(--primary-color);
-            margin-top: 5px;
-        }
-
-        .faq-item.active .faq-answer {
-            display: block;
-        }
-
-        footer {
-            margin-top: 15px;
-            font-size: 12px;
-            text-align: center;
-            color: var(--text-muted);
-        }
-
-        footer a {
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<script src="https://www.google.com/recaptcha/api.js?render=6Le3N9YqAAAAAA4zcPOhyd0DhiPPj8y0ynMWMHCB"></script>
-<body>
-    <div class="container">
-        <h1>Support Center</h1>
-
-        <div class="contact-options">
-            <a href="mailto:support@yourwebsite.com">📧 Email Support</a>
-            <a href="https://discord.gg/yourserver" target="_blank">💬 Discord Support</a>
-            <a href="/tickets">🎫 Submit a Ticket</a>
-        </div>
-
-        <div class="faq-container">
-            <h2 style="font-size: 18px; text-align: center;">Frequently Asked Questions</h2>
-
-            <div class="faq-item">
-                <button class="faq-question">❓ How long does support take?</button>
-                <div class="faq-answer">We usually respond within 24 hours, but during high-volume periods, it may take up to 48 hours.</div>
-            </div>
-
-            <div class="faq-item">
-                <button class="faq-question">🔑 I lost my account access. What should I do?</button>
-                <div class="faq-answer">If you've lost access, contact support with your account email and proof of ownership.</div>
-            </div>
-
-            <div class="faq-item">
-                <button class="faq-question">🚫 Why was my account banned?</button>
-                <div class="faq-answer">Your account may have been banned for violating our rules. Please check our <a href="/rules">rules page</a> and contact support if you believe it's a mistake.</div>
-            </div>
-
-            <div class="faq-item">
-                <button class="faq-question">🔒 How can I secure my account?</button>
-                <div class="faq-answer">Enable 2FA, use a strong password, and never share your login details with anyone.</div>
-            </div>
-
-            <div class="faq-item">
-                <button class="faq-question">🛠️ Can I request a feature?</button>
-                <div class="faq-answer">Yes! Feature requests are welcome. Submit your ideas in our <a href="https://discord.gg/yourserver">Discord server</a>.</div>
-            </div>
-
-            <div class="faq-item">
-                <button class="faq-question">💰 Can I get a refund?</button>
-                <div class="faq-answer">Refunds depend on our policy. Please read our <a href="/refund-policy">Refund Policy</a> before requesting.</div>
-            </div>
-
-            <div class="faq-item">
-                <button class="faq-question">📜 Where can I read the rules?</button>
-                <div class="faq-answer">Check out our <a href="/rules">rules page</a> for community guidelines.</div>
-            </div>
-
-            <div class="faq-item">
-                <button class="faq-question">📢 Where can I get updates?</button>
-                <div class="faq-answer">Join our <a href="https://discord.gg/yourserver">Discord server</a> or follow our social media for the latest updates.</div>
-            </div>
-            
-            <div class="faq-item">
-    <button class="faq-question">🆔 How do I change my username?</button>
-    <div class="faq-answer">You can change your username in your account settings. If you need help, visit <a href="/account-settings">Account Settings</a>.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">⚠️ What should I do if I encounter a bug?</button>
-    <div class="faq-answer">If you find a bug, report it via our <a href="/bug-report">Bug Report Form</a> or in our <a href="https://discord.gg/yourserver">Discord server</a>.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">🔨 Can I become a moderator?</button>
-    <div class="faq-answer">Moderator applications open occasionally. Check the <a href="/mod-application">Mod Application Page</a> or join our Discord for announcements.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">📧 Why am I not receiving emails from support?</button>
-    <div class="faq-answer">Check your spam folder and ensure that support@yourwebsite.com is not blocked. If the issue persists, contact us via Discord.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">💳 What payment methods do you accept?</button>
-    <div class="faq-answer">We accept PayPal, credit/debit cards, and some cryptocurrencies. See our <a href="/payment-options">Payment Options</a> page for details.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">🛑 How do I delete my account?</button>
-    <div class="faq-answer">If you wish to delete your account permanently, please submit a request at <a href="/account-deletion">Account Deletion</a>.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">🚀 Do you have a VIP or premium membership?</button>
-    <div class="faq-answer">Yes! We offer premium plans with exclusive perks. Check out our <a href="/premium">Premium Membership</a> page for details.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">🔄 Can I transfer my account to another email?</button>
-    <div class="faq-answer">Yes, you can request an email change by verifying ownership. Visit <a href="/account-transfer">Account Transfer</a> for details.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">⏳ Why is my order taking so long?</button>
-    <div class="faq-answer">Orders usually process within 24 hours. If it's delayed, check <a href="/order-status">Order Status</a> or contact support.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">📢 Can I advertise my server/project?</button>
-    <div class="faq-answer">We allow advertisements in specific channels. Please check our <a href="/advertising-rules">Advertising Rules</a> before posting.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">💰 How do I cancel my subscription?</button>
-    <div class="faq-answer">You can cancel your subscription in your account settings. See <a href="/subscription-management">Subscription Management</a> for details.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">❌ Someone is harassing me. What should I do?</button>
-    <div class="faq-answer">Report harassment to our support team or use the <a href="/report-user">Report User</a> form for immediate action.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">⚙️ Can I change my password?</button>
-    <div class="faq-answer">Yes! You can reset your password at <a href="/reset-password">Reset Password</a>.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">📁 How can I back up my data?</button>
-    <div class="faq-answer">You can request a data backup from our support team. Learn more at <a href="/data-backup">Data Backup</a>.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">🌍 Do you support multiple languages?</button>
-    <div class="faq-answer">Yes! Our platform is available in multiple languages. You can change your language in <a href="/settings">Settings</a>.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">🚀 How do I speed up my support ticket response?</button>
-    <div class="faq-answer">To get a faster response, provide as many details as possible in your ticket. Screenshots and error logs help a lot!</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">🔁 Can I have multiple accounts?</button>
-    <div class="faq-answer">No, we do not allow multiple accounts per user unless explicitly permitted. Violations may result in bans.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">📌 How do I report a scam?</button>
-    <div class="faq-answer">If someone is scamming or impersonating us, report it immediately via our <a href="/report-scam">Scam Report Form</a>.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">📩 Can I opt out of promotional emails?</button>
-    <div class="faq-answer">Yes! You can manage your email preferences in <a href="/email-preferences">Email Preferences</a>.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">💾 How do I clear my cache to fix issues?</button>
-    <div class="faq-answer">If you're experiencing loading issues, clear your browser cache or reset your app settings.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">👤 How do I verify my identity?</button>
-    <div class="faq-answer">For security reasons, we may require ID verification. Follow the instructions at <a href="/verify">Verification Page</a>.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">📆 Do you have a roadmap for upcoming features?</button>
-    <div class="faq-answer">Yes! You can check our development roadmap at <a href="/roadmap">Roadmap</a> to see what's coming next.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">🔗 Can I connect my account to other platforms?</button>
-    <div class="faq-answer">Yes! You can link your account to platforms like Discord, Steam, and more via <a href="/linked-accounts">Linked Accounts</a>.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">🎁 Do you offer giveaways or events?</button>
-    <div class="faq-answer">Yes! Join our <a href="https://discord.gg/yourserver">Discord server</a> to participate in exclusive giveaways and community events.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">📜 Where can I find legal policies?</button>
-    <div class="faq-answer">You can find our Terms of Service, Privacy Policy, and other legal documents at <a href="/legal">Legal</a>.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">⏳ How long do refunds take to process?</button>
-    <div class="faq-answer">Refunds typically take 3-7 business days, depending on your payment method. Check <a href="/refund-status">Refund Status</a> for more info.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">🛠️ Do you offer API access for developers?</button>
-    <div class="faq-answer">Yes! Developers can access our API by visiting <a href="/api">API Documentation</a>.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">⚡ How can I reduce lag or slow performance?</button>
-    <div class="faq-answer">Try closing background apps, clearing your cache, or checking your internet connection. If issues persist, contact support.</div>
-</div>
-
-<div class="faq-item">
-    <button class="faq-question">🏆 How do I become a verified user?</button>
-    <div class="faq-answer">Verified users receive special perks! Apply for verification at <a href="/verified">Verification Page</a>.</div>
-</div>
-
-
-        </div>
-
-        <footer>
-            Need more help? <a href="mailto:support@yourwebsite.com">Contact Support</a>.
-        </footer>
-    </div>
-
-    <script>
-        document.querySelectorAll('.faq-question').forEach(button => {
-            button.addEventListener('click', () => {
-                const faqItem = button.parentElement;
-                faqItem.classList.toggle('active');
-            });
-        });
-    </script>
-</body>
-</html>
 
 
     `);
 });
 
 app.get('/legal', (req, res) => {
-    res.send(`<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Legal | The Lost Nemo</title>
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        body {
-            background-color: #0a0a0a;
-            color: white;
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .legal-container {
-            width: 60%;
-            max-width: 800px;
-            background: #111;
-            border: 1px solid #007bff;
-            padding: 20px;
-            border-radius: 0;
-            box-shadow: 0 0 10px rgba(0, 123, 255, 0.2);
-        }
-        h1, h2 {
-            text-align: center;
-            color: #007bff;
-        }
-        p, ul {
-            font-size: 16px;
-            line-height: 1.5;
-        }
-        ul {
-            padding-left: 20px;
-        }
-        .legal-section {
-            margin-bottom: 20px;
-        }
-        a {
-            color: #007bff;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .scrollable-box {
-            max-height: 400px;
-            overflow-y: auto;
-            padding: 10px;
-            border: 1px solid #007bff;
-            border-radius: 0;
-            scrollbar-width: thin;
-            scrollbar-color: #007bff #111;
-        }
-        .scrollable-box::-webkit-scrollbar {
-            width: 8px;
-        }
-        .scrollable-box::-webkit-scrollbar-thumb {
-            background: #007bff;
-            border-radius: 10px;
-        }
-        .scrollable-box::-webkit-scrollbar-track {
-            background: #111;
-        }
-    </style>
-</head>
-<script src="https://www.google.com/recaptcha/api.js?render=6Le3N9YqAAAAAA4zcPOhyd0DhiPPj8y0ynMWMHCB"></script>
-<body>
-    <div class="legal-container">
-        <h1>Legal Information</h1>
-        <div class="scrollable-box">
-            <div class="legal-section">
-                <h2>Terms of Service</h2>
-                <p>By using The Lost Nemo, you agree to the following:</p>
-                <ul>
-                    <li>You will not misuse the service.</li>
-    <li>You must comply with all applicable laws.</li>
-    <li>We reserve the right to terminate accounts for violations.</li>
-    <li>You must not attempt to hack, exploit, or reverse-engineer the platform.</li>
-    <li>Any unauthorized bot usage may result in a permanent ban.</li>
-    <li>You agree not to impersonate moderators, admins, or any other staff.</li>
-    <li>Spamming, flooding, or excessive messaging is strictly prohibited.</li>
-    <li>Phishing, scamming, or fraudulent activities will result in account termination.</li>
-    <li>All users must be at least 13 years old to use the service.</li>
-    <li>Harassment, hate speech, or discrimination of any kind is not allowed.</li>
-    <li>Any attempt to bypass security measures will lead to legal action.</li>
-    <li>You must not distribute malicious software, viruses, or harmful scripts.</li>
-    <li>Attempting to manipulate or game the system for unfair advantages is forbidden.</li>
-    <li>Advertising without explicit permission is not allowed.</li>
-    <li>Do not share personal information of yourself or others.</li>
-    <li>We are not responsible for any damages, losses, or liabilities from service usage.</li>
-    <li>You acknowledge that this service is provided "as is" without any guarantees.</li>
-    <li>We may update these terms at any time without prior notice.</li>
-    <li>Using multiple accounts to evade bans or restrictions is not permitted.</li>
-    <li>Exploiting glitches or bugs for personal gain is strictly forbidden.</li>
-    <li>You must respect all moderators, admins, and community members.</li>
-    <li>False reports or abuse of the reporting system will result in penalties.</li>
-    <li>Any real-life threats or doxxing will lead to an instant ban and legal action.</li>
-    <li>You agree not to use the platform for illegal activities.</li>
-    <li>All virtual currency, items, or rewards hold no real-world monetary value.</li>
-    <li>You may not redistribute, resell, or copy any part of this service.</li>
-    <li>Third-party integrations must follow our security guidelines.</li>
-    <li>Attempting to overload our servers with excessive requests is prohibited.</li>
-    <li>All disputes must be handled through our official support channels.</li>
-    <li>By using this service, you agree to our data collection policies.</li>
-    <li>Accounts inactive for extended periods may be deleted.</li>
-    <li>We are not liable for downtime, service interruptions, or lost data.</li>
-    <li>Paid services or premium memberships are non-refundable.</li>
-    <li>You may not use VPNs or proxies to bypass restrictions.</li>
-    <li>Do not attempt to resell or trade in-game items outside the service.</li>
-    <li>Any attempt to bribe staff or users for personal gain is prohibited.</li>
-    <li>All user-generated content must follow community guidelines.</li>
-    <li>Moderators have the final say on all rule enforcement decisions.</li>
-    <li>All purchases must be authorized by the cardholder or account owner.</li>
-    <li>Threats of self-harm or suicide should be reported immediately.</li>
-    <li>Posting NSFW (Not Safe For Work) content is strictly prohibited.</li>
-    <li>All usernames and profile pictures must be appropriate.</li>
-    <li>All players must follow fair play policies at all times.</li>
-    <li>Using exploits to bypass in-game mechanics is not allowed.</li>
-    <li>Streaming or recording content must comply with platform rules.</li>
-    <li>Server administrators have the right to enforce additional rules.</li>
-    <li>Using automation tools for farming or grinding is not allowed.</li>
-    <li>Attempts to access restricted areas of the site will result in a ban.</li>
-    <li>Sharing cheat software, hacks, or exploits is strictly forbidden.</li>
-    <li>Account sharing or selling is not allowed.</li>
-    <li>You agree that any legal disputes will be handled under our jurisdiction.</li>
-    <li>Violation of terms may result in temporary or permanent bans.</li>
-    <li>Users must not attempt to intimidate or threaten others.</li>
-    <li>Mass messaging, invites, or friend requests to unknown users is not allowed.</li>
-    <li>Streaming copyrighted material without permission is forbidden.</li>
-    <li>All transactions made within the service are final.</li>
-    <li>Admins reserve the right to revoke privileges at any time.</li>
-    <li>Spreading misinformation or fake news is strictly prohibited.</li>
-    <li>Refund requests will only be considered under specific conditions.</li>
-    <li>Any attempt to evade bans using new accounts will result in a permanent IP ban.</li>
-    <li>Users must not encourage others to break the rules.</li>
-    <li>Public shaming or exposing private conversations is not allowed.</li>
-    <li>Users may not use offensive or controversial usernames.</li>
-    <li>Threatening legal action without basis will result in removal.</li>
-    <li>Users may not trade real-world money for in-game items.</li>
-    <li>Spamming emojis, stickers, or gifs excessively is not permitted.</li>
-    <li>Users should report violations rather than taking matters into their own hands.</li>
-    <li>We reserve the right to remove any content that violates our terms.</li>
-    <li>Abusing loopholes in rules or guidelines is still considered a violation.</li>
-    <li>Users who falsely claim to be staff or moderators will be banned.</li>
-    <li>All forms of gambling using the service are not permitted.</li>
-    <li>Users must respect age restrictions on content.</li>
-    <li>Do not use the service to promote illegal or unethical behavior.</li>
-    <li>All forms of harassment, whether public or private, will not be tolerated.</li>
-    <li>Attempting to create unrest or incite arguments is prohibited.</li>
-    <li>Using misleading links or bait-and-switch tactics is not allowed.</li>
-    <li>All submitted content must adhere to copyright laws.</li>
-    <li>Inappropriate profile bios or status messages will be removed.</li>
-    <li>Any external links posted must be safe and relevant.</li>
-    <li>Deliberately misusing features or commands is not allowed.</li>
-    <li>All discussions must remain civil and respectful.</li>
-    <li>Users must ensure they follow any additional Discord guidelines.</li>
-    <li>Attempting to artificially inflate user statistics is forbidden.</li>
-    <li>Mass-reporting users for false claims is against the rules.</li>
-    <li>Users may not use alts to bypass chat restrictions.</li>
-    <li>Attempting to manipulate staff decisions is not allowed.</li>
-    <li>Users found guilty of account theft or scams will be permanently banned.</li>
-    <li>Users must accept that changes to rules or features can happen anytime.</li>
-    <li>Violation of rules in private chats will also be taken seriously.</li>
-    <li>Server logs and moderation actions are confidential.</li>
-    <li>Users must respect event rules and participate fairly.</li>
-    <li>Any actions that disrupt the community will be punished.</li>
-    <li>Attempting to exploit giveaways, contests, or rewards is not allowed.</li>
-    <li>Users are responsible for their own security and account safety.</li>
-    <li>We reserve the right to take legal action against serious offenses.</li>
-                </ul>
-                <p>Read the full Terms of Service <a href="#">here</a>.</p>
-            </div>
+    res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Legal | The Lost Nemo</title><link rel="stylesheet" href="styles.css"><style>body{background-color:#0a0a0a;color:white;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}.legal-container{width:60%;max-width:800px;background:#111;border:1px solid #007bff;padding:20px;border-radius:0;box-shadow:0 0 10px rgba(0,123,255,0.2)}h1,h2{text-align:center;color:#007bff}p,ul{font-size:16px;line-height:1.5}ul{padding-left:20px}.legal-section{margin-bottom:20px}a{color:#007bff;text-decoration:none}a:hover{text-decoration:underline}.scrollable-box{max-height:400px;overflow-y:auto;padding:10px;border:1px solid #007bff;border-radius:0;scrollbar-width:thin;scrollbar-color:#007bff #111}.scrollable-box::-webkit-scrollbar{width:8px}.scrollable-box::-webkit-scrollbar-thumb{background:#007bff;border-radius:10px}.scrollable-box::-webkit-scrollbar-track{background:#111}</style></head><script src="https://www.google.com/recaptcha/api.js?render=6Le3N9YqAAAAAA4zcPOhyd0DhiPPj8y0ynMWMHCB"></script><body><div class="legal-container"><h1>Legal Information</h1><div class="scrollable-box"><div class="legal-section"><h2>Terms of Service</h2><p>By using The Lost Nemo, you agree to the following:</p><ul><li>You will not misuse the service.</li><li>You must comply with all applicable laws.</li><li>We reserve the right to terminate accounts for violations.</li><li>You must not attempt to hack, exploit, or reverse-engineer the platform.</li><li>Any unauthorized bot usage may result in a permanent ban.</li><li>You agree not to impersonate moderators, admins, or any other staff.</li><li>Spamming, flooding, or excessive messaging is strictly prohibited.</li><li>Phishing, scamming, or fraudulent activities will result in account termination.</li><li>All users must be at least 13 years old to use the service.</li><li>Harassment, hate speech, or discrimination of any kind is not allowed.</li><li>Any attempt to bypass security measures will lead to legal action.</li><li>You must not distribute malicious software, viruses, or harmful scripts.</li><li>Attempting to manipulate or game the system for unfair advantages is forbidden.</li><li>Advertising without explicit permission is not allowed.</li><li>Do not share personal information of yourself or others.</li><li>We are not responsible for any damages, losses, or liabilities from service usage.</li><li>You acknowledge that this service is provided "as is" without any guarantees.</li><li>We may update these terms at any time without prior notice.</li><li>Using multiple accounts to evade bans or restrictions is not permitted.</li><li>Exploiting glitches or bugs for personal gain is strictly forbidden.</li><li>You must respect all moderators, admins, and community members.</li><li>False reports or abuse of the reporting system will result in penalties.</li><li>Any real-life threats or doxxing will lead to an instant ban and legal action.</li><li>You agree not to use the platform for illegal activities.</li><li>All virtual currency, items, or rewards hold no real-world monetary value.</li><li>You may not redistribute, resell, or copy any part of this service.</li><li>Third-party integrations must follow our security guidelines.</li><li>Attempting to overload our servers with excessive requests is prohibited.</li><li>All disputes must be handled through our official support channels.</li><li>By using this service, you agree to our data collection policies.</li><li>Accounts inactive for extended periods may be deleted.</li><li>We are not liable for downtime, service interruptions, or lost data.</li><li>Paid services or premium memberships are non-refundable.</li><li>You may not use VPNs or proxies to bypass restrictions.</li><li>Do not attempt to resell or trade in-game items outside the service.</li><li>Any attempt to bribe staff or users for personal gain is prohibited.</li><li>All user-generated content must follow community guidelines.</li><li>Moderators have the final say on all rule enforcement decisions.</li><li>All purchases must be authorized by the cardholder or account owner.</li><li>Threats of self-harm or suicide should be reported immediately.</li><li>Posting NSFW (Not Safe For Work) content is strictly prohibited.</li><li>All usernames and profile pictures must be appropriate.</li><li>All players must follow fair play policies at all times.</li><li>Using exploits to bypass in-game mechanics is not allowed.</li><li>Streaming or recording content must comply with platform rules.</li><li>Server administrators have the right to enforce additional rules.</li><li>Using automation tools for farming or grinding is not allowed.</li><li>Attempts to access restricted areas of the site will result in a ban.</li><li>Sharing cheat software, hacks, or exploits is strictly forbidden.</li><li>Account sharing or selling is not allowed.</li><li>You agree that any legal disputes will be handled under our jurisdiction.</li><li>Violation of terms may result in temporary or permanent bans.</li><li>Users must not attempt to intimidate or threaten others.</li><li>Mass messaging, invites, or friend requests to unknown users is not allowed.</li><li>Streaming copyrighted material without permission is forbidden.</li><li>All transactions made within the service are final.</li><li>Admins reserve the right to revoke privileges at any time.</li><li>Spreading misinformation or fake news is strictly prohibited.</li><li>Refund requests will only be considered under specific conditions.</li><li>Any attempt to evade bans using new accounts will result in a permanent IP ban.</li><li>Users must not encourage others to break the rules.</li><li>Public shaming or exposing private conversations is not allowed.</li><li>Users may not use offensive or controversial usernames.</li><li>Threatening legal action without basis will result in removal.</li><li>Users may not trade real-world money for in-game items.</li><li>Spamming emojis, stickers, or gifs excessively is not permitted.</li><li>Users should report violations rather than taking matters into their own hands.</li><li>We reserve the right to remove any content that violates our terms.</li><li>Abusing loopholes in rules or guidelines is still considered a violation.</li><li>Users who falsely claim to be staff or moderators will be banned.</li><li>All forms of gambling using the service are not permitted.</li><li>Users must respect age restrictions on content.</li><li>Do not use the service to promote illegal or unethical behavior.</li><li>All forms of harassment, whether public or private, will not be tolerated.</li><li>Attempting to create unrest or incite arguments is prohibited.</li><li>Using misleading links or bait-and-switch tactics is not allowed.</li><li>All submitted content must adhere to copyright laws.</li><li>Inappropriate profile bios or status messages will be removed.</li><li>Any external links posted must be safe and relevant.</li><li>Deliberately misusing features or commands is not allowed.</li><li>All discussions must remain civil and respectful.</li><li>Users must ensure they follow any additional Discord guidelines.</li><li>Attempting to artificially inflate user statistics is forbidden.</li><li>Mass-reporting users for false claims is against the rules.</li><li>Users may not use alts to bypass chat restrictions.</li><li>Attempting to manipulate staff decisions is not allowed.</li><li>Users found guilty of account theft or scams will be permanently banned.</li><li>Users must accept that changes to rules or features can happen anytime.</li><li>Violation of rules in private chats will also be taken seriously.</li><li>Server logs and moderation actions are confidential.</li><li>Users must respect event rules and participate fairly.</li><li>Any actions that disrupt the community will be punished.</li><li>Attempting to exploit giveaways, contests, or rewards is not allowed.</li><li>Users are responsible for their own security and account safety.</li><li>We reserve the right to take legal action against serious offenses.</li></ul><p>Read the full Terms of Service <a href="#">here</a>.</p></div><div class="legal-section"><h2>Privacy Policy</h2><p>We take your privacy seriously. Our policy covers:</p><ul><li>What data we collect and why.</li><li>How we store and secure your information.</li><li>Your rights and how to manage your data.</li><li>We collect only necessary data required for service functionality.</li><li>Your data is encrypted and securely stored.</li><li>We do not sell your personal data to third parties.</li><li>All user data is protected against unauthorized access.</li><li>We may collect usage data for analytics and service improvement.</li><li>Cookies are used to enhance user experience.</li><li>You have the right to request data deletion.</li><li>We comply with GDPR, CCPA, and other privacy laws.</li><li>We log IP addresses for security purposes.</li><li>Two-factor authentication (2FA) is recommended for account security.</li><li>We do not store your passwords in plain text.</li><li>We only collect personal data you voluntarily provide.</li><li>Data backups are performed regularly for security.</li><li>We do not track users outside of our platform.</li><li>You can opt out of certain data collection practices.</li><li>We use secure protocols (HTTPS, TLS) for data transmission.</li><li>Personal data is deleted after extended inactivity.</li><li>We anonymize data where possible to enhance privacy.</li><li>Your data is not shared with advertisers without consent.</li><li>We store login timestamps for account security tracking.</li><li>You may request a copy of the data we have on you.</li><li>We implement access controls to protect sensitive data.</li><li>Data processing is limited to legitimate business operations.</li><li>We do not use facial recognition or biometric tracking.</li><li>We retain transaction records for financial security.</li><li>Your preferences and settings are stored securely.</li><li>Location data is collected only when explicitly enabled.</li><li>We do not share personal messages or private conversations.</li><li>We may use AI-powered analytics but not for profiling.</li><li>All stored data is periodically reviewed for relevance.</li><li>We use CAPTCHA systems to prevent automated abuse.</li><li>Your contact details are used only for essential communication.</li><li>We do not knowingly collect data from children under 13.</li><li>We respect “Do Not Track” browser settings where applicable.</li><li>Only authorized personnel have access to user data.</li><li>All third-party integrations comply with our privacy policies.</li><li>Third-party service providers must follow strict data policies.</li><li>Users have control over what data they share.</li><li>Data is never used for discriminatory purposes.</li><li>We do not collect banking details unless required for transactions.</li><li>Your data is never used for political or ideological targeting.</li><li>Stored emails are used solely for verification and notifications.</li><li>We provide clear options for unsubscribing from communications.</li><li>Only minimal personally identifiable information (PII) is stored.</li><li>We do not use dark patterns to force consent.</li><li>Personal data is stored for only as long as necessary.</li><li>All payment processing is handled by secure third-party providers.</li><li>Personal data is not shared with law enforcement without legal obligation.</li><li>Users are informed of major privacy policy changes.</li><li>We do not store raw biometric data.</li><li>We review data security measures regularly.</li><li>Users may opt out of non-essential data collection.</li><li>Data is collected transparently, with clear explanations.</li><li>We do not engage in excessive data collection practices.</li><li>Users may update their data preferences at any time.</li><li>We take immediate action in case of data breaches.</li><li>Users can report privacy concerns through official channels.</li><li>All data access is logged and monitored.</li><li>We maintain a dedicated security team for data protection.</li><li>Multi-layered encryption protects all stored data.</li><li>We do not use AI or machine learning to predict personal behavior.</li><li>We follow industry best practices for cybersecurity.</li><li>We implement rate limiting to prevent data scraping.</li><li>We comply with global privacy frameworks and best practices.</li><li>We allow users to delete their accounts permanently.</li><li>Data is stored on secure servers in privacy-compliant regions.</li><li>We require strong passwords to enhance security.</li><li>User-generated content is moderated for compliance.</li><li>Data collection policies are clearly stated in user settings.</li><li>Users are notified of any changes in data handling.</li><li>We have internal audits to ensure compliance.</li><li>We support anonymous usage where feasible.</li><li>We limit employee access to user data.</li><li>Privacy settings are accessible and easy to understand.</li><li>We do not engage in data resale or brokerage.</li><li>Session data is cleared after logout.</li><li>We do not collect unnecessary metadata from messages.</li><li>Users may adjust tracking settings within their profiles.</li><li>We provide transparency reports regarding data requests.</li><li>Users can deactivate tracking for targeted advertising.</li><li>Data portability requests are processed promptly.</li><li>All analytics are anonymized where possible.</li><li>We allow users to disable location tracking.</li><li>We minimize data collection on sign-up.</li><li>We do not require excessive permissions for mobile users.</li><li>Our logs are purged regularly for security.</li><li>We do not collect device fingerprints without consent.</li><li>Users are informed when their data is shared with partners.</li><li>All stored files undergo security checks.</li><li>Our privacy policies are regularly reviewed and updated.</li></ul><p>Read the full Privacy Policy <a href="#">here</a>.</p></div><div class="legal-section"><h2>Data Handling & Compliance</h2><p>We adhere to international data protection laws such as GDPR and CCPA. Your data will:</p><ul><li>We collect only the data necessary for service functionality.</li><li>All user data is securely stored with encryption.</li><li>We never sell user data to third parties.</li><li>Data is processed only for legitimate business purposes.</li><li>We comply with GDPR, CCPA, and other privacy regulations.</li><li>All stored data undergoes regular security audits.</li><li>User passwords are hashed and never stored in plain text.</li><li>We use secure cloud storage with end-to-end encryption.</li><li>Data is regularly backed up to prevent loss.</li><li>Access to sensitive data is strictly limited to authorized personnel.</li><li>All stored data is automatically deleted after a defined retention period.</li><li>We allow users to request a copy of their stored data.</li><li>Users may opt out of non-essential data collection.</li><li>We anonymize collected data whenever possible.</li><li>IP addresses are stored temporarily for security reasons.</li><li>We do not engage in excessive data logging.</li><li>Users can delete their accounts and associated data permanently.</li><li>Session data is automatically cleared upon logout.</li><li>We provide clear explanations on how user data is processed.</li><li>Third-party service providers must comply with our data policies.</li><li>Data encryption is enforced for all transmissions.</li><li>We limit data collection to necessary operational purposes.</li><li>We do not store sensitive personal information unless required.</li><li>All personal data is stored in secure, privacy-compliant regions.</li><li>We do not track users across third-party websites.</li><li>Data collected for analytics is aggregated and anonymized.</li><li>We comply with data deletion requests within a reasonable timeframe.</li><li>We have a strict access control policy for stored data.</li><li>User preferences and settings are stored securely.</li><li>Data retention policies are periodically reviewed and updated.</li><li>We implement real-time monitoring to prevent unauthorized access.</li><li>Multi-factor authentication is required for administrative access.</li><li>We provide users with transparency reports on data requests.</li><li>Data is not stored on insecure or unencrypted devices.</li><li>We do not retain search history beyond operational necessity.</li><li>Users are informed of significant changes to data handling policies.</li><li>Data portability requests are processed within legal guidelines.</li><li>We do not use automated decision-making that impacts user rights.</li><li>Data access logs are reviewed periodically to ensure compliance.</li><li>Only verified employees have access to sensitive data.</li><li>All stored emails are encrypted and used only for verification purposes.</li><li>We do not store user messages unless explicitly permitted.</li><li>We use CAPTCHA verification to prevent automated abuse.</li><li>User-generated content is moderated to ensure compliance.</li><li>We do not collect biometric or facial recognition data.</li><li>We maintain offline backups for critical data recovery.</li><li>We do not process personal data for targeted political advertising.</li><li>Our data centers implement physical and digital security measures.</li><li>All third-party integrations are vetted for compliance.</li><li>We do not engage in excessive metadata collection.</li><li>Data deletion is irreversible and processed within 30 days.</li><li>We notify users in case of a significant data breach.</li><li>Stored files undergo security checks before processing.</li><li>Users may request an audit of the data we store on them.</li><li>We allow users to disable tracking cookies.</li><li>We do not require unnecessary personal information for registration.</li><li>Stored logs are periodically purged to enhance privacy.</li><li>All third-party partners are contractually bound to follow our policies.</li><li>Location data is only collected when explicitly enabled by users.</li><li>We do not store device fingerprints for tracking purposes.</li><li>We maintain transparency regarding how data is used.</li><li>Stored transaction records are protected by financial security standards.</li><li>We do not profile users based on sensitive data.</li><li>Users can request explanations for automated decisions affecting them.</li><li>We ensure that stored backups do not contain unnecessary user data.</li><li>We do not collect voice recordings or other audio data.</li><li>Session tokens expire after a predefined period for security.</li><li>Data is only shared with authorities under a valid legal request.</li><li>We provide clear documentation on how data handling works.</li><li>Stored user preferences are encrypted for privacy.</li><li>Data loss prevention measures are in place to protect user information.</li><li>We continuously update security measures to prevent breaches.</li><li>Users may contact us to correct inaccurate personal data.</li><li>Stored data undergoes periodic integrity checks.</li><li>We follow international best practices for cybersecurity.</li><li>We provide an easily accessible data management dashboard.</li><li>Data stored on our servers is protected by strict access controls.</li><li>We do not use machine learning to predict private user behavior.</li><li>We regularly review data handling policies to ensure compliance.</li><li>Stored logs contain only essential diagnostic information.</li><li>Data is automatically purged from inactive accounts.</li><li>We conduct internal audits to detect potential vulnerabilities.</li><li>Data is not used to manipulate user choices.</li><li>We clearly explain all data handling practices.</li><li>We prevent unauthorized data scraping through security measures.</li><li>Users can adjust privacy settings at any time.</li><li>Stored chat logs are encrypted and only accessible by the user.</li><li>We do not store unnecessary personal identifiers.</li><li>We protect against unauthorized API access to user data.</li><li>We use AI responsibly without excessive data mining.</li><li>Data access logs are reviewed for suspicious activity.</li><li>Stored passwords are hashed using industry-standard algorithms.</li><li>We provide users with control over their data retention policies.</li><li>We do not process personal data for purposes unrelated to our services.</li><li>We allow users to restrict the visibility of their personal data.</li><li>We provide clear disclosures on all data collection methods.</li><li>We do not use data to create psychological profiles of users.</li><li>All data policies align with international human rights standards.</li><li>We take immediate action against security vulnerabilities.</li><li>Stored multimedia files undergo scanning for security threats.</li><li>We provide privacy training for employees handling user data.</li><li>Stored sensitive data is accessible only through secure authentication.</li></ul><p>Learn more about data handling <a href="#">here</a>.</p></div></div></div></body></html>
 
-            <div class="legal-section">
-                <h2>Privacy Policy</h2>
-                <p>We take your privacy seriously. Our policy covers:</p>
-                <ul>
-                    <li>What data we collect and why.</li>
-    <li>How we store and secure your information.</li>
-    <li>Your rights and how to manage your data.</li>
-    <li>We collect only necessary data required for service functionality.</li>
-    <li>Your data is encrypted and securely stored.</li>
-    <li>We do not sell your personal data to third parties.</li>
-    <li>All user data is protected against unauthorized access.</li>
-    <li>We may collect usage data for analytics and service improvement.</li>
-    <li>Cookies are used to enhance user experience.</li>
-    <li>You have the right to request data deletion.</li>
-    <li>We comply with GDPR, CCPA, and other privacy laws.</li>
-    <li>We log IP addresses for security purposes.</li>
-    <li>Two-factor authentication (2FA) is recommended for account security.</li>
-    <li>We do not store your passwords in plain text.</li>
-    <li>We only collect personal data you voluntarily provide.</li>
-    <li>Data backups are performed regularly for security.</li>
-    <li>We do not track users outside of our platform.</li>
-    <li>You can opt out of certain data collection practices.</li>
-    <li>We use secure protocols (HTTPS, TLS) for data transmission.</li>
-    <li>Personal data is deleted after extended inactivity.</li>
-    <li>We anonymize data where possible to enhance privacy.</li>
-    <li>Your data is not shared with advertisers without consent.</li>
-    <li>We store login timestamps for account security tracking.</li>
-    <li>You may request a copy of the data we have on you.</li>
-    <li>We implement access controls to protect sensitive data.</li>
-    <li>Data processing is limited to legitimate business operations.</li>
-    <li>We do not use facial recognition or biometric tracking.</li>
-    <li>We retain transaction records for financial security.</li>
-    <li>Your preferences and settings are stored securely.</li>
-    <li>Location data is collected only when explicitly enabled.</li>
-    <li>We do not share personal messages or private conversations.</li>
-    <li>We may use AI-powered analytics but not for profiling.</li>
-    <li>All stored data is periodically reviewed for relevance.</li>
-    <li>We use CAPTCHA systems to prevent automated abuse.</li>
-    <li>Your contact details are used only for essential communication.</li>
-    <li>We do not knowingly collect data from children under 13.</li>
-    <li>We respect “Do Not Track” browser settings where applicable.</li>
-    <li>Only authorized personnel have access to user data.</li>
-    <li>All third-party integrations comply with our privacy policies.</li>
-    <li>Third-party service providers must follow strict data policies.</li>
-    <li>Users have control over what data they share.</li>
-    <li>Data is never used for discriminatory purposes.</li>
-    <li>We do not collect banking details unless required for transactions.</li>
-    <li>Your data is never used for political or ideological targeting.</li>
-    <li>Stored emails are used solely for verification and notifications.</li>
-    <li>We provide clear options for unsubscribing from communications.</li>
-    <li>Only minimal personally identifiable information (PII) is stored.</li>
-    <li>We do not use dark patterns to force consent.</li>
-    <li>Personal data is stored for only as long as necessary.</li>
-    <li>All payment processing is handled by secure third-party providers.</li>
-    <li>Personal data is not shared with law enforcement without legal obligation.</li>
-    <li>Users are informed of major privacy policy changes.</li>
-    <li>We do not store raw biometric data.</li>
-    <li>We review data security measures regularly.</li>
-    <li>Users may opt out of non-essential data collection.</li>
-    <li>Data is collected transparently, with clear explanations.</li>
-    <li>We do not engage in excessive data collection practices.</li>
-    <li>Users may update their data preferences at any time.</li>
-    <li>We take immediate action in case of data breaches.</li>
-    <li>Users can report privacy concerns through official channels.</li>
-    <li>All data access is logged and monitored.</li>
-    <li>We maintain a dedicated security team for data protection.</li>
-    <li>Multi-layered encryption protects all stored data.</li>
-    <li>We do not use AI or machine learning to predict personal behavior.</li>
-    <li>We follow industry best practices for cybersecurity.</li>
-    <li>We implement rate limiting to prevent data scraping.</li>
-    <li>We comply with global privacy frameworks and best practices.</li>
-    <li>We allow users to delete their accounts permanently.</li>
-    <li>Data is stored on secure servers in privacy-compliant regions.</li>
-    <li>We require strong passwords to enhance security.</li>
-    <li>User-generated content is moderated for compliance.</li>
-    <li>Data collection policies are clearly stated in user settings.</li>
-    <li>Users are notified of any changes in data handling.</li>
-    <li>We have internal audits to ensure compliance.</li>
-    <li>We support anonymous usage where feasible.</li>
-    <li>We limit employee access to user data.</li>
-    <li>Privacy settings are accessible and easy to understand.</li>
-    <li>We do not engage in data resale or brokerage.</li>
-    <li>Session data is cleared after logout.</li>
-    <li>We do not collect unnecessary metadata from messages.</li>
-    <li>Users may adjust tracking settings within their profiles.</li>
-    <li>We provide transparency reports regarding data requests.</li>
-    <li>Users can deactivate tracking for targeted advertising.</li>
-    <li>Data portability requests are processed promptly.</li>
-    <li>All analytics are anonymized where possible.</li>
-    <li>We allow users to disable location tracking.</li>
-    <li>We minimize data collection on sign-up.</li>
-    <li>We do not require excessive permissions for mobile users.</li>
-    <li>Our logs are purged regularly for security.</li>
-    <li>We do not collect device fingerprints without consent.</li>
-    <li>Users are informed when their data is shared with partners.</li>
-    <li>All stored files undergo security checks.</li>
-    <li>Our privacy policies are regularly reviewed and updated.</li>
-                </ul>
-                <p>Read the full Privacy Policy <a href="#">here</a>.</p>
-            </div>
-
-            <div class="legal-section">
-                <h2>Data Handling & Compliance</h2>
-                <p>We adhere to international data protection laws such as GDPR and CCPA. Your data will:</p>
-                <ul>
-                    <li>We collect only the data necessary for service functionality.</li>
-    <li>All user data is securely stored with encryption.</li>
-    <li>We never sell user data to third parties.</li>
-    <li>Data is processed only for legitimate business purposes.</li>
-    <li>We comply with GDPR, CCPA, and other privacy regulations.</li>
-    <li>All stored data undergoes regular security audits.</li>
-    <li>User passwords are hashed and never stored in plain text.</li>
-    <li>We use secure cloud storage with end-to-end encryption.</li>
-    <li>Data is regularly backed up to prevent loss.</li>
-    <li>Access to sensitive data is strictly limited to authorized personnel.</li>
-    <li>All stored data is automatically deleted after a defined retention period.</li>
-    <li>We allow users to request a copy of their stored data.</li>
-    <li>Users may opt out of non-essential data collection.</li>
-    <li>We anonymize collected data whenever possible.</li>
-    <li>IP addresses are stored temporarily for security reasons.</li>
-    <li>We do not engage in excessive data logging.</li>
-    <li>Users can delete their accounts and associated data permanently.</li>
-    <li>Session data is automatically cleared upon logout.</li>
-    <li>We provide clear explanations on how user data is processed.</li>
-    <li>Third-party service providers must comply with our data policies.</li>
-    <li>Data encryption is enforced for all transmissions.</li>
-    <li>We limit data collection to necessary operational purposes.</li>
-    <li>We do not store sensitive personal information unless required.</li>
-    <li>All personal data is stored in secure, privacy-compliant regions.</li>
-    <li>We do not track users across third-party websites.</li>
-    <li>Data collected for analytics is aggregated and anonymized.</li>
-    <li>We comply with data deletion requests within a reasonable timeframe.</li>
-    <li>We have a strict access control policy for stored data.</li>
-    <li>User preferences and settings are stored securely.</li>
-    <li>Data retention policies are periodically reviewed and updated.</li>
-    <li>We implement real-time monitoring to prevent unauthorized access.</li>
-    <li>Multi-factor authentication is required for administrative access.</li>
-    <li>We provide users with transparency reports on data requests.</li>
-    <li>Data is not stored on insecure or unencrypted devices.</li>
-    <li>We do not retain search history beyond operational necessity.</li>
-    <li>Users are informed of significant changes to data handling policies.</li>
-    <li>Data portability requests are processed within legal guidelines.</li>
-    <li>We do not use automated decision-making that impacts user rights.</li>
-    <li>Data access logs are reviewed periodically to ensure compliance.</li>
-    <li>Only verified employees have access to sensitive data.</li>
-    <li>All stored emails are encrypted and used only for verification purposes.</li>
-    <li>We do not store user messages unless explicitly permitted.</li>
-    <li>We use CAPTCHA verification to prevent automated abuse.</li>
-    <li>User-generated content is moderated to ensure compliance.</li>
-    <li>We do not collect biometric or facial recognition data.</li>
-    <li>We maintain offline backups for critical data recovery.</li>
-    <li>We do not process personal data for targeted political advertising.</li>
-    <li>Our data centers implement physical and digital security measures.</li>
-    <li>All third-party integrations are vetted for compliance.</li>
-    <li>We do not engage in excessive metadata collection.</li>
-    <li>Data deletion is irreversible and processed within 30 days.</li>
-    <li>We notify users in case of a significant data breach.</li>
-    <li>Stored files undergo security checks before processing.</li>
-    <li>Users may request an audit of the data we store on them.</li>
-    <li>We allow users to disable tracking cookies.</li>
-    <li>We do not require unnecessary personal information for registration.</li>
-    <li>Stored logs are periodically purged to enhance privacy.</li>
-    <li>All third-party partners are contractually bound to follow our policies.</li>
-    <li>Location data is only collected when explicitly enabled by users.</li>
-    <li>We do not store device fingerprints for tracking purposes.</li>
-    <li>We maintain transparency regarding how data is used.</li>
-    <li>Stored transaction records are protected by financial security standards.</li>
-    <li>We do not profile users based on sensitive data.</li>
-    <li>Users can request explanations for automated decisions affecting them.</li>
-    <li>We ensure that stored backups do not contain unnecessary user data.</li>
-    <li>We do not collect voice recordings or other audio data.</li>
-    <li>Session tokens expire after a predefined period for security.</li>
-    <li>Data is only shared with authorities under a valid legal request.</li>
-    <li>We provide clear documentation on how data handling works.</li>
-    <li>Stored user preferences are encrypted for privacy.</li>
-    <li>Data loss prevention measures are in place to protect user information.</li>
-    <li>We continuously update security measures to prevent breaches.</li>
-    <li>Users may contact us to correct inaccurate personal data.</li>
-    <li>Stored data undergoes periodic integrity checks.</li>
-    <li>We follow international best practices for cybersecurity.</li>
-    <li>We provide an easily accessible data management dashboard.</li>
-    <li>Data stored on our servers is protected by strict access controls.</li>
-    <li>We do not use machine learning to predict private user behavior.</li>
-    <li>We regularly review data handling policies to ensure compliance.</li>
-    <li>Stored logs contain only essential diagnostic information.</li>
-    <li>Data is automatically purged from inactive accounts.</li>
-    <li>We conduct internal audits to detect potential vulnerabilities.</li>
-    <li>Data is not used to manipulate user choices.</li>
-    <li>We clearly explain all data handling practices.</li>
-    <li>We prevent unauthorized data scraping through security measures.</li>
-    <li>Users can adjust privacy settings at any time.</li>
-    <li>Stored chat logs are encrypted and only accessible by the user.</li>
-    <li>We do not store unnecessary personal identifiers.</li>
-    <li>We protect against unauthorized API access to user data.</li>
-    <li>We use AI responsibly without excessive data mining.</li>
-    <li>Data access logs are reviewed for suspicious activity.</li>
-    <li>Stored passwords are hashed using industry-standard algorithms.</li>
-    <li>We provide users with control over their data retention policies.</li>
-    <li>We do not process personal data for purposes unrelated to our services.</li>
-    <li>We allow users to restrict the visibility of their personal data.</li>
-    <li>We provide clear disclosures on all data collection methods.</li>
-    <li>We do not use data to create psychological profiles of users.</li>
-    <li>All data policies align with international human rights standards.</li>
-    <li>We take immediate action against security vulnerabilities.</li>
-    <li>Stored multimedia files undergo scanning for security threats.</li>
-    <li>We provide privacy training for employees handling user data.</li>
-    <li>Stored sensitive data is accessible only through secure authentication.</li>
-                </ul>
-                <p>Learn more about data handling <a href="#">here</a>.</p>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
 `);
 });
 
@@ -7040,7 +5112,7 @@ app.get('/tickets', (req, res) => {
             </div>
 
             <!-- hCaptcha Widget -->
-            <div class="h-captcha" data-sitekey="#####################" data-callback="onCaptchaVerified"></div>
+            <div class="h-captcha" data-sitekey="c3d047fe-4c10-4718-8e0a-85606d44518a" data-callback="onCaptchaVerified"></div>
 
             <button id="submitTicketBtn" type="submit" disabled>
                 <i class="fas fa-paper-plane"></i> Submit Ticket
@@ -7460,12 +5532,12 @@ app.get('/chat', (req, res) => {
         }
     </style>
 </head>
-<script src="https://www.google.com/recaptcha/api.js?render=#######################"></script>
+<script src="https://www.google.com/recaptcha/api.js?render=6Le3N9YqAAAAAA4zcPOhyd0DhiPPj8y0ynMWMHCB"></script>
 <body>
 
     <div class="captcha-overlay" id="captchaOverlay">
         <div class="captcha-box">
-            <div class="h-captcha" data-sitekey="####################" data-callback="onCaptchaSuccess"></div>
+            <div class="h-captcha" data-sitekey="c3d047fe-4c10-4718-8e0a-85606d44518a" data-callback="onCaptchaSuccess"></div>
         </div>
     </div>
 
@@ -7489,8 +5561,2728 @@ app.get('/chat', (req, res) => {
         const chatContainer = document.getElementById('chatContainer');
 
         const blockedWords = [
-  "All censore",
-  "They bad"
+  "2 girls 1 cup",
+  "2g1c",
+  "4r5e",
+  "5h1t",
+  "5hit",
+  "5ht",
+  "@$$",
+  "a s s",
+  "a s shole",
+  "a55",
+  "a55hole",
+  "a_s_s",
+  "abbo",
+  "abeed",
+  "abuse",
+  "acrotomophilia",
+  "africoon",
+  "ahole",
+  "alabama hot pocket",
+  "alaskan pipeline",
+  "alligator bait",
+  "alligatorbait",
+  "amcik",
+  "anal",
+  "analannie",
+  "analprobe",
+  "analsex",
+  "andskota",
+  "anilingus",
+  "anus",
+  "apeshit",
+  "ar5e",
+  "arabush",
+  "arabushs",
+  "areola",
+  "areole",
+  "argie",
+  "armo",
+  "armos",
+  "arrse",
+  "arschloch",
+  "arse",
+  "arsehole",
+  "aryan",
+  "ash0le",
+  "ash0les",
+  "asholes",
+  "ass monkey",
+  "ass",
+  "ass-fucker",
+  "ass-hat",
+  "ass-pirate",
+  "assbag",
+  "assbagger",
+  "assbandit",
+  "assbang",
+  "assbanged",
+  "assbanger",
+  "assbangs",
+  "assbite",
+  "assblaster",
+  "assclown",
+  "asscock",
+  "asscowboy",
+  "asscracker",
+  "asses",
+  "assface",
+  "assfuck",
+  "assfucker",
+  "assfukka",
+  "assgoblin",
+  "assh0le",
+  "assh0lez",
+  "asshat",
+  "asshead",
+  "assho1e",
+  "asshole",
+  "assholes",
+  "assholz",
+  "asshopper",
+  "asshore",
+  "assjacker",
+  "assjockey",
+  "asskiss",
+  "asskisser",
+  "assklown",
+  "asslick",
+  "asslicker",
+  "asslover",
+  "assman",
+  "assmaster",
+  "assmonkey",
+  "assmunch",
+  "assmuncher",
+  "assnigger",
+  "asspacker",
+  "asspirate",
+  "asspuppies",
+  "assrammer",
+  "assranger",
+  "assshit",
+  "assshole",
+  "asssucker",
+  "asswad",
+  "asswhole",
+  "asswhore",
+  "asswipe",
+  "asswipes",
+  "auto erotic",
+  "autoerotic",
+  "ayir",
+  "azazel",
+  "azz",
+  "azzhole",
+  "b a s t a r d",
+  "b i t c h",
+  "b o o b",
+  "b!+ch",
+  "b!tch",
+  "b!tchin",
+  "b*tch",
+  "b00b",
+  "b00bies",
+  "b00biez",
+  "b00bs",
+  "b00bz",
+  "b17ch",
+  "b1tch",
+  "b7ch",
+  "babeland",
+  "babes",
+  "baby batter",
+  "baby juice",
+  "backdoorman",
+  "badfuck",
+  "ball gag",
+  "ball gravy",
+  "ball kicking",
+  "ball licking",
+  "ball sack",
+  "ball sucking",
+  "ballbag",
+  "balllicker",
+  "ballsack",
+  "bampot",
+  "bangbro",
+  "bangbros",
+  "bangbus",
+  "bareback",
+  "barely legal",
+  "barelylegal",
+  "barenaked",
+  "barface",
+  "barfface",
+  "bassterd",
+  "bassterds",
+  "bastard",
+  "bastardo",
+  "bastards",
+  "bastardz",
+  "basterds",
+  "basterdz",
+  "bastinado",
+  "bazongas",
+  "bazooms",
+  "bbw",
+  "bdsm",
+  "beaner",
+  "beaners",
+  "beaney",
+  "beaneys",
+  "beardedclam",
+  "beastality",
+  "beastial",
+  "beastiality",
+  "beastility",
+  "beatch",
+  "beatoff",
+  "beatyourmeat",
+  "beaver cleaver",
+  "beaver lips",
+  "beef curtains",
+  "beeyotch",
+  "bellend",
+  "beotch",
+  "bestial",
+  "bestiality",
+  "bi curious",
+  "bi+ch",
+  "bi7ch",
+  "biatch",
+  "bicurious",
+  "big black",
+  "big breasts",
+  "big knockers",
+  "big tits",
+  "bigass",
+  "bigbastard",
+  "bigbreasts",
+  "bigbutt",
+  "bigtits",
+  "bimbo",
+  "bimbos",
+  "bint",
+  "birdlock",
+  "bitch",
+  "bitchass",
+  "bitched",
+  "bitcher",
+  "bitchers",
+  "bitches",
+  "bitchez",
+  "bitchin",
+  "bitching",
+  "bitchslap",
+  "bitchtit",
+  "bitchy",
+  "biteme",
+  "bitties",
+  "black cock",
+  "blackcock",
+  "blackman",
+  "blacks",
+  "blonde action",
+  "blonde on blonde action",
+  "blonde on blonde",
+  "bloodclaat",
+  "blow j",
+  "blow job",
+  "blow your l",
+  "blow your load",
+  "blowjob",
+  "blowjobs",
+  "blue waffle",
+  "bluegum",
+  "bluegums",
+  "blumpkin",
+  "bo ob",
+  "bo obs",
+  "boang",
+  "boche",
+  "boches",
+  "boffing",
+  "bogan",
+  "bohunk",
+  "boink",
+  "boiolas",
+  "bollick",
+  "bollock",
+  "bollocks",
+  "bollok",
+  "bollox",
+  "bombers",
+  "bomd",
+  "bondage",
+  "boned",
+  "boner",
+  "boners",
+  "bong",
+  "boong",
+  "boonga",
+  "boongas",
+  "boongs",
+  "boonie",
+  "boonies",
+  "booobs",
+  "boooobs",
+  "booooobs",
+  "booooooobs",
+  "bootee",
+  "bootlip",
+  "bootlips",
+  "boozer",
+  "bosch",
+  "bosche",
+  "bosches",
+  "boschs",
+  "bosomy",
+  "bounty bar",
+  "bounty bars",
+  "bountybar",
+  "brea5t",
+  "breastjob",
+  "breastlover",
+  "breastman",
+  "brown shower",
+  "brown showers",
+  "brunette action",
+  "btch",
+  "buceta",
+  "buddhahead",
+  "buddhaheads",
+  "buffies",
+  "bugger",
+  "buggered",
+  "buggery",
+  "bukake",
+  "bukkake",
+  "bullcrap",
+  "bulldike",
+  "bulldyke",
+  "bullet vibe",
+  "bullshit",
+  "bullshits",
+  "bullshitted",
+  "bullturds",
+  "bumblefuck",
+  "bumfuck",
+  "bung hole",
+  "bung",
+  "bunga",
+  "bungas",
+  "bunghole",
+  "bunny fucker",
+  "burr head",
+  "burr heads",
+  "burrhead",
+  "burrheads",
+  "butchbabes",
+  "butchdike",
+  "butchdyke",
+  "butt plug",
+  "butt-pirate",
+  "buttbang",
+  "buttcheeks",
+  "buttface",
+  "buttfuck",
+  "buttfucker",
+  "buttfuckers",
+  "butthead",
+  "butthole",
+  "buttman",
+  "buttmuch",
+  "buttmunch",
+  "buttmuncher",
+  "buttpirate",
+  "buttplug",
+  "buttstain",
+  "buttwipe",
+  "byatch",
+  "c u n t",
+  "c-0-c-k",
+  "c-o-c-k",
+  "c-u-n-t",
+  "c.0.c.k",
+  "c.o.c.k.",
+  "c.u.n.t",
+  "c0ck",
+  "c0cks",
+  "c0cksucker",
+  "c0k",
+  "cabron",
+  "caca",
+  "cacker",
+  "cahone",
+  "camel jockey",
+  "camel jockeys",
+  "camel toe",
+  "cameljockey",
+  "cameltoe",
+  "camgirl",
+  "camslut",
+  "camwhore",
+  "carpet muncher",
+  "carpetmuncher",
+  "carruth",
+  "cawk",
+  "cawks",
+  "cazzo",
+  "chav",
+  "cheese eating surrender monkey",
+  "cheese eating surrender monkies",
+  "cheeseeating surrender monkey",
+  "cheeseeating surrender monkies",
+  "cheesehead",
+  "cheeseheads",
+  "cherrypopper",
+  "chickslick",
+  "china swede",
+  "china swedes",
+  "chinaman",
+  "chinamen",
+  "chinaswede",
+  "chinaswedes",
+  "chinc",
+  "chincs",
+  "ching chong",
+  "ching chongs",
+  "chinga",
+  "chingchong",
+  "chingchongs",
+  "chink",
+  "chinks",
+  "chinky",
+  "choad",
+  "chocolate rosebuds",
+  "chode",
+  "chodes",
+  "chonkies",
+  "chonky",
+  "chonkys",
+  "chraa",
+  "christ killer",
+  "christ killers",
+  "chug",
+  "chugs",
+  "chuj",
+  "chunger",
+  "chungers",
+  "chunkies",
+  "chunkys",
+  "cipa",
+  "circlejerk",
+  "cl1t",
+  "clamdigger",
+  "clamdiver",
+  "clamps",
+  "clansman",
+  "clansmen",
+  "clanswoman",
+  "clanswomen",
+  "cleveland steamer",
+  "clit",
+  "clitface",
+  "clitfuck",
+  "clitoris",
+  "clitorus",
+  "clits",
+  "clitty",
+  "clogwog",
+  "clover clamps",
+  "clusterfuck",
+  "cnts",
+  "cntz",
+  "cnut",
+  "cocain",
+  "cocaine",
+  "cock",
+  "cock-head",
+  "cock-sucker",
+  "cockbite",
+  "cockblock",
+  "cockblocker",
+  "cockburger",
+  "cockcowboy",
+  "cockface",
+  "cockfight",
+  "cockfucker",
+  "cockhead",
+  "cockholster",
+  "cockjockey",
+  "cockknob",
+  "cockknocker",
+  "cockknoker",
+  "cocklicker",
+  "cocklover",
+  "cockmaster",
+  "cockmongler",
+  "cockmongruel",
+  "cockmonkey",
+  "cockmunch",
+  "cockmuncher",
+  "cocknob",
+  "cocknose",
+  "cocknugget",
+  "cockqueen",
+  "cockrider",
+  "cocks",
+  "cockshit",
+  "cocksman",
+  "cocksmith",
+  "cocksmoker",
+  "cocksucer",
+  "cocksuck",
+  "cocksucked",
+  "cocksucker",
+  "cocksucking",
+  "cocksucks",
+  "cocksuka",
+  "cocksukka",
+  "cocktease",
+  "cocky",
+  "cohee",
+  "coital",
+  "coitus",
+  "cok",
+  "cokmuncher",
+  "coksucka",
+  "condom",
+  "coochie",
+  "coochy",
+  "coolie",
+  "coolies",
+  "cooly",
+  "coon ass",
+  "coon asses",
+  "coonass",
+  "coonasses",
+  "coondog",
+  "coons",
+  "cooter",
+  "coprolagnia",
+  "coprophilia",
+  "copulate",
+  "corksucker",
+  "cornhole",
+  "cra5h",
+  "crackcocain",
+  "crackpipe",
+  "crackwhore",
+  "crap",
+  "crapola",
+  "crapper",
+  "crappy",
+  "creampie",
+  "crotchjockey",
+  "crotchmonkey",
+  "crotchrot",
+  "cuck",
+  "cum face",
+  "cum licker",
+  "cum",
+  "cumbubble",
+  "cumdumpster",
+  "cumfest",
+  "cumguzzler",
+  "cuming",
+  "cumjockey",
+  "cumlickr",
+  "cumm",
+  "cummer",
+  "cummin",
+  "cumming",
+  "cumquat",
+  "cumqueen",
+  "cums",
+  "cumshot",
+  "cumshots",
+  "cumslut",
+  "cumstain",
+  "cumsucker",
+  "cumtart",
+  "cunilingus",
+  "cunillingus",
+  "cunn",
+  "cunnie",
+  "cunnilingus",
+  "cunntt",
+  "cunny",
+  "cunt",
+  "cunteyed",
+  "cuntface",
+  "cuntfuck",
+  "cuntfucker",
+  "cunthole",
+  "cunthunter",
+  "cuntlick",
+  "cuntlicker",
+  "cuntlicking",
+  "cuntrag",
+  "cunts",
+  "cuntslut",
+  "cuntsucker",
+  "cuntz",
+  "curry muncher",
+  "curry munchers",
+  "currymuncher",
+  "currymunchers",
+  "cushi",
+  "cushis",
+  "cyalis",
+  "cyberfuc",
+  "cyberfuck",
+  "cyberfucked",
+  "cyberfucker",
+  "cyberfuckers",
+  "cyberfucking",
+  "cybersex",
+  "cyberslimer",
+  "d0ng",
+  "d0uch3",
+  "d0uche",
+  "d1ck",
+  "d1ld0",
+  "d1ldo",
+  "d4mn",
+  "dago",
+  "dagos",
+  "dahmer",
+  "damm",
+  "dammit",
+  "damn",
+  "damnit",
+  "darkey",
+  "darkeys",
+  "darkie",
+  "darkies",
+  "darky",
+  "date rape",
+  "daterape",
+  "datnigga",
+  "dawgie style",
+  "dawgie-style",
+  "daygo",
+  "deapthroat",
+  "deep throat",
+  "deep throating",
+  "deepaction",
+  "deepthroat",
+  "deepthroating",
+  "defecate",
+  "deggo",
+  "dego",
+  "degos",
+  "dendrophilia",
+  "destroyyourpussy",
+  "deth",
+  "diaper daddy",
+  "diaper head",
+  "diaper heads",
+  "diaperdaddy",
+  "diaperhead",
+  "diaperheads",
+  "dick pic",
+  "dick",
+  "dick-ish",
+  "dickbag",
+  "dickbeater",
+  "dickbeaters",
+  "dickbrain",
+  "dickdipper",
+  "dickface",
+  "dickflipper",
+  "dickforbrains",
+  "dickfuck",
+  "dickhead",
+  "dickheads",
+  "dickhole",
+  "dickish",
+  "dickjuice",
+  "dickless",
+  "dicklick",
+  "dicklicker",
+  "dickman",
+  "dickmilk",
+  "dickmonger",
+  "dickpic",
+  "dickripper",
+  "dicks",
+  "dicksipper",
+  "dickslap",
+  "dickslicker",
+  "dicksucker",
+  "dickwad",
+  "dickweasel",
+  "dickweed",
+  "dickwhipper",
+  "dickwod",
+  "dickzipper",
+  "diddle",
+  "dike",
+  "dild0",
+  "dild0s",
+  "dildo",
+  "dildos",
+  "dilf",
+  "diligaf",
+  "dilld0",
+  "dilld0s",
+  "dillweed",
+  "dimwit",
+  "dingle",
+  "dingleberries",
+  "dingleberry",
+  "dink",
+  "dinks",
+  "dipship",
+  "dipshit",
+  "dipstick",
+  "dirsa",
+  "dirty pillows",
+  "dirty sanchez",
+  "dix",
+  "dixiedike",
+  "dixiedyke",
+  "dlck",
+  "dog style",
+  "dog-fucker",
+  "doggie style",
+  "doggie",
+  "doggie-style",
+  "doggiestyle",
+  "doggin",
+  "dogging",
+  "doggy style",
+  "doggy-style",
+  "doggystyle",
+  "dolcett",
+  "dominatricks",
+  "dominatrics",
+  "dominatrix",
+  "dommes",
+  "dong",
+  "donkey punch",
+  "donkeypunch",
+  "donkeyribber",
+  "doochbag",
+  "doodoo",
+  "doofus",
+  "dookie",
+  "doosh",
+  "dot head",
+  "dot heads",
+  "dothead",
+  "dotheads",
+  "double dong",
+  "double penetration",
+  "doubledong",
+  "doublepenetration",
+  "douch3",
+  "douche bag",
+  "douche",
+  "douche-fag",
+  "douchebag",
+  "douchebags",
+  "douchewaffle",
+  "douchey",
+  "dp action",
+  "dpaction",
+  "dragqueen",
+  "dragqween",
+  "dripdick",
+  "dry hump",
+  "dryhump",
+  "duche",
+  "dudette",
+  "dumass",
+  "dumb ass",
+  "dumbass",
+  "dumbasses",
+  "dumbbitch",
+  "dumbfuck",
+  "dumbshit",
+  "dumshit",
+  "dune coon",
+  "dune coons",
+  "dupa",
+  "dvda",
+  "dyefly",
+  "dyke",
+  "dykes",
+  "dziwka",
+  "earotics",
+  "easyslut",
+  "eat my ass",
+  "eat my",
+  "eatadick",
+  "eatballs",
+  "eathairpie",
+  "eatme",
+  "eatmyass",
+  "eatpussy",
+  "ecchi",
+  "ejackulate",
+  "ejakulate",
+  "ekrem",
+  "ekto",
+  "enculer",
+  "enema",
+  "erection",
+  "ero",
+  "erotic",
+  "erotism",
+  "esqua",
+  "essohbee",
+  "ethical slut",
+  "evl",
+  "excrement",
+  "exkwew",
+  "extacy",
+  "extasy",
+  "f u c k e r",
+  "f u c k e",
+  "f u c k",
+  "f u k",
+  "f*ck",
+  "f-u-c-k",
+  "f.u.c.k",
+  "f4nny",
+  "f_u_c_k",
+  "facefucker",
+  "fack",
+  "faeces",
+  "faen",
+  "fag",
+  "fag1t",
+  "fagbag",
+  "faget",
+  "fagfucker",
+  "fagg",
+  "fagg1t",
+  "fagged",
+  "fagging",
+  "faggit",
+  "faggitt",
+  "faggot",
+  "faggotcock",
+  "faggs",
+  "fagit",
+  "fagot",
+  "fagots",
+  "fags",
+  "fagt",
+  "fagtard",
+  "fagz",
+  "faig",
+  "faigs",
+  "faigt",
+  "fanculo",
+  "fannybandit",
+  "fannyflaps",
+  "fannyfucker",
+  "fanyy",
+  "fartknocker",
+  "fastfuck",
+  "fatah",
+  "fatfuck",
+  "fatfucker",
+  "fatso",
+  "fck",
+  "fckcum",
+  "fckd",
+  "fcuk",
+  "fcuker",
+  "fcuking",
+  "fecal",
+  "feck",
+  "fecker",
+  "feg",
+  "felatio",
+  "felch",
+  "felcher",
+  "felching",
+  "fellate",
+  "fellatio",
+  "feltch",
+  "feltcher",
+  "feltching",
+  "female squirting",
+  "femalesquirtin",
+  "femalesquirting",
+  "femdom",
+  "fetish",
+  "ficken",
+  "figging",
+  "fingerbang",
+  "fingerfood",
+  "fingerfuck",
+  "fingerfucked",
+  "fingerfucker",
+  "fingerfuckers",
+  "fingerfucking",
+  "fingerfucks",
+  "fingering",
+  "fisted",
+  "fister",
+  "fistfuck",
+  "fistfucked",
+  "fistfucker",
+  "fistfuckers",
+  "fistfucking",
+  "fistfuckings",
+  "fistfucks",
+  "fisting",
+  "fisty",
+  "fitt",
+  "flamer",
+  "flasher",
+  "flikker",
+  "flipping the bird",
+  "flogthelog",
+  "floo",
+  "floozy",
+  "flydie",
+  "flydye",
+  "foad",
+  "fok",
+  "fondle",
+  "foobar",
+  "fook",
+  "fooker",
+  "foot fetish",
+  "footaction",
+  "footfetish",
+  "footfuck",
+  "footfucker",
+  "footjob",
+  "footlicker",
+  "footstar",
+  "foreskin",
+  "forni",
+  "fornicate",
+  "fotze",
+  "foursome",
+  "fourtwenty",
+  "freakfuck",
+  "freakyfucker",
+  "freefuck",
+  "freex",
+  "frigg",
+  "frigga",
+  "frigger",
+  "frotting",
+  "fucck",
+  "fuck",
+  "fuck-tard",
+  "fucka",
+  "fuckable",
+  "fuckass",
+  "fuckbag",
+  "fuckbitch",
+  "fuckbook",
+  "fuckboy",
+  "fuckbrain",
+  "fuckbuddy",
+  "fuckbutt",
+  "fuckd",
+  "fucked",
+  "fuckedup",
+  "fucker",
+  "fuckers",
+  "fuckersucker",
+  "fuckface",
+  "fuckfest",
+  "fuckfreak",
+  "fuckfriend",
+  "fuckhead",
+  "fuckheads",
+  "fuckher",
+  "fuckhole",
+  "fuckin",
+  "fuckina",
+  "fucking",
+  "fuckingbitch",
+  "fuckings",
+  "fuckingshitmotherfucker",
+  "fuckinnuts",
+  "fuckinright",
+  "fuckit",
+  "fuckknob",
+  "fuckme",
+  "fuckmeat",
+  "fuckmehard",
+  "fuckmonkey",
+  "fuckn",
+  "fucknugget",
+  "fucknut",
+  "fucknuts",
+  "fucknutt",
+  "fucknutz",
+  "fuckoff",
+  "fuckpig",
+  "fuckpuppet",
+  "fuckr",
+  "fucks",
+  "fuckstick",
+  "fucktard",
+  "fucktards",
+  "fucktoy",
+  "fucktrophy",
+  "fuckup",
+  "fuckwad",
+  "fuckwhit",
+  "fuckwhore",
+  "fuckwit",
+  "fuckwitt",
+  "fuckyomama",
+  "fuckyou",
+  "fudge packer",
+  "fudgepacker",
+  "fugly",
+  "fuk",
+  "fukah",
+  "fuken",
+  "fuker",
+  "fukin",
+  "fuking",
+  "fukk",
+  "fukkah",
+  "fukken",
+  "fukker",
+  "fukkin",
+  "fukking",
+  "fuks",
+  "fuktard",
+  "fuktards",
+  "fukwhit",
+  "fukwit",
+  "funfuck",
+  "futanari",
+  "futanary",
+  "futkretzn",
+  "fuuck",
+  "fux",
+  "fux0r",
+  "fuxor",
+  "fvck",
+  "fvk",
+  "fxck",
+  "g-spot",
+  "g00k",
+  "gae",
+  "gai",
+  "gang bang",
+  "gangbang",
+  "gangbanged",
+  "gangbanger",
+  "gangbangs",
+  "ganja",
+  "gassyass",
+  "gator bait",
+  "gatorbait",
+  "gay sex",
+  "gayass",
+  "gaybob",
+  "gayboy",
+  "gaydo",
+  "gaygirl",
+  "gaylord",
+  "gaymuthafuckinwhore",
+  "gays",
+  "gaysex",
+  "gaytard",
+  "gaywad",
+  "gayz",
+  "geezer",
+  "geni",
+  "genital",
+  "genitals",
+  "getiton",
+  "gey",
+  "gfy",
+  "ghay",
+  "ghey",
+  "giant cock",
+  "gigolo",
+  "ginzo",
+  "ginzos",
+  "gipp",
+  "gippo",
+  "gippos",
+  "gipps",
+  "girl on top",
+  "girl on",
+  "girls gone wild",
+  "givehead",
+  "glans",
+  "glazeddonut",
+  "goatcx",
+  "goatse",
+  "god dammit",
+  "god damn",
+  "god damnit",
+  "god-dam",
+  "god-damned",
+  "godam",
+  "godammit",
+  "godamn",
+  "godamnit",
+  "goddam",
+  "goddamit",
+  "goddamm",
+  "goddammit",
+  "goddamn",
+  "goddamned",
+  "goddamnes",
+  "goddamnit",
+  "goddamnmuthafucker",
+  "godsdamn",
+  "gokkun",
+  "golden shower",
+  "goldenshower",
+  "golliwog",
+  "golliwogs",
+  "gonad",
+  "gonads",
+  "gonorrehea",
+  "gonzagas",
+  "goo girl",
+  "gooch",
+  "goodpoop",
+  "gook eye",
+  "gook eyes",
+  "gook",
+  "gookeye",
+  "gookeyes",
+  "gookies",
+  "gooks",
+  "gooky",
+  "gora",
+  "goras",
+  "goregasm",
+  "gotohell",
+  "goy",
+  "goyim",
+  "greaseball",
+  "greaseballs",
+  "groe",
+  "groid",
+  "groids",
+  "grope",
+  "grostulation",
+  "group sex",
+  "gspot",
+  "gstring",
+  "gtfo",
+  "gub",
+  "gubba",
+  "gubbas",
+  "gubs",
+  "guido",
+  "guiena",
+  "guineas",
+  "guizi",
+  "gummer",
+  "guro",
+  "gwailo",
+  "gwailos",
+  "gweilo",
+  "gweilos",
+  "gyopo",
+  "gyopos",
+  "gyp",
+  "gyped",
+  "gypo",
+  "gypos",
+  "gypp",
+  "gypped",
+  "gyppie",
+  "gyppies",
+  "gyppo",
+  "gyppos",
+  "gyppy",
+  "gyppys",
+  "gypsys",
+  "h e l l",
+  "h o m",
+  "h00r",
+  "h0ar",
+  "h0m0",
+  "h0mo",
+  "h0r",
+  "h0re",
+  "h4x0r",
+  "hadji",
+  "hadjis",
+  "hairyback",
+  "hairybacks",
+  "haji",
+  "hajis",
+  "hajji",
+  "hajjis",
+  "half breed",
+  "half caste",
+  "halfbreed",
+  "halfcaste",
+  "hamas",
+  "hamflap",
+  "hand job",
+  "handjob",
+  "haole",
+  "haoles",
+  "hapa",
+  "hard core",
+  "hardcore",
+  "hardcoresex",
+  "hardon",
+  "he11",
+  "headfuck",
+  "hebe",
+  "hebes",
+  "heeb",
+  "heebs",
+  "hells",
+  "helvete",
+  "hentai",
+  "heroin",
+  "herp",
+  "herpes",
+  "herpy",
+  "heshe",
+  "hijacking",
+  "hillbillies",
+  "hillbilly",
+  "hindoo",
+  "hiscock",
+  "hitler",
+  "hitlerism",
+  "hitlerist",
+  "hoare",
+  "hobag",
+  "hodgie",
+  "hoer",
+  "hoes",
+  "holestuffer",
+  "hom0",
+  "homo",
+  "homobangers",
+  "homodumbshit",
+  "homoey",
+  "honger",
+  "honkers",
+  "honkey",
+  "honkeys",
+  "honkie",
+  "honkies",
+  "honky",
+  "hooch",
+  "hooker",
+  "hookers",
+  "hoor",
+  "hoore",
+  "hootch",
+  "hooter",
+  "hooters",
+  "hore",
+  "hori",
+  "horis",
+  "hork",
+  "horndawg",
+  "horndog",
+  "horney",
+  "horniest",
+  "horny",
+  "horseshit",
+  "hosejob",
+  "hoser",
+  "hot carl",
+  "hot chick",
+  "hotcarl",
+  "hotdamn",
+  "hotpussy",
+  "hotsex",
+  "hottotrot",
+  "how to kill",
+  "how to murder",
+  "howtokill",
+  "howtomurdep",
+  "huevon",
+  "huge fat",
+  "hugefat",
+  "hui",
+  "hummer",
+  "humped",
+  "humper",
+  "humpher",
+  "humphim",
+  "humpin",
+  "humping",
+  "hussy",
+  "hustler",
+  "hymen",
+  "hymie",
+  "hymies",
+  "iblowu",
+  "ike",
+  "ikes",
+  "ikey",
+  "ikeymo",
+  "ikeymos",
+  "ikwe",
+  "illegals",
+  "incest",
+  "indon",
+  "indons",
+  "injun",
+  "injuns",
+  "insest",
+  "intercourse",
+  "intheass",
+  "inthebuff",
+  "israels",
+  "j3rk0ff",
+  "jack off",
+  "jack-off",
+  "jackass",
+  "jackhole",
+  "jackoff",
+  "jackshit",
+  "jacktheripper",
+  "jail bait",
+  "jailbait",
+  "jap",
+  "japcrap",
+  "japie",
+  "japies",
+  "japs",
+  "jebus",
+  "jelly donut",
+  "jerk off",
+  "jerk-off",
+  "jerk0ff",
+  "jerked",
+  "jerkoff",
+  "jerries",
+  "jerry",
+  "jewboy",
+  "jewed",
+  "jewess",
+  "jiga",
+  "jigaboo",
+  "jigaboos",
+  "jigarooni",
+  "jigaroonis",
+  "jigg",
+  "jigga",
+  "jiggabo",
+  "jiggaboo",
+  "jiggabos",
+  "jiggas",
+  "jigger",
+  "jiggerboo",
+  "jiggers",
+  "jiggs",
+  "jiggy",
+  "jigs",
+  "jihad",
+  "jijjiboo",
+  "jijjiboos",
+  "jimfish",
+  "jisim",
+  "jism",
+  "jiss",
+  "jiz",
+  "jizim",
+  "jizin",
+  "jizjuice",
+  "jizm",
+  "jizn",
+  "jizz",
+  "jizzd",
+  "jizzed",
+  "jizzim",
+  "jizzin",
+  "jizzn",
+  "jizzum",
+  "jugg",
+  "juggs",
+  "jungle bunnies",
+  "jungle bunny",
+  "junglebunny",
+  "junkie",
+  "junky",
+  "kacap",
+  "kacapas",
+  "kacaps",
+  "kaffer",
+  "kaffir",
+  "kaffre",
+  "kafir",
+  "kanake",
+  "kanker",
+  "katsap",
+  "katsaps",
+  "kawk",
+  "khokhol",
+  "khokhols",
+  "kigger",
+  "kike",
+  "kikes",
+  "kimchis",
+  "kinbaku",
+  "kink",
+  "kinkster",
+  "kinky",
+  "kinkyJesus",
+  "kissass",
+  "kiunt",
+  "kkk",
+  "klan",
+  "klansman",
+  "klansmen",
+  "klanswoman",
+  "klanswomen",
+  "klootzak",
+  "knobbing",
+  "knobead",
+  "knobed",
+  "knobend",
+  "knobhead",
+  "knobjocky",
+  "knobjokey",
+  "knobz",
+  "knockers",
+  "knulle",
+  "kock",
+  "kondum",
+  "kondums",
+  "kooch",
+  "kooches",
+  "koon",
+  "kootch",
+  "krap",
+  "krappy",
+  "kraut",
+  "krauts",
+  "kuffar",
+  "kuk",
+  "kuksuger",
+  "kum",
+  "kumbubble",
+  "kumbullbe",
+  "kumer",
+  "kummer",
+  "kumming",
+  "kums",
+  "kunilingus",
+  "kunnilingus",
+  "kunt",
+  "kunts",
+  "kuntz",
+  "kurac",
+  "kurwa",
+  "kushi",
+  "kushis",
+  "kusi",
+  "kwa",
+  "kwai lo",
+  "kwai los",
+  "kwif",
+  "kyke",
+  "kykes",
+  "kyopo",
+  "kyopos",
+  "kyrpa",
+  "l3i+ch",
+  "l3i\\+ch",
+  "l3itch",
+  "labia",
+  "lapdance",
+  "leather restraint",
+  "leather straight",
+  "leatherrestraint",
+  "lebos",
+  "lech",
+  "lemon party",
+  "lemonparty",
+  "leper",
+  "lesbain",
+  "lesbayn",
+  "lesbin",
+  "lesbo",
+  "lesbos",
+  "lez",
+  "lezbe",
+  "lezbefriends",
+  "lezbian",
+  "lezbians",
+  "lezbo",
+  "lezbos",
+  "lezz",
+  "lezzian",
+  "lezzie",
+  "lezzies",
+  "lezzo",
+  "lezzy",
+  "libido",
+  "licker",
+  "licking",
+  "lickme",
+  "lilniglet",
+  "limey",
+  "limpdick",
+  "limy",
+  "lingerie",
+  "lipshits",
+  "lipshitz",
+  "livesex",
+  "loadedgun",
+  "lolita",
+  "lovebone",
+  "lovegoo",
+  "lovegun",
+  "lovejuice",
+  "lovemuscle",
+  "lovepistol",
+  "loverocket",
+  "lowlife",
+  "lsd",
+  "lubejob",
+  "lubra",
+  "lucifer",
+  "luckycammeltoe",
+  "lugan",
+  "lugans",
+  "lusting",
+  "lusty",
+  "lynch",
+  "m-fucking",
+  "m0f0",
+  "m0fo",
+  "m45terbate",
+  "ma5terb8",
+  "ma5terbate",
+  "mabuno",
+  "mabunos",
+  "macaca",
+  "macacas",
+  "mafugly",
+  "magicwand",
+  "mahbuno",
+  "mahbunos",
+  "make me come",
+  "makemecome",
+  "makemecum",
+  "male squirting",
+  "mamhoon",
+  "mams",
+  "manhater",
+  "manpaste",
+  "maricon",
+  "maricón",
+  "marijuana",
+  "masochist",
+  "masokist",
+  "massa",
+  "massterbait",
+  "masstrbait",
+  "masstrbate",
+  "mastabate",
+  "mastabater",
+  "master-bate",
+  "masterb8",
+  "masterbaiter",
+  "masterbat",
+  "masterbat3",
+  "masterbate",
+  "masterbates",
+  "masterbating",
+  "masterbation",
+  "masterbations",
+  "masterblaster",
+  "mastrabator",
+  "masturbat",
+  "masturbate",
+  "masturbating",
+  "masturbation",
+  "mattressprincess",
+  "mau mau",
+  "mau maus",
+  "maumau",
+  "maumaus",
+  "mcfagget",
+  "meatbeatter",
+  "meatrack",
+  "menage",
+  "merd",
+  "mgger",
+  "mggor",
+  "mibun",
+  "mick",
+  "mickeyfinn",
+  "mideast",
+  "mierda",
+  "milf",
+  "mindfuck",
+  "minge",
+  "minger",
+  "mo-fo",
+  "mockey",
+  "mockie",
+  "mocky",
+  "mof0",
+  "mofo",
+  "moky",
+  "molest",
+  "molestation",
+  "molester",
+  "molestor",
+  "moneyshot",
+  "mong",
+  "monkleigh",
+  "moolie",
+  "moon cricket",
+  "moon crickets",
+  "mooncricket",
+  "mooncrickets",
+  "moron",
+  "moskal",
+  "moskals",
+  "moslem",
+  "mosshead",
+  "motha fucker",
+  "motha fuker",
+  "motha fukkah",
+  "motha fukker",
+  "mothafuck",
+  "mothafucka",
+  "mothafuckas",
+  "mothafuckaz",
+  "mothafucked",
+  "mothafucker",
+  "mothafuckers",
+  "mothafuckin",
+  "mothafucking",
+  "mothafuckings",
+  "mothafucks",
+  "mother fucker",
+  "mother fukah",
+  "mother fuker",
+  "mother fukkah",
+  "mother fukker",
+  "mother-fucker",
+  "motherfuck",
+  "motherfucka",
+  "motherfucked",
+  "motherfucker",
+  "motherfuckers",
+  "motherfuckin",
+  "motherfucking",
+  "motherfuckings",
+  "motherfuckka",
+  "motherfucks",
+  "motherfvcker",
+  "motherlovebone",
+  "mothrfucker",
+  "mouliewop",
+  "mound of venus",
+  "moundofvenus",
+  "mr hands",
+  "mrhands",
+  "mtherfucker",
+  "mthrfuck",
+  "mthrfucker",
+  "mthrfucking",
+  "mtrfck",
+  "mtrfuck",
+  "mtrfucker",
+  "muff diver",
+  "muff",
+  "muffdive",
+  "muffdiver",
+  "muffdiving",
+  "muffindiver",
+  "mufflikcer",
+  "muffpuff",
+  "muie",
+  "mulatto",
+  "mulkku",
+  "muncher",
+  "munging",
+  "munt",
+  "munter",
+  "muschi",
+  "mutha fucker",
+  "mutha fukah",
+  "mutha fuker",
+  "mutha fukkah",
+  "mutha fukker",
+  "muthafecker",
+  "muthafuckaz",
+  "muthafucker",
+  "muthafuckker",
+  "muther",
+  "mutherfucker",
+  "mutherfucking",
+  "muthrfucking",
+  "mzungu",
+  "mzungus",
+  "n1gga",
+  "n1gger",
+  "n1gr",
+  "nads",
+  "naked",
+  "nambla",
+  "nastt",
+  "nastybitch",
+  "nastyho",
+  "nastyslut",
+  "nastywhore",
+  "nawashi",
+  "nazi",
+  "nazis",
+  "nazism",
+  "necro",
+  "needthedick",
+  "negres",
+  "negress",
+  "negro",
+  "negroes",
+  "negroid",
+  "negros",
+  "neonazi",
+  "nepesaurio",
+  "nig nog",
+  "nig",
+  "niga",
+  "nigar",
+  "nigars",
+  "nigas",
+  "nigers",
+  "nigette",
+  "nigettes",
+  "nigg",
+  "nigg3r",
+  "nigg4h",
+  "nigga",
+  "niggah",
+  "niggahs",
+  "niggar",
+  "niggaracci",
+  "niggard",
+  "niggarded",
+  "niggarding",
+  "niggardliness",
+  "niggardlinesss",
+  "niggardly",
+  "niggards",
+  "niggars",
+  "niggas",
+  "niggaz",
+  "nigger",
+  "niggerhead",
+  "niggerhole",
+  "niggers",
+  "niggle",
+  "niggled",
+  "niggles",
+  "nigglings",
+  "niggor",
+  "niggress",
+  "niggresses",
+  "nigguh",
+  "nigguhs",
+  "niggur",
+  "niggurs",
+  "niglet",
+  "nignog",
+  "nigor",
+  "nigors",
+  "nigr",
+  "nigra",
+  "nigras",
+  "nigre",
+  "nigres",
+  "nigress",
+  "nigs",
+  "nigur",
+  "niiger",
+  "niigr",
+  "nimphomania",
+  "nimrod",
+  "ninny",
+  "nipple",
+  "nipplering",
+  "nipples",
+  "nips",
+  "nittit",
+  "nlgger",
+  "nlggor",
+  "nob jokey",
+  "nob",
+  "nobhead",
+  "nobjocky",
+  "nobjokey",
+  "nofuckingway",
+  "nog",
+  "nookey",
+  "nookie",
+  "nooky",
+  "noonan",
+  "nooner",
+  "nsfw images",
+  "nsfw",
+  "nudger",
+  "nudie",
+  "nudies",
+  "numbnuts",
+  "nut sack",
+  "nutbutter",
+  "nutfucker",
+  "nutsack",
+  "nutten",
+  "nympho",
+  "nymphomania",
+  "o c k",
+  "octopussy",
+  "omorashi",
+  "one cup two girls",
+  "one guy one jar",
+  "one guy",
+  "one jar",
+  "ontherag",
+  "orafis",
+  "orga",
+  "orgasim",
+  "orgasim;",
+  "orgasims",
+  "orgasm",
+  "orgasmic",
+  "orgasms",
+  "orgasum",
+  "orgies",
+  "orgy",
+  "oriface",
+  "orifiss",
+  "orospu",
+  "osama",
+  "ovum",
+  "ovums",
+  "p e n i s",
+  "p i s",
+  "p u s s y",
+  "p.u.s.s.y.",
+  "p0rn",
+  "packi",
+  "packie",
+  "packy",
+  "paddy",
+  "paedophile",
+  "paki",
+  "pakie",
+  "pakis",
+  "paky",
+  "palesimian",
+  "pancake face",
+  "pancake faces",
+  "panooch",
+  "pansies",
+  "pansy",
+  "panti",
+  "pantie",
+  "panties",
+  "panty",
+  "paska",
+  "payo",
+  "pcp",
+  "pearlnecklace",
+  "pecker",
+  "peckerhead",
+  "peckerwood",
+  "pedo",
+  "pedobear",
+  "pedophile",
+  "pedophilia",
+  "pedophiliac",
+  "peeenus",
+  "peeenusss",
+  "peehole",
+  "peenus",
+  "peepee",
+  "peepshow",
+  "peepshpw",
+  "pegging",
+  "peinus",
+  "pen1s",
+  "penas",
+  "pendejo",
+  "pendy",
+  "penetrate",
+  "penetration",
+  "peni5",
+  "penial",
+  "penile",
+  "penis",
+  "penis-breath",
+  "penises",
+  "penisfucker",
+  "penisland",
+  "penislick",
+  "penislicker",
+  "penispuffer",
+  "penthouse",
+  "penus",
+  "penuus",
+  "perse",
+  "perv",
+  "perversion",
+  "peyote",
+  "phalli",
+  "phallic",
+  "phone sex",
+  "phonesex",
+  "phuc",
+  "phuck",
+  "phuk",
+  "phuked",
+  "phuker",
+  "phuking",
+  "phukked",
+  "phukker",
+  "phukking",
+  "phuks",
+  "phungky",
+  "phuq",
+  "pi55",
+  "picaninny",
+  "piccaninny",
+  "picka",
+  "pickaninnies",
+  "pickaninny",
+  "piece of shit",
+  "pieceofshit",
+  "piefke",
+  "piefkes",
+  "pierdol",
+  "pigfucker",
+  "piker",
+  "pikey",
+  "piky",
+  "pillowbiter",
+  "pillu",
+  "pimmel",
+  "pimp",
+  "pimped",
+  "pimper",
+  "pimpis",
+  "pimpjuic",
+  "pimpjuice",
+  "pimpsimp",
+  "pindick",
+  "pinko",
+  "pis",
+  "pises",
+  "pisin",
+  "pising",
+  "pisof",
+  "piss pig",
+  "piss",
+  "piss-off",
+  "pissed",
+  "pisser",
+  "pissers",
+  "pisses",
+  "pissflap",
+  "pissflaps",
+  "pisshead",
+  "pissin",
+  "pissing",
+  "pissoff",
+  "pisspig",
+  "pizda",
+  "playboy",
+  "playgirl",
+  "pleasure chest",
+  "pleasurechest",
+  "pocha",
+  "pochas",
+  "pocho",
+  "pochos",
+  "pocketpool",
+  "pohm",
+  "pohms",
+  "polac",
+  "polack",
+  "polacks",
+  "polak",
+  "pole smoker",
+  "polesmoker",
+  "pollock",
+  "pollocks",
+  "pommie grant",
+  "pommie grants",
+  "pommy",
+  "ponyplay",
+  "poof",
+  "poon",
+  "poonani",
+  "poonany",
+  "poontang",
+  "poontsee",
+  "poop chute",
+  "poopchute",
+  "pooper",
+  "pooperscooper",
+  "pooping",
+  "poorwhitetrash",
+  "popimp",
+  "porch monkey",
+  "porch monkies",
+  "porchmonkey",
+  "porn",
+  "pornflick",
+  "pornking",
+  "porno",
+  "pornography",
+  "pornos",
+  "pornprincess",
+  "pound town",
+  "poundtown",
+  "pplicker",
+  "pr0n",
+  "pr1c",
+  "pr1ck",
+  "pr1k",
+  "prairie nigger",
+  "prairie niggers",
+  "preteen",
+  "pric",
+  "prickhead",
+  "pricks",
+  "prig",
+  "prince albert piercing",
+  "pron",
+  "prostitute",
+  "pthc",
+  "pu55i",
+  "pu55y",
+  "pube",
+  "pubes",
+  "pubic",
+  "pubiclice",
+  "pubis",
+  "pudboy",
+  "pudd",
+  "puddboy",
+  "pula",
+  "punani",
+  "punanny",
+  "punany",
+  "punkass",
+  "punky",
+  "punta",
+  "puntang",
+  "purinapricness",
+  "pusies",
+  "puss",
+  "pusse",
+  "pussee",
+  "pussi",
+  "pussie",
+  "pussies",
+  "pussy",
+  "pussycat",
+  "pussydestroyer",
+  "pussyeater",
+  "pussyfart",
+  "pussyfuck",
+  "pussyfucker",
+  "pussylicker",
+  "pussylicking",
+  "pussylips",
+  "pussylover",
+  "pussypalace",
+  "pussypounder",
+  "pussys",
+  "pusy",
+  "puta",
+  "puto",
+  "puuke",
+  "puuker",
+  "qahbeh",
+  "quashie",
+  "queaf",
+  "queef",
+  "queerhole",
+  "queero",
+  "queers",
+  "queerz",
+  "quickie",
+  "quicky",
+  "quiff",
+  "quim",
+  "qweers",
+  "qweerz",
+  "qweir",
+  "r-tard",
+  "r-tards",
+  "r5e",
+  "ra8s",
+  "raghead",
+  "ragheads",
+  "rape",
+  "raped",
+  "raper",
+  "raping",
+  "rapist",
+  "rautenberg",
+  "rearend",
+  "rearentry",
+  "recktum",
+  "rectal",
+  "rectum",
+  "rectus",
+  "redleg",
+  "redlegs",
+  "redlight",
+  "redskin",
+  "redskins",
+  "reefer",
+  "reestie",
+  "reetard",
+  "reich",
+  "renob",
+  "rentafuck",
+  "rere",
+  "retard",
+  "retarded",
+  "retards",
+  "retardz",
+  "reverse cowgirl",
+  "reversecowgirl",
+  "rimjaw",
+  "rimjob",
+  "rimming",
+  "ritard",
+  "rosebuds",
+  "rosy palm and her 5 sisters",
+  "rosy palm",
+  "rosypalm",
+  "rosypalmandher5sisters",
+  "rosypalmandherefivesisters",
+  "round eyes",
+  "roundeye",
+  "rtard",
+  "rtards",
+  "rumprammer",
+  "ruski",
+  "russki",
+  "russkie",
+  "rusty trombone",
+  "rustytrombone",
+  "s h i t",
+  "s hit",
+  "s&m",
+  "s-h-1-t",
+  "s-h-i-t",
+  "s-o-b",
+  "s.h.i.t.",
+  "s.o.b.",
+  "s0b",
+  "s_h_i_t",
+  "sadis",
+  "sadism",
+  "sadist",
+  "sadom",
+  "sambo",
+  "sambos",
+  "samckdaddy",
+  "sanchez",
+  "sand nigger",
+  "sand niggers",
+  "sandm",
+  "sandnigger",
+  "santorum",
+  "sausagequeen",
+  "scag",
+  "scallywag",
+  "scank",
+  "scantily",
+  "scat",
+  "schaffer",
+  "scheiss",
+  "schizo",
+  "schlampe",
+  "schlong",
+  "schmuck",
+  "schvartse",
+  "schvartsen",
+  "schwartze",
+  "schwartzen",
+  "scissoring",
+  "screwyou",
+  "scroat",
+  "scrog",
+  "scrote",
+  "scrotum",
+  "scrud",
+  "seduce",
+  "semen",
+  "seppo",
+  "seppos",
+  "septics",
+  "sex",
+  "sexcam",
+  "sexed",
+  "sexfarm",
+  "sexhound",
+  "sexhouse",
+  "sexi",
+  "sexing",
+  "sexkitten",
+  "sexo",
+  "sexpot",
+  "sexslave",
+  "sextogo",
+  "sextoy",
+  "sextoys",
+  "sexual",
+  "sexually",
+  "sexwhore",
+  "sexx",
+  "sexxi",
+  "sexxx",
+  "sexxxi",
+  "sexxxy",
+  "sexxy",
+  "sexy",
+  "sexymoma",
+  "sexyslim",
+  "sh!+",
+  "sh!t",
+  "sh1t",
+  "sh1ter",
+  "sh1ts",
+  "sh1tter",
+  "sh1tz",
+  "shag",
+  "shagger",
+  "shaggin",
+  "shagging",
+  "shamedame",
+  "sharmuta",
+  "sharmute",
+  "shat",
+  "shav",
+  "shaved beaver",
+  "shaved pussy",
+  "shavedbeaver",
+  "shavedpussy",
+  "shawtypimp",
+  "sheeney",
+  "shemale",
+  "shhit",
+  "shi+",
+  "shibari",
+  "shibary",
+  "shinola",
+  "shipal",
+  "shit ass",
+  "shit",
+  "shit-ass",
+  "shit-bag",
+  "shit-bagger",
+  "shit-brain",
+  "shit-breath",
+  "shit-cunt",
+  "shit-dick",
+  "shit-eating",
+  "shit-face",
+  "shit-faced",
+  "shit-fit",
+  "shit-head",
+  "shit-heel",
+  "shit-hole",
+  "shit-house",
+  "shit-load",
+  "shit-pot",
+  "shit-spitter",
+  "shit-stain",
+  "shitass",
+  "shitbag",
+  "shitbagger",
+  "shitblimp",
+  "shitbrain",
+  "shitbreath",
+  "shitcan",
+  "shitcunt",
+  "shitdick",
+  "shite",
+  "shiteater",
+  "shiteating",
+  "shited",
+  "shitey",
+  "shitface",
+  "shitfaced",
+  "shitfit",
+  "shitforbrains",
+  "shitfuck",
+  "shitfucker",
+  "shitfull",
+  "shithapens",
+  "shithappens",
+  "shithead",
+  "shitheel",
+  "shithole",
+  "shithouse",
+  "shiting",
+  "shitings",
+  "shitlist",
+  "shitload",
+  "shitola",
+  "shitoutofluck",
+  "shitpot",
+  "shits",
+  "shitspitter",
+  "shitstain",
+  "shitt",
+  "shitted",
+  "shitter",
+  "shitters",
+  "shittiest",
+  "shitting",
+  "shittings",
+  "shitty",
+  "shity",
+  "shitz",
+  "shiz",
+  "shiznit",
+  "shortfuck",
+  "shota",
+  "shylock",
+  "shylocks",
+  "shyt",
+  "shyte",
+  "shytty",
+  "shyty",
+  "simp",
+  "sissy",
+  "sixsixsix",
+  "sixtynine",
+  "sixtyniner",
+  "skag",
+  "skanck",
+  "skank",
+  "skankbitch",
+  "skankee",
+  "skankey",
+  "skankfuck",
+  "skanks",
+  "skankwhore",
+  "skanky",
+  "skankybitch",
+  "skankywhore",
+  "skeet",
+  "skinflute",
+  "skribz",
+  "skullfuck",
+  "skum",
+  "skumbag",
+  "skurwysyn",
+  "skwa",
+  "skwe",
+  "slag",
+  "slanteye",
+  "slanty",
+  "slapper",
+  "sleezeball",
+  "slideitin",
+  "slimeball",
+  "slimebucket",
+  "slopehead",
+  "slopeheads",
+  "sloper",
+  "slopers",
+  "slopey",
+  "slopeys",
+  "slopies",
+  "slopy",
+  "slut",
+  "slutbag",
+  "slutbucket",
+  "slutdumper",
+  "slutkiss",
+  "sluts",
+  "slutt",
+  "slutting",
+  "slutty",
+  "slutwear",
+  "slutwhore",
+  "slutz",
+  "smackthemonkey",
+  "smeg",
+  "smegma",
+  "smut",
+  "smutty",
+  "snatchpatch",
+  "sniggered",
+  "sniggering",
+  "sniggers",
+  "snowback",
+  "snowballing",
+  "snownigger",
+  "snuff",
+  "socksucker",
+  "sodom",
+  "sodomise",
+  "sodomite",
+  "sodomize",
+  "sodomy",
+  "son of a bitch",
+  "son of a whore",
+  "son-of-a-bitch",
+  "son-of-a-whore",
+  "sonofabitch",
+  "sonofbitch",
+  "sooties",
+  "souse",
+  "soused",
+  "soyboy",
+  "spac",
+  "spaghettibender",
+  "spaghettinigger",
+  "spank",
+  "spankthemonkey",
+  "spastic",
+  "spearchucker",
+  "spearchuckers",
+  "sperm",
+  "spermacide",
+  "spermbag",
+  "spermhearder",
+  "spermherder",
+  "sphencter",
+  "spic",
+  "spick",
+  "spicks",
+  "spics",
+  "spierdalaj",
+  "spig",
+  "spigotty",
+  "spik",
+  "spiks",
+  "splittail",
+  "splooge",
+  "spludge",
+  "spooge",
+  "spread legs",
+  "spreadeagle",
+  "spunk",
+  "spunky",
+  "sqeh",
+  "squa",
+  "squarehead",
+  "squareheads",
+  "squaw",
+  "squinty",
+  "squirting",
+  "stagg",
+  "stfu",
+  "stiffy",
+  "stoned",
+  "stoner",
+  "strap on",
+  "strapon",
+  "strappado",
+  "strip club",
+  "stripclub",
+  "stroking",
+  "stuinties",
+  "stupidfuck",
+  "stupidfucker",
+  "style doggy",
+  "suckdick",
+  "sucked",
+  "sucker",
+  "sucking",
+  "suckme",
+  "suckmyass",
+  "suckmydick",
+  "suckmytit",
+  "suckoff",
+  "suicide girl",
+  "suicide girls",
+  "suicidegirl",
+  "suicidegirls",
+  "suka",
+  "sultrywoman",
+  "sultrywomen",
+  "sumofabiatch",
+  "swallower",
+  "swalow",
+  "swamp guinea",
+  "swamp guineas",
+  "swastika",
+  "syphilis",
+  "t i t",
+  "t i ts",
+  "t1t",
+  "t1tt1e5",
+  "t1tties",
+  "tacohead",
+  "tacoheads",
+  "taff",
+  "take off your",
+  "tar babies",
+  "tar baby",
+  "tarbaby",
+  "tard",
+  "taste my",
+  "tastemy",
+  "tawdry",
+  "tea bagging",
+  "teabagging",
+  "teat",
+  "teets",
+  "teez",
+  "terd",
+  "teste",
+  "testee",
+  "testes",
+  "testical",
+  "testicle",
+  "testicles",
+  "testis",
+  "thicklip",
+  "thicklips",
+  "thirdeye",
+  "thirdleg",
+  "threesome",
+  "threeway",
+  "throating",
+  "thumbzilla",
+  "thundercunt",
+  "tied up",
+  "tig ol bitties",
+  "tig old bitties",
+  "tight white",
+  "timber nigger",
+  "timber niggers",
+  "timbernigger",
+  "tit",
+  "titbitnipply",
+  "titfuck",
+  "titfucker",
+  "titfuckin",
+  "titi",
+  "titjob",
+  "titlicker",
+  "titlover",
+  "tits",
+  "titt",
+  "tittie",
+  "tittie5",
+  "tittiefucker",
+  "titties",
+  "tittis",
+  "titty",
+  "tittyfuck",
+  "tittyfucker",
+  "tittys",
+  "tittywank",
+  "titwank",
+  "tity",
+  "to murder",
+  "tongethruster",
+  "tongue in a",
+  "tongueina",
+  "tonguethrust",
+  "tonguetramp",
+  "toots",
+  "topless",
+  "tortur",
+  "torture",
+  "tosser",
+  "towel head",
+  "towel heads",
+  "towelhead",
+  "trailertrash",
+  "trannie",
+  "tranny",
+  "transsexual",
+  "transvestite",
+  "tribadism",
+  "trisexual",
+  "trois",
+  "trots",
+  "tub girl",
+  "tubgirl",
+  "tuckahoe",
+  "tunneloflove",
+  "turd burgler",
+  "turnon",
+  "tush",
+  "tushy",
+  "tw4t",
+  "twat",
+  "twathead",
+  "twatlips",
+  "twats",
+  "twatty",
+  "twatwaffle",
+  "twink",
+  "twinkie",
+  "two girls one cup",
+  "twobitwhore",
+  "twunt",
+  "twunter",
+  "udge packer",
+  "ukrop",
+  "unclefucker",
+  "unfuckable",
+  "upskirt",
+  "uptheass",
+  "upthebutt",
+  "urethra play",
+  "urethraplay",
+  "urophilia",
+  "usama",
+  "ussys",
+  "uzi",
+  "v a g i n a",
+  "v14gra",
+  "v1gra",
+  "v4gra",
+  "va-j-j",
+  "va1jina",
+  "vag",
+  "vag1na",
+  "vagiina",
+  "vaj1na",
+  "vajina",
+  "valium",
+  "venus mound",
+  "vgra",
+  "vibr",
+  "vibrater",
+  "vibrator",
+  "vigra",
+  "violet wand",
+  "virginbreaker",
+  "vittu",
+  "vixen",
+  "vjayjay",
+  "vorarephilia",
+  "voyeurweb",
+  "voyuer",
+  "vullva",
+  "vulva",
+  "w00se",
+  "w0p",
+  "wab",
+  "wang",
+  "wank",
+  "wanker",
+  "wanking",
+  "wanky",
+  "waysted",
+  "wazoo",
+  "weenie",
+  "weewee",
+  "weiner",
+  "welcher",
+  "wench",
+  "wet dream",
+  "wetb",
+  "wetback",
+  "wetbacks",
+  "wetdream",
+  "wetspot",
+  "wh00r",
+  "wh0re",
+  "wh0reface",
+  "whacker",
+  "whash",
+  "whigger",
+  "whiggers",
+  "whiskeydick",
+  "whiskydick",
+  "whit",
+  "white power",
+  "white trash",
+  "whitenigger",
+  "whitepower",
+  "whitetrash",
+  "whitey",
+  "whiteys",
+  "whities",
+  "whoar",
+  "whop",
+  "whoralicious",
+  "whore",
+  "whorealicious",
+  "whorebag",
+  "whored",
+  "whoreface",
+  "whorefucker",
+  "whorehopper",
+  "whorehouse",
+  "whores",
+  "whoring",
+  "wichser",
+  "wigga",
+  "wiggas",
+  "wigger",
+  "wiggers",
+  "willie",
+  "willies",
+  "williewanker",
+  "willy",
+  "wog",
+  "wogs",
+  "woose",
+  "wop",
+  "worldsex",
+  "wrapping men",
+  "wrinkled starfish",
+  "wtf",
+  "wuss",
+  "wuzzie",
+  "x-rated",
+  "x-rated2g1c",
+  "xkwe",
+  "xrated",
+  "xtc",
+  "xx",
+  "xxx",
+  "xxxxxx",
+  "yank",
+  "yaoi",
+  "yarpie",
+  "yarpies",
+  "yed",
+  "yellow showers",
+  "yellowman",
+  "yellowshowers",
+  "yid",
+  "yids",
+  "yiffy",
+  "yobbo",
+  "yourboobs",
+  "yourpenis",
+  "yourtits",
+  "yury",
+  "zabourah",
+  "zigabo",
+  "zigabos",
+  "zipperhead",
+  "zipperheads",
+  "zoophile",
+  "zoophilia",
+  "🖕"
 ]; // Add bad words here
 
         async function loadModel() {
@@ -8297,7 +9089,7 @@ app.get('/mod-application', (req, res) => {
             </div>
 
             <!-- hCaptcha -->
-            <div class="h-captcha" id="captcha" data-sitekey="#############################" data-callback="onCaptchaVerified"></div>
+            <div class="h-captcha" id="captcha" data-sitekey="c3d047fe-4c10-4718-8e0a-85606d44518a" data-callback="onCaptchaVerified"></div>
 
             <!-- Submit Button -->
             <button type="submit" id="submitBtn" disabled>Submit Application</button>
@@ -8342,7 +9134,7 @@ app.get('/mod-application', (req, res) => {
         // Initialize hCaptcha once the DOM is fully loaded
         window.onload = function () {
             hcaptcha.render('captcha', {
-                sitekey: '##########################',
+                sitekey: 'c3d047fe-4c10-4718-8e0a-85606d44518a',
                 callback: onCaptchaVerified
             });
         };
@@ -8548,7 +9340,7 @@ app.get('/premium', (req, res) => {
 
                 <!-- hCaptcha Verification -->
                 <div class="my-4 h-captcha">
-                    <div class="h-captcha" data-sitekey="###############################"></div>
+                    <div class="h-captcha" data-sitekey="your-hcaptcha-sitekey"></div>
                 </div>
 
                 <button type="submit" class="purchase-btn">

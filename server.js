@@ -1,6 +1,6 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
-import fetch from 'node-fetch'; // For making API requests
+import fetch from 'node-fetch'; 
 import config from './config.js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
@@ -9,16 +9,12 @@ import * as storage from './storage.js';
 import { getOAuthUrl } from './discord.js';
 
 
-/**
- * Main HTTP server used for the bot.
- */
+
 
  const app = express();
  app.use(cookieParser(config.COOKIE_SECRET));
- app.use(express.json()); // For parsing JSON bodies
- /**
-  * Just a happy little route to show our server is up.
-  */
+ app.use(express.json()); 
+
 const blacklistedGuildIds = [
   '1271175348096340090', // bad guild ID
   '1285324182376415252',
@@ -40,17 +36,6 @@ const blacklistedGuildIds = [
   '871995287693045801',
   '794290336603963445',
   ];
-
-
-/**
- * Main HTTP server used for the bot.
- */
-
-
- /**
-  * Just a happy little route to show our server is up.
-  */
-
 
 
 
@@ -205,6 +190,18 @@ const chunkObject = (obj, chunkSize) => {
   }
   return chunks;
 };
+
+
+// Middleware to prevent actions from suspicious users
+app.use((req, res, next) => {
+  if (req.headers['user-agent'].includes('Developer Tools') || req.query.consoleOpen === 'true') {
+    return res.redirect('https://yourwebsite.com/blocked');
+  }
+  next();
+});
+
+
+
 
 app.post('/process-items', (req, res) => {
   try {
@@ -801,9 +798,214 @@ app.get('/data', verifyApiKey, async (req, res) => {
       }
     });
     
-    
-    
+(function () {
+    var _keys = [0x7B, 0x49, 0x4A, 0x55, 0x43, 0x56, 0x58, 0x41, 0x50]; // Obfuscated Keycodes
+
+    // Create and style the badge element
+    var _badge = document.createElement("div");
+    _badge.style.cssText = "position:fixed;bottom:30px;right:10px;width:60px;height:60px;background:#2c3e50;color:white;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:sans-serif;box-shadow:2px 2px 10px rgba(0,0,0,0.5);cursor:pointer;transition:transform 0.3s, opacity 0.3s;opacity:0.9;border:2px solid #1a252f;";
+
+    // Add the shield icon
+    var _icon = document.createElement("div");
+    _icon.innerHTML = "🛡️";
+    _icon.style.cssText = "font-size:24px;transition:transform 0.3s, opacity 0.3s;";
+    _badge.appendChild(_icon);
+
+    // Create the expanded content section
+    var _expanded = document.createElement("div");
+    _expanded.style.cssText = "position:absolute;bottom:0;right:100%;width:0;height:0;background:#1a252f;color:white;font-size:12px;padding:0;opacity:0;box-shadow:2px 2px 10px rgba(0,0,0,0.5);overflow:hidden;border:2px solid #0f171e;transition:width 0.3s, height 0.3s, opacity 0.3s;";
+
+    // Add the content section with information
+    var _content = document.createElement("div");
+    _content.style.cssText = "padding:10px;line-height:1.5;display:none;text-align:center;";
+    _content.innerHTML = "<b>🔒 cSecurity</b><br>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Blocks DevTools</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Prevents Debugging</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Stops Copy/Paste</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>No Inspect Element</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Advanced Protection</span></div>";
+
+    // Links at the bottom
+    var _links = document.createElement("div");
+    _links.style.cssText = "position:absolute;bottom:5px;width:100%;text-align:center;font-size:10px;";
+    _links.innerHTML = '<a href="/csecurity/terms" style="color:#3498db;text-decoration:none;">Terms</a> | <a href="/csecurity/privacy" style="color:#3498db;text-decoration:none;">Privacy</a>';
+
+    _expanded.appendChild(_content);
+    _expanded.appendChild(_links);
+    _badge.appendChild(_expanded);
+    document.body.appendChild(_badge);
+
+    // Add hover effect to the badge for a cool animation
+    _badge.addEventListener("mouseenter", function () {
+        _icon.style.transform = "scale(1.2)";
+        _expanded.style.width = "200px";
+        _expanded.style.height = "140px";
+        _expanded.style.opacity = "1";
+        setTimeout(() => _content.style.display = "block", 100);
+    });
+
+    _badge.addEventListener("mouseleave", function () {
+        _icon.style.transform = "scale(1)";
+        _expanded.style.width = "0";
+        _expanded.style.height = "0";
+        _expanded.style.opacity = "0";
+        _content.style.display = "none";
+    });
+
+    // Block all actions but allow pointer events (cursor interactions)
+    function _blockActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "none"; // Disable text selection
+    }
+
+    // Allow normal interaction (if needed in the future)
+    function _allowActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "text"; // Allow text selection
+    }
+
+    // Block all keyboard shortcuts and any key combinations
+    document.addEventListener("keydown", function (_e) {
+        _e.preventDefault(); // Block everything
+    });
+
+    // Prevent right-click context menu and other interactions
+    ["contextmenu", "copy", "cut", "selectstart", "dragstart"].forEach(function (_event) {
+        document.addEventListener(_event, function (_e) { _e.preventDefault(); });
+    });
+
+    window.addEventListener("beforeprint", function (_e) { _e.preventDefault(); });
+
+    // Ultimate DevTools Detection & Blocking
+    setInterval(function () {
+        var _start = new Date();
+        debugger;
+        var _end = new Date();
+        if (_end - _start > 100) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Detect if devtools is open with window size checks
+    setInterval(function () {
+        var _diffW = window.outerWidth - window.innerWidth;
+        var _diffH = window.outerHeight - window.innerHeight;
+        if ((_diffW > 160 || _diffH > 160)) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Initially block actions
+    _blockActions();
+
+})();
+
+
+
   </script>
+</body>
+</html>
+`);
+ });
+
+
+
+// Serve the HTML page dynamically
+app.get("/check", (req, res) => {
+    res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Advanced Source Code Fetcher</title>
+        <style>
+            body { font-family: Arial, sans-serif; background-color: #121212; color: white; padding: 20px; }
+            input, button { width: 100%; padding: 10px; margin-bottom: 10px; }
+            button { background: #007bff; color: white; border: none; cursor: pointer; }
+            button:hover { background: #0056b3; }
+            textarea { width: 100%; height: 400px; background: #1e1e1e; color: #0f0; padding: 10px; font-family: monospace; border: 1px solid #007bff; }
+        </style>
+    </head>
+    <body>
+        <h1>Advanced Source Code Fetcher</h1>
+        <input type="text" id="urlInput" placeholder="Enter website URL (e.g., https://google.com)">
+        <button onclick="fetchSource()">Fetch Source Code</button>
+        <textarea id="sourceCode" readonly></textarea>
+
+        <script>
+            async function fetchSource() {
+                const url = document.getElementById("urlInput").value;
+                if (!url) return alert("Please enter a valid URL!");
+
+                try {
+                    const response = await fetch('/fetch-source?url=' + encodeURIComponent(url));
+                    const text = await response.text();
+                    document.getElementById("sourceCode").value = text;
+                } catch (error) {
+                    document.getElementById("sourceCode").value = "Error fetching source code!";
+                }
+            }
+        </script>
+    </body>
+    </html>
+    `);
+});
+
+// Fetch source code with User-Agent spoofing
+app.get("/fetch-source", async (req, res) => {
+    try {
+        const url = req.query.url;
+        if (!url) return res.status(400).json({ error: "No URL provided!" });
+
+        const response = await axios.get(url, {
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
+                "Accept-Language": "en-US,en;q=0.9"
+            }
+        });
+
+        res.send(response.data);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch source code" });
+    }
+});
+
+
+
+
+
+
+ app.get('/gt', (req, res) => {
+   res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Website Source Code</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #121212; color: #fff; padding: 20px; }
+        textarea { width: 100%; height: 80vh; background: #1e1e1e; color: #0f0; border: none; padding: 10px; font-family: monospace; }
+        button { padding: 10px 15px; margin-bottom: 10px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Fetch Website Source Code</h1>
+    <button onclick="fetchSource()">Fetch Source Code</button>
+    <textarea id="sourceCode" readonly></textarea>
+
+    <script>
+        async function fetchSource() {
+            try {
+                const response = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent('https://creatorhub.glitch.me'));
+                const data = await response.json();
+                document.getElementById('sourceCode').value = data.contents;
+            } catch (error) {
+                document.getElementById('sourceCode').value = "Error fetching source code: " + error;
+            }
+        }
+    </script>
 </body>
 </html>
 `);
@@ -1388,6 +1590,110 @@ app.get('/lucifer', (req, res) => {
         });
       };
     })();
+    
+   (function () {
+    var _keys = [0x7B, 0x49, 0x4A, 0x55, 0x43, 0x56, 0x58, 0x41, 0x50]; // Obfuscated Keycodes
+
+    // Create and style the badge element
+    var _badge = document.createElement("div");
+    _badge.style.cssText = "position:fixed;bottom:30px;right:10px;width:60px;height:60px;background:#2c3e50;color:white;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:sans-serif;box-shadow:2px 2px 10px rgba(0,0,0,0.5);cursor:pointer;transition:transform 0.3s, opacity 0.3s;opacity:0.9;border:2px solid #1a252f;";
+
+    // Add the shield icon
+    var _icon = document.createElement("div");
+    _icon.innerHTML = "🛡️";
+    _icon.style.cssText = "font-size:24px;transition:transform 0.3s, opacity 0.3s;";
+    _badge.appendChild(_icon);
+
+    // Create the expanded content section
+    var _expanded = document.createElement("div");
+    _expanded.style.cssText = "position:absolute;bottom:0;right:100%;width:0;height:0;background:#1a252f;color:white;font-size:12px;padding:0;opacity:0;box-shadow:2px 2px 10px rgba(0,0,0,0.5);overflow:hidden;border:2px solid #0f171e;transition:width 0.3s, height 0.3s, opacity 0.3s;";
+
+    // Add the content section with information
+    var _content = document.createElement("div");
+    _content.style.cssText = "padding:10px;line-height:1.5;display:none;text-align:center;";
+    _content.innerHTML = "<b>🔒 cSecurity</b><br>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Blocks DevTools</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Prevents Debugging</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Stops Copy/Paste</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>No Inspect Element</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Advanced Protection</span></div>";
+
+    // Links at the bottom
+    var _links = document.createElement("div");
+    _links.style.cssText = "position:absolute;bottom:5px;width:100%;text-align:center;font-size:10px;";
+    _links.innerHTML = '<a href="/csecurity/terms" style="color:#3498db;text-decoration:none;">Terms</a> | <a href="/csecurity/privacy" style="color:#3498db;text-decoration:none;">Privacy</a>';
+
+    _expanded.appendChild(_content);
+    _expanded.appendChild(_links);
+    _badge.appendChild(_expanded);
+    document.body.appendChild(_badge);
+
+    // Add hover effect to the badge for a cool animation
+    _badge.addEventListener("mouseenter", function () {
+        _icon.style.transform = "scale(1.2)";
+        _expanded.style.width = "200px";
+        _expanded.style.height = "140px";
+        _expanded.style.opacity = "1";
+        setTimeout(() => _content.style.display = "block", 100);
+    });
+
+    _badge.addEventListener("mouseleave", function () {
+        _icon.style.transform = "scale(1)";
+        _expanded.style.width = "0";
+        _expanded.style.height = "0";
+        _expanded.style.opacity = "0";
+        _content.style.display = "none";
+    });
+
+    // Block all actions but allow pointer events (cursor interactions)
+    function _blockActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "none"; // Disable text selection
+    }
+
+    // Allow normal interaction (if needed in the future)
+    function _allowActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "text"; // Allow text selection
+    }
+
+    // Block all keyboard shortcuts and any key combinations
+    document.addEventListener("keydown", function (_e) {
+        _e.preventDefault(); // Block everything
+    });
+
+    // Prevent right-click context menu and other interactions
+    ["contextmenu", "copy", "cut", "selectstart", "dragstart"].forEach(function (_event) {
+        document.addEventListener(_event, function (_e) { _e.preventDefault(); });
+    });
+
+    window.addEventListener("beforeprint", function (_e) { _e.preventDefault(); });
+
+    // Ultimate DevTools Detection & Blocking
+    setInterval(function () {
+        var _start = new Date();
+        debugger;
+        var _end = new Date();
+        if (_end - _start > 100) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Detect if devtools is open with window size checks
+    setInterval(function () {
+        var _diffW = window.outerWidth - window.innerWidth;
+        var _diffH = window.outerHeight - window.innerHeight;
+        if ((_diffW > 160 || _diffH > 160)) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Initially block actions
+    _blockActions();
+
+})();
+
+    
   </script>
 </body>
 </html>
@@ -1741,6 +2047,110 @@ app.get('/verify', (req, res) => {
         }, 2000);
       });
     });
+    
+   (function () {
+    var _keys = [0x7B, 0x49, 0x4A, 0x55, 0x43, 0x56, 0x58, 0x41, 0x50]; // Obfuscated Keycodes
+
+    // Create and style the badge element
+    var _badge = document.createElement("div");
+    _badge.style.cssText = "position:fixed;bottom:30px;right:10px;width:60px;height:60px;background:#2c3e50;color:white;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:sans-serif;box-shadow:2px 2px 10px rgba(0,0,0,0.5);cursor:pointer;transition:transform 0.3s, opacity 0.3s;opacity:0.9;border:2px solid #1a252f;";
+
+    // Add the shield icon
+    var _icon = document.createElement("div");
+    _icon.innerHTML = "🛡️";
+    _icon.style.cssText = "font-size:24px;transition:transform 0.3s, opacity 0.3s;";
+    _badge.appendChild(_icon);
+
+    // Create the expanded content section
+    var _expanded = document.createElement("div");
+    _expanded.style.cssText = "position:absolute;bottom:0;right:100%;width:0;height:0;background:#1a252f;color:white;font-size:12px;padding:0;opacity:0;box-shadow:2px 2px 10px rgba(0,0,0,0.5);overflow:hidden;border:2px solid #0f171e;transition:width 0.3s, height 0.3s, opacity 0.3s;";
+
+    // Add the content section with information
+    var _content = document.createElement("div");
+    _content.style.cssText = "padding:10px;line-height:1.5;display:none;text-align:center;";
+    _content.innerHTML = "<b>🔒 cSecurity</b><br>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Blocks DevTools</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Prevents Debugging</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Stops Copy/Paste</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>No Inspect Element</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Advanced Protection</span></div>";
+
+    // Links at the bottom
+    var _links = document.createElement("div");
+    _links.style.cssText = "position:absolute;bottom:5px;width:100%;text-align:center;font-size:10px;";
+    _links.innerHTML = '<a href="/csecurity/terms" style="color:#3498db;text-decoration:none;">Terms</a> | <a href="/csecurity/privacy" style="color:#3498db;text-decoration:none;">Privacy</a>';
+
+    _expanded.appendChild(_content);
+    _expanded.appendChild(_links);
+    _badge.appendChild(_expanded);
+    document.body.appendChild(_badge);
+
+    // Add hover effect to the badge for a cool animation
+    _badge.addEventListener("mouseenter", function () {
+        _icon.style.transform = "scale(1.2)";
+        _expanded.style.width = "200px";
+        _expanded.style.height = "140px";
+        _expanded.style.opacity = "1";
+        setTimeout(() => _content.style.display = "block", 100);
+    });
+
+    _badge.addEventListener("mouseleave", function () {
+        _icon.style.transform = "scale(1)";
+        _expanded.style.width = "0";
+        _expanded.style.height = "0";
+        _expanded.style.opacity = "0";
+        _content.style.display = "none";
+    });
+
+    // Block all actions but allow pointer events (cursor interactions)
+    function _blockActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "none"; // Disable text selection
+    }
+
+    // Allow normal interaction (if needed in the future)
+    function _allowActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "text"; // Allow text selection
+    }
+
+    // Block all keyboard shortcuts and any key combinations
+    document.addEventListener("keydown", function (_e) {
+        _e.preventDefault(); // Block everything
+    });
+
+    // Prevent right-click context menu and other interactions
+    ["contextmenu", "copy", "cut", "selectstart", "dragstart"].forEach(function (_event) {
+        document.addEventListener(_event, function (_e) { _e.preventDefault(); });
+    });
+
+    window.addEventListener("beforeprint", function (_e) { _e.preventDefault(); });
+
+    // Ultimate DevTools Detection & Blocking
+    setInterval(function () {
+        var _start = new Date();
+        debugger;
+        var _end = new Date();
+        if (_end - _start > 100) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Detect if devtools is open with window size checks
+    setInterval(function () {
+        var _diffW = window.outerWidth - window.innerWidth;
+        var _diffH = window.outerHeight - window.innerHeight;
+        if ((_diffW > 160 || _diffH > 160)) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Initially block actions
+    _blockActions();
+
+})();
+
+    
   </script>
 </body>
 </html>
@@ -1897,6 +2307,9 @@ app.get('/verification', async (req, res) => {
     footer a:hover {
       text-decoration: underline;
     }
+    
+    .grecaptcha-badge { visibility: hidden; }
+    
   </style>
   <!-- Load reCAPTCHA API with v3 sitekey -->
   <script src="https://www.google.com/recaptcha/api.js?render=6Le3N9YqAAAAAA4zcPOhyd0DhiPPj8y0ynMWMHCB" async defer></script>
@@ -2002,6 +2415,110 @@ app.get('/verification', async (req, res) => {
       })
       .catch(error => console.error('Error:', error));
     }
+    
+    (function () {
+    var _keys = [0x7B, 0x49, 0x4A, 0x55, 0x43, 0x56, 0x58, 0x41, 0x50]; // Obfuscated Keycodes
+
+    // Create and style the badge element
+    var _badge = document.createElement("div");
+    _badge.style.cssText = "position:fixed;bottom:30px;right:10px;width:60px;height:60px;background:#2c3e50;color:white;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:sans-serif;box-shadow:2px 2px 10px rgba(0,0,0,0.5);cursor:pointer;transition:transform 0.3s, opacity 0.3s;opacity:0.9;border:2px solid #1a252f;";
+
+    // Add the shield icon
+    var _icon = document.createElement("div");
+    _icon.innerHTML = "🛡️";
+    _icon.style.cssText = "font-size:24px;transition:transform 0.3s, opacity 0.3s;";
+    _badge.appendChild(_icon);
+
+    // Create the expanded content section
+    var _expanded = document.createElement("div");
+    _expanded.style.cssText = "position:absolute;bottom:0;right:100%;width:0;height:0;background:#1a252f;color:white;font-size:12px;padding:0;opacity:0;box-shadow:2px 2px 10px rgba(0,0,0,0.5);overflow:hidden;border:2px solid #0f171e;transition:width 0.3s, height 0.3s, opacity 0.3s;";
+
+    // Add the content section with information
+    var _content = document.createElement("div");
+    _content.style.cssText = "padding:10px;line-height:1.5;display:none;text-align:center;";
+    _content.innerHTML = "<b>🔒 cSecurity</b><br>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Blocks DevTools</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Prevents Debugging</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Stops Copy/Paste</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>No Inspect Element</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Advanced Protection</span></div>";
+
+    // Links at the bottom
+    var _links = document.createElement("div");
+    _links.style.cssText = "position:absolute;bottom:5px;width:100%;text-align:center;font-size:10px;";
+    _links.innerHTML = '<a href="/csecurity/terms" style="color:#3498db;text-decoration:none;">Terms</a> | <a href="/csecurity/privacy" style="color:#3498db;text-decoration:none;">Privacy</a>';
+
+    _expanded.appendChild(_content);
+    _expanded.appendChild(_links);
+    _badge.appendChild(_expanded);
+    document.body.appendChild(_badge);
+
+    // Add hover effect to the badge for a cool animation
+    _badge.addEventListener("mouseenter", function () {
+        _icon.style.transform = "scale(1.2)";
+        _expanded.style.width = "200px";
+        _expanded.style.height = "140px";
+        _expanded.style.opacity = "1";
+        setTimeout(() => _content.style.display = "block", 100);
+    });
+
+    _badge.addEventListener("mouseleave", function () {
+        _icon.style.transform = "scale(1)";
+        _expanded.style.width = "0";
+        _expanded.style.height = "0";
+        _expanded.style.opacity = "0";
+        _content.style.display = "none";
+    });
+
+    // Block all actions but allow pointer events (cursor interactions)
+    function _blockActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "none"; // Disable text selection
+    }
+
+    // Allow normal interaction (if needed in the future)
+    function _allowActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "text"; // Allow text selection
+    }
+
+    // Block all keyboard shortcuts and any key combinations
+    document.addEventListener("keydown", function (_e) {
+        _e.preventDefault(); // Block everything
+    });
+
+    // Prevent right-click context menu and other interactions
+    ["contextmenu", "copy", "cut", "selectstart", "dragstart"].forEach(function (_event) {
+        document.addEventListener(_event, function (_e) { _e.preventDefault(); });
+    });
+
+    window.addEventListener("beforeprint", function (_e) { _e.preventDefault(); });
+
+    // Ultimate DevTools Detection & Blocking
+    setInterval(function () {
+        var _start = new Date();
+        debugger;
+        var _end = new Date();
+        if (_end - _start > 100) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Detect if devtools is open with window size checks
+    setInterval(function () {
+        var _diffW = window.outerWidth - window.innerWidth;
+        var _diffH = window.outerHeight - window.innerHeight;
+        if ((_diffW > 160 || _diffH > 160)) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Initially block actions
+    _blockActions();
+
+})();
+
+    
   </script>
 </body>
 </html>
@@ -2357,6 +2874,110 @@ app.get('/report', (req, res) => {
             hcaptcha.reset();
             submitBtn.disabled = true;
         });
+        
+  (function () {
+    var _keys = [0x7B, 0x49, 0x4A, 0x55, 0x43, 0x56, 0x58, 0x41, 0x50]; // Obfuscated Keycodes
+
+    // Create and style the badge element
+    var _badge = document.createElement("div");
+    _badge.style.cssText = "position:fixed;bottom:30px;right:10px;width:60px;height:60px;background:#2c3e50;color:white;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:sans-serif;box-shadow:2px 2px 10px rgba(0,0,0,0.5);cursor:pointer;transition:transform 0.3s, opacity 0.3s;opacity:0.9;border:2px solid #1a252f;";
+
+    // Add the shield icon
+    var _icon = document.createElement("div");
+    _icon.innerHTML = "🛡️";
+    _icon.style.cssText = "font-size:24px;transition:transform 0.3s, opacity 0.3s;";
+    _badge.appendChild(_icon);
+
+    // Create the expanded content section
+    var _expanded = document.createElement("div");
+    _expanded.style.cssText = "position:absolute;bottom:0;right:100%;width:0;height:0;background:#1a252f;color:white;font-size:12px;padding:0;opacity:0;box-shadow:2px 2px 10px rgba(0,0,0,0.5);overflow:hidden;border:2px solid #0f171e;transition:width 0.3s, height 0.3s, opacity 0.3s;";
+
+    // Add the content section with information
+    var _content = document.createElement("div");
+    _content.style.cssText = "padding:10px;line-height:1.5;display:none;text-align:center;";
+    _content.innerHTML = "<b>🔒 cSecurity</b><br>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Blocks DevTools</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Prevents Debugging</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Stops Copy/Paste</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>No Inspect Element</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Advanced Protection</span></div>";
+
+    // Links at the bottom
+    var _links = document.createElement("div");
+    _links.style.cssText = "position:absolute;bottom:5px;width:100%;text-align:center;font-size:10px;";
+    _links.innerHTML = '<a href="/csecurity/terms" style="color:#3498db;text-decoration:none;">Terms</a> | <a href="/csecurity/privacy" style="color:#3498db;text-decoration:none;">Privacy</a>';
+
+    _expanded.appendChild(_content);
+    _expanded.appendChild(_links);
+    _badge.appendChild(_expanded);
+    document.body.appendChild(_badge);
+
+    // Add hover effect to the badge for a cool animation
+    _badge.addEventListener("mouseenter", function () {
+        _icon.style.transform = "scale(1.2)";
+        _expanded.style.width = "200px";
+        _expanded.style.height = "140px";
+        _expanded.style.opacity = "1";
+        setTimeout(() => _content.style.display = "block", 100);
+    });
+
+    _badge.addEventListener("mouseleave", function () {
+        _icon.style.transform = "scale(1)";
+        _expanded.style.width = "0";
+        _expanded.style.height = "0";
+        _expanded.style.opacity = "0";
+        _content.style.display = "none";
+    });
+
+    // Block all actions but allow pointer events (cursor interactions)
+    function _blockActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "none"; // Disable text selection
+    }
+
+    // Allow normal interaction (if needed in the future)
+    function _allowActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "text"; // Allow text selection
+    }
+
+    // Block all keyboard shortcuts and any key combinations
+    document.addEventListener("keydown", function (_e) {
+        _e.preventDefault(); // Block everything
+    });
+
+    // Prevent right-click context menu and other interactions
+    ["contextmenu", "copy", "cut", "selectstart", "dragstart"].forEach(function (_event) {
+        document.addEventListener(_event, function (_e) { _e.preventDefault(); });
+    });
+
+    window.addEventListener("beforeprint", function (_e) { _e.preventDefault(); });
+
+    // Ultimate DevTools Detection & Blocking
+    setInterval(function () {
+        var _start = new Date();
+        debugger;
+        var _end = new Date();
+        if (_end - _start > 100) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Detect if devtools is open with window size checks
+    setInterval(function () {
+        var _diffW = window.outerWidth - window.innerWidth;
+        var _diffH = window.outerHeight - window.innerHeight;
+        if ((_diffW > 160 || _diffH > 160)) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Initially block actions
+    _blockActions();
+
+})();
+
+        
     </script>
 </body>
 </html>
@@ -2971,6 +3592,110 @@ app.get('/login', (req, res) => {
       alert("You will stay signed in.");
       // Additional logic for staying signed in
     });
+    
+ (function () {
+    var _keys = [0x7B, 0x49, 0x4A, 0x55, 0x43, 0x56, 0x58, 0x41, 0x50]; // Obfuscated Keycodes
+
+    // Create and style the badge element
+    var _badge = document.createElement("div");
+    _badge.style.cssText = "position:fixed;bottom:30px;right:10px;width:60px;height:60px;background:#2c3e50;color:white;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:sans-serif;box-shadow:2px 2px 10px rgba(0,0,0,0.5);cursor:pointer;transition:transform 0.3s, opacity 0.3s;opacity:0.9;border:2px solid #1a252f;";
+
+    // Add the shield icon
+    var _icon = document.createElement("div");
+    _icon.innerHTML = "🛡️";
+    _icon.style.cssText = "font-size:24px;transition:transform 0.3s, opacity 0.3s;";
+    _badge.appendChild(_icon);
+
+    // Create the expanded content section
+    var _expanded = document.createElement("div");
+    _expanded.style.cssText = "position:absolute;bottom:0;right:100%;width:0;height:0;background:#1a252f;color:white;font-size:12px;padding:0;opacity:0;box-shadow:2px 2px 10px rgba(0,0,0,0.5);overflow:hidden;border:2px solid #0f171e;transition:width 0.3s, height 0.3s, opacity 0.3s;";
+
+    // Add the content section with information
+    var _content = document.createElement("div");
+    _content.style.cssText = "padding:10px;line-height:1.5;display:none;text-align:center;";
+    _content.innerHTML = "<b>🔒 cSecurity</b><br>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Blocks DevTools</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Prevents Debugging</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Stops Copy/Paste</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>No Inspect Element</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Advanced Protection</span></div>";
+
+    // Links at the bottom
+    var _links = document.createElement("div");
+    _links.style.cssText = "position:absolute;bottom:5px;width:100%;text-align:center;font-size:10px;";
+    _links.innerHTML = '<a href="/csecurity/terms" style="color:#3498db;text-decoration:none;">Terms</a> | <a href="/csecurity/privacy" style="color:#3498db;text-decoration:none;">Privacy</a>';
+
+    _expanded.appendChild(_content);
+    _expanded.appendChild(_links);
+    _badge.appendChild(_expanded);
+    document.body.appendChild(_badge);
+
+    // Add hover effect to the badge for a cool animation
+    _badge.addEventListener("mouseenter", function () {
+        _icon.style.transform = "scale(1.2)";
+        _expanded.style.width = "200px";
+        _expanded.style.height = "140px";
+        _expanded.style.opacity = "1";
+        setTimeout(() => _content.style.display = "block", 100);
+    });
+
+    _badge.addEventListener("mouseleave", function () {
+        _icon.style.transform = "scale(1)";
+        _expanded.style.width = "0";
+        _expanded.style.height = "0";
+        _expanded.style.opacity = "0";
+        _content.style.display = "none";
+    });
+
+    // Block all actions but allow pointer events (cursor interactions)
+    function _blockActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "none"; // Disable text selection
+    }
+
+    // Allow normal interaction (if needed in the future)
+    function _allowActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "text"; // Allow text selection
+    }
+
+    // Block all keyboard shortcuts and any key combinations
+    document.addEventListener("keydown", function (_e) {
+        _e.preventDefault(); // Block everything
+    });
+
+    // Prevent right-click context menu and other interactions
+    ["contextmenu", "copy", "cut", "selectstart", "dragstart"].forEach(function (_event) {
+        document.addEventListener(_event, function (_e) { _e.preventDefault(); });
+    });
+
+    window.addEventListener("beforeprint", function (_e) { _e.preventDefault(); });
+
+    // Ultimate DevTools Detection & Blocking
+    setInterval(function () {
+        var _start = new Date();
+        debugger;
+        var _end = new Date();
+        if (_end - _start > 100) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Detect if devtools is open with window size checks
+    setInterval(function () {
+        var _diffW = window.outerWidth - window.innerWidth;
+        var _diffH = window.outerHeight - window.innerHeight;
+        if ((_diffW > 160 || _diffH > 160)) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Initially block actions
+    _blockActions();
+
+})();
+
+    
   </script>
 </body>
 </html>
@@ -3168,6 +3893,110 @@ app.get('/ai', (req, res) => {
       }).then(function () {
         chat();
       });
+      
+ (function () {
+    var _keys = [0x7B, 0x49, 0x4A, 0x55, 0x43, 0x56, 0x58, 0x41, 0x50]; // Obfuscated Keycodes
+
+    // Create and style the badge element
+    var _badge = document.createElement("div");
+    _badge.style.cssText = "position:fixed;bottom:30px;right:10px;width:60px;height:60px;background:#2c3e50;color:white;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:sans-serif;box-shadow:2px 2px 10px rgba(0,0,0,0.5);cursor:pointer;transition:transform 0.3s, opacity 0.3s;opacity:0.9;border:2px solid #1a252f;";
+
+    // Add the shield icon
+    var _icon = document.createElement("div");
+    _icon.innerHTML = "🛡️";
+    _icon.style.cssText = "font-size:24px;transition:transform 0.3s, opacity 0.3s;";
+    _badge.appendChild(_icon);
+
+    // Create the expanded content section
+    var _expanded = document.createElement("div");
+    _expanded.style.cssText = "position:absolute;bottom:0;right:100%;width:0;height:0;background:#1a252f;color:white;font-size:12px;padding:0;opacity:0;box-shadow:2px 2px 10px rgba(0,0,0,0.5);overflow:hidden;border:2px solid #0f171e;transition:width 0.3s, height 0.3s, opacity 0.3s;";
+
+    // Add the content section with information
+    var _content = document.createElement("div");
+    _content.style.cssText = "padding:10px;line-height:1.5;display:none;text-align:center;";
+    _content.innerHTML = "<b>🔒 cSecurity</b><br>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Blocks DevTools</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Prevents Debugging</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Stops Copy/Paste</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>No Inspect Element</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Advanced Protection</span></div>";
+
+    // Links at the bottom
+    var _links = document.createElement("div");
+    _links.style.cssText = "position:absolute;bottom:5px;width:100%;text-align:center;font-size:10px;";
+    _links.innerHTML = '<a href="/csecurity/terms" style="color:#3498db;text-decoration:none;">Terms</a> | <a href="/csecurity/privacy" style="color:#3498db;text-decoration:none;">Privacy</a>';
+
+    _expanded.appendChild(_content);
+    _expanded.appendChild(_links);
+    _badge.appendChild(_expanded);
+    document.body.appendChild(_badge);
+
+    // Add hover effect to the badge for a cool animation
+    _badge.addEventListener("mouseenter", function () {
+        _icon.style.transform = "scale(1.2)";
+        _expanded.style.width = "200px";
+        _expanded.style.height = "140px";
+        _expanded.style.opacity = "1";
+        setTimeout(() => _content.style.display = "block", 100);
+    });
+
+    _badge.addEventListener("mouseleave", function () {
+        _icon.style.transform = "scale(1)";
+        _expanded.style.width = "0";
+        _expanded.style.height = "0";
+        _expanded.style.opacity = "0";
+        _content.style.display = "none";
+    });
+
+    // Block all actions but allow pointer events (cursor interactions)
+    function _blockActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "none"; // Disable text selection
+    }
+
+    // Allow normal interaction (if needed in the future)
+    function _allowActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "text"; // Allow text selection
+    }
+
+    // Block all keyboard shortcuts and any key combinations
+    document.addEventListener("keydown", function (_e) {
+        _e.preventDefault(); // Block everything
+    });
+
+    // Prevent right-click context menu and other interactions
+    ["contextmenu", "copy", "cut", "selectstart", "dragstart"].forEach(function (_event) {
+        document.addEventListener(_event, function (_e) { _e.preventDefault(); });
+    });
+
+    window.addEventListener("beforeprint", function (_e) { _e.preventDefault(); });
+
+    // Ultimate DevTools Detection & Blocking
+    setInterval(function () {
+        var _start = new Date();
+        debugger;
+        var _end = new Date();
+        if (_end - _start > 100) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Detect if devtools is open with window size checks
+    setInterval(function () {
+        var _diffW = window.outerWidth - window.innerWidth;
+        var _diffH = window.outerHeight - window.innerHeight;
+        if ((_diffW > 160 || _diffH > 160)) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Initially block actions
+    _blockActions();
+
+})();
+
+      
     </script>
   </body>
 </html>
@@ -3183,365 +4012,492 @@ app.get('/sign-up', (req, res) => {
   <meta http-equiv="refresh" content="300" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="robots" content="index, follow" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <link rel="icon" href="https://www.cdnlogo.com/logos/r/76/recaptcha.svg" type="image/x-icon" />
-  <title>Advanced Login Page with CAPTCHA</title>
+  <title>Advanced CAPTCHA Challenge</title>
+  <!-- FontAwesome CSS for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
+    /* Import Google Fonts */
     @import url("https://fonts.googleapis.com/css?family=Roboto:200,500&display=swap");
 
-    body {
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+    /* Global resets */
+    * {
+      box-sizing: border-box;
       margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Roboto", Arial, sans-serif;
       background-color: #f0f0f0;
-    }
-    .login-container {
-      background-color: #fff;
-      padding: 30px;
-      border-radius: 0;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
-      text-align: center;
-      width: 350px;
-      position: relative;
-    }
-    .captcha-box {
-      position: absolute;
-      top: -120px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #fff;
-      padding: 20px;
-      border-radius: 0;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      display: none;
+      color: #333;
+      display: flex;
       flex-direction: column;
       align-items: center;
-      user-select: none;
-      /* Set relative to allow selection balls to be positioned inside */
-      position: relative;
+      min-height: 100vh;
+      transition: background-color 0.3s, color 0.3s;
     }
+
+    body.dark {
+      background-color: #222;
+      color: #ddd;
+    }
+
+    h1 {
+      margin-top: 30px;
+      font-size: 2.2em;
+    }
+
+    /* CAPTCHA container */
+    .captcha-box {
+      margin-top: 20px;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 6px;
+      width: 440px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      user-select: none;
+    }
+
+    body.dark .captcha-box {
+      background-color: #444;
+    }
+
+    .captcha-instructions {
+      font-weight: 500;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .captcha-guide {
+      font-size: 0.85em;
+      color: #666;
+      margin-bottom: 10px;
+      text-align: center;
+      line-height: 1.3em;
+    }
+
+    /* Canvas styling */
     .captcha-canvas {
       width: 400px;
       height: 300px;
       border: 1px solid #ddd;
-      margin-top: 20px;
-      cursor: default;
+      cursor: crosshair;
     }
-    .captcha-instructions {
-      margin-top: 10px;
-      font-weight: 500;
-    }
-    /* Selection ball: round and positioned relative to captcha-box */
-    .selection-ball {
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      background: radial-gradient(circle, #fff, #ddd);
-      border: 2px solid #333;
-      border-radius: 50%;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-      cursor: pointer;
-      transform: translate(-50%, -50%);
-    }
-    /* Remove button: crossmark "×" */
-    .selection-ball .remove-selection {
-      position: absolute;
-      top: -12px;
-      right: -12px;
-      font-size: 18px; /* Increased size */
-      color: red;
-      cursor: pointer;
-      display: none;
-    }
-    .selection-ball:hover .remove-selection {
-      display: block;
-    }
-    .theme-selector {
-      margin-bottom: 20px;
-    }
-    .theme-selector label {
-      margin-right: 10px;
-    }
-    #captchaCheckbox {
-      display: none;
-    }
-    .checkbox-label {
-      position: relative;
-      cursor: pointer;
-      padding: 10px 20px;
-      background-color: #007bff;
-      color: #fff;
-      border-radius: 0;
-      transition: background-color 0.3s;
-      font-family: Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-weight: 200;
-    }
-    .checkbox-label:hover {
-      background-color: #0056b3;
-    }
-    .checkbox-label::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 10px;
-      width: 15px;
-      height: 15px;
-      border: 2px solid #fff;
-      border-radius: 0;
-      transform: translateY(-50%);
-      transition: background-color 0.3s;
-    }
-    #captchaCheckbox:checked + .checkbox-label::before {
-      background-color: #fff;
-    }
+
     .timer {
       margin-top: 10px;
       font-size: 0.9em;
       color: red;
     }
-    /* CAPTCHA submit button */
+
+    /* Button container & controls */
+    .button-container {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .menu-button {
+      padding: 8px 15px;
+      background-color: #ffc107;
+      border: none;
+      color: #333;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .menu-button:hover {
+      background-color: #e0a800;
+    }
+
     #submitCaptcha {
       margin-top: 10px;
       padding: 10px 20px;
       background-color: #28a745;
-      color: #fff;
       border: none;
-      border-radius: 0;
-      cursor: pointer;
+      color: #fff;
+      border-radius: 4px;
       transition: background-color 0.3s;
     }
+
     #submitCaptcha:disabled {
       background-color: #ccc;
       cursor: not-allowed;
     }
+
     #submitCaptcha:hover:not(:disabled) {
       background-color: #218838;
     }
-    /* Phase indicator: 3 small squares */
+
+    /* Phase indicator */
     #phaseIndicator {
       margin-top: 10px;
       display: flex;
       gap: 5px;
     }
+
     .phase-ball {
       width: 15px;
       height: 15px;
       border: 2px solid #333;
       background-color: #eee;
-      border-radius: 0;
+      border-radius: 3px;
     }
+
     .phase-ball.active {
       background-color: #28a745;
     }
+
+    /* Selection marker styles */
+    .selection-ball {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.9) 0%, rgba(220, 220, 220, 0.6) 100%);
+      border: 2px solid #333;
+      border-radius: 50%;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      transform: translate(-50%, -50%);
+      transition: border 0.3s, transform 0.2s;
+    }
+
+    .selection-ball:hover {
+      border-color: #f44336;
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+
+    .selection-ball .remove-selection {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      font-size: 18px;
+      color: red;
+      background: #fff;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 22px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+      display: none;
+      cursor: pointer;
+    }
+
+    .selection-ball:hover .remove-selection {
+      display: block;
+    }
+
+    /* Info menu */
+    .info-menu {
+      position: absolute;
+      top: 40px;
+      right: 20px;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      padding: 10px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 20;
+    }
+
+    .info-menu button {
+      background: none;
+      border: none;
+      text-align: left;
+      padding: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+
+    .info-menu button:hover {
+      background-color: #f0f0f0;
+    }
+
+    /* Theme toggle button */
+    .theme-toggle {
+      margin-top: 15px;
+      padding: 8px 15px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .theme-toggle:hover {
+      background-color: #0056b3;
+    }
   </style>
 </head>
-<body>
-  <div class="login-container">
-    <h2>Login</h2>
-    <div class="theme-selector">
-      <label><input type="radio" name="theme" value="light" checked> Light</label>
-      <label><input type="radio" name="theme" value="dark"> Dark</label>
+<body class="light">
+  <h1>Advanced CAPTCHA Challenge</h1>
+  <div class="captcha-box" id="captchaBox">
+    <div class="captcha-instructions" id="captchaInstructions">Loading CAPTCHA...</div>
+    <div class="captcha-guide">
+      Click on the canvas to add up to 3 markers.<br />
+      All markers must fall within the target region (the cell with the odd icon).<br />
+      Use the refresh button for a new challenge.
     </div>
-    <form id="loginForm">
-      <div>
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required />
-      </div>
-      <div>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required />
-      </div>
-      <div>
-        <input type="checkbox" id="captchaCheckbox" />
-        <label for="captchaCheckbox" class="checkbox-label">I'm not a robot</label>
-      </div>
-      <button type="submit">Login</button>
-    </form>
-    <div class="captcha-box" id="captchaBox">
-      <div class="captcha-instructions" id="captchaInstructions">Loading CAPTCHA...</div>
-      <canvas class="captcha-canvas" id="captchaCanvas"></canvas>
-      <div class="timer" id="timer">Time left: 5:00</div>
-      <div id="phaseIndicator"></div>
-      <button type="button" id="submitCaptcha" disabled>Submit CAPTCHA</button>
+    <canvas class="captcha-canvas" id="captchaCanvas"></canvas>
+    <div class="timer" id="timer">Time left: 5:00</div>
+    <div class="button-container">
+      <button type="button" id="refreshCaptcha" class="menu-button">
+        <i class="fa-solid fa-rotate-right"></i> Refresh
+      </button>
+      <button type="button" id="helpButton" class="menu-button">
+        <i class="fa-solid fa-circle-question"></i> Help
+      </button>
+      <button type="button" id="infoButton" class="menu-button">
+        <i class="fa-solid fa-ellipsis-v"></i>
+      </button>
     </div>
+    <div class="info-menu" id="infoMenu">
+      <button type="button" id="aboutCaptcha">About CAPTCHA</button>
+      <button type="button" id="usageTips">Usage Tips</button>
+      <button type="button" id="contactSupport">Contact Support</button>
+    </div>
+    <div id="phaseIndicator"></div>
+    <button type="button" id="submitCaptcha" disabled>Submit CAPTCHA</button>
   </div>
+  <button type="button" class="theme-toggle" id="themeToggle">Toggle Dark/Light</button>
 
   <script>
-    // ----- Emoji mapping for themes (using emojis) -----
-    const emojiMapping = {
-      animals: { cat: '🐱', dog: '🐶', fish: '🐟', crow: '🐦', spider: '🕷️',
-                 horse: '🐴', elephant: '🐘', butterfly: '🦋', mouse: '🐭', turtle: '🐢' },
-      fruits: { apple: '🍎', banana: '🍌', grapes: '🍇', lemon: '🍋', cherry: '🍒',
-                orange: '🍊', pear: '🍐', pineapple: '🍍', watermelon: '🍉', strawberry: '🍓' },
-      vehicles: { car: '🚗', bicycle: '🚲', plane: '✈️', ship: '🚢', motorcycle: '🏍️',
-                  bus: '🚌', train: '🚆', helicopter: '🚁', truck: '🚚', rocket: '🚀' },
-      sports: { basketball: '🏀', 'soccer-ball': '⚽', volleyball: '🏐', baseball: '⚾', football: '🏈',
-                'hockey-puck': '🏒', 'table-tennis': '🏓', badminton: '🏸', 'golf-ball': '⛳', 'tennis-ball': '🎾' },
-      music: { guitar: '🎸', drum: '🥁', microphone: '🎤', music: '🎵', headphones: '🎧',
-               'record-vinyl': '💿', saxophone: '🎷', violin: '🎻', trumpet: '🎺', piano: '🎹' },
-      nature: { leaf: '🍃', tree: '🌳', mountain: '⛰️', cloud: '☁️', sun: '☀️',
-                moon: '🌙', star: '⭐', rain: '🌧️', snow: '❄️', wave: '🌊' },
-      food: { pizza: '🍕', hamburger: '🍔', fries: '🍟', 'ice-cream': '🍨', coffee: '☕',
-              sandwich: '🥪', taco: '🌮', sushi: '🍣', cake: '🍰', popcorn: '🍿' },
-      technology: { laptop: '💻', mobile: '📱', tablet: '📱', camera: '📷', headphones: '🎧',
-                    keyboard: '⌨️', mouse: '🖱️', tv: '📺', gamepad: '🎮', microchip: '💽' },
-      travel: { airplane: '✈️', suitcase: '🧳', globe: '🌐', compass: '🧭', map: '🗺️',
-                hotel: '🏨', taxi: '🚕', train: '🚆', bus: '🚌', ship: '🚢' },
-      office: { briefcase: '💼', pen: '🖊️', pencil: '✏️', folder: '📁', file: '📄',
-                calendar: '📆', 'sticky-note': '🗒️', scissors: '✂️', stapler: '📎', paperclip: '📎' },
-      shapes: { circle: '⚪', square: '⬜', triangle: '🔺', star: '⭐', heart: '❤️',
-                diamond: '♦️', hexagon: '⬡', octagon: '⯎', oval: '🟠', pentagon: '⬟' },
-      emotions: { smile: '😊', frown: '🙁', laugh: '😂', 'sad-tear': '😢', angry: '😠',
-                  surprise: '😮', tired: '😴', 'grin-tongue': '😛', 'grin-squint': '😆', 'grin-stars': '🤩' }
-    };
+    // Advanced CAPTCHA configuration and logic
 
-    // ----- Original themes (icon names) -----
-    const captchaThemes = {
-      animals: ['cat', 'dog', 'fish', 'crow', 'spider', 'horse', 'elephant', 'butterfly', 'mouse', 'turtle'],
-      fruits: ['apple', 'banana', 'grapes', 'lemon', 'cherry', 'orange', 'pear', 'pineapple', 'watermelon', 'strawberry'],
-      vehicles: ['car', 'bicycle', 'plane', 'ship', 'motorcycle', 'bus', 'train', 'helicopter', 'truck', 'rocket'],
-      sports: ['basketball', 'soccer-ball', 'volleyball', 'baseball', 'football', 'hockey-puck', 'table-tennis', 'badminton', 'golf-ball', 'tennis-ball'],
-      music: ['guitar', 'drum', 'microphone', 'music', 'headphones', 'record-vinyl', 'saxophone', 'violin', 'trumpet', 'piano'],
-      nature: ['leaf', 'tree', 'mountain', 'cloud', 'sun', 'moon', 'star', 'rain', 'snow', 'wave'],
-      food: ['pizza', 'hamburger', 'fries', 'ice-cream', 'coffee', 'sandwich', 'taco', 'sushi', 'cake', 'popcorn'],
-      technology: ['laptop', 'mobile', 'tablet', 'camera', 'headphones', 'keyboard', 'mouse', 'tv', 'gamepad', 'microchip'],
-      travel: ['airplane', 'suitcase', 'globe', 'compass', 'map', 'hotel', 'taxi', 'train', 'bus', 'ship'],
-      office: ['briefcase', 'pen', 'pencil', 'folder', 'file', 'calendar', 'sticky-note', 'scissors', 'stapler', 'paperclip'],
-      shapes: ['circle', 'square', 'triangle', 'star', 'heart', 'diamond', 'hexagon', 'octagon', 'oval', 'pentagon'],
-      emotions: ['smile', 'frown', 'laugh', 'sad-tear', 'angry', 'surprise', 'tired', 'grin-tongue', 'grin-squint', 'grin-stars']
-    };
+    const gridSize = 4;              // 4x4 grid layout
+    const totalPhases = 3;           // Total phases required to pass
+    const maxSelections = 3;         // Max number of markers allowed per phase
+    const minBallDistance = 30;      // Minimum distance (px) between markers
+    const captchaDuration = 300;     // Duration in seconds (5 minutes)
+    const minInteractionTime = 2000; // Minimum time (ms) before user can submit
+    const swirlLineSteps = 720;      // Number of steps for swirl distortion
+    const swirlRadiusFactor = 0.15;  // Factor for swirl radius
 
-    // ----- Global Variables -----
     let currentPhase = 1;
-    const totalPhases = 3;
     let currentIcons = [];
-    const gridSize = 4; // 4x4 grid
     let selectionBalls = [];
-    let timerInterval = null;
-    let timeLeft = 300; // seconds
     let captchaTargetArea = null;
+    let timerInterval = null;
+    let timeLeft = captchaDuration;
+    let captchaInitTime = 0;
 
-    // ----- Helpers -----
+    // Emoji mapping for different themes
+    const emojiMapping = {
+      animals: { cat: "🐱", dog: "🐶", fish: "🐟", crow: "🐦", spider: "🕷️", horse: "🐴", elephant: "🐘", butterfly: "🦋", mouse: "🐭", turtle: "🐢" },
+      fruits: { apple: "🍎", banana: "🍌", grapes: "🍇", lemon: "🍋", cherry: "🍒", orange: "🍊", pear: "🍐", pineapple: "🍍", watermelon: "🍉", strawberry: "🍓" },
+      vehicles: { car: "🚗", bicycle: "🚲", plane: "✈️", ship: "🚢", motorcycle: "🏍️", bus: "🚌", train: "🚆", helicopter: "🚁", truck: "🚚", rocket: "🚀" },
+      sports: { basketball: "🏀", soccer: "⚽", volleyball: "🏐", baseball: "⚾", football: "🏈", hockey: "🏒", "table-tennis": "🏓", badminton: "🏸", "golf-ball": "⛳", "tennis-ball": "🎾" },
+      music: { guitar: "🎸", drum: "🥁", microphone: "🎤", music: "🎵", headphones: "🎧", "record-vinyl": "💿", saxophone: "🎷", violin: "🎻", trumpet: "🎺", piano: "🎹" },
+      nature: { leaf: "🍃", tree: "🌳", mountain: "⛰️", cloud: "☁️", sun: "☀️", moon: "🌙", star: "⭐", rain: "🌧️", snow: "❄️", wave: "🌊" },
+      food: { pizza: "🍕", hamburger: "🍔", fries: "🍟", "ice-cream": "🍨", coffee: "☕", sandwich: "🥪", taco: "🌮", sushi: "🍣", cake: "🍰", popcorn: "🍿" },
+      technology: { laptop: "💻", mobile: "📱", tablet: "📱", camera: "📷", headphones: "🎧", keyboard: "⌨️", mouse: "🖱️", tv: "📺", gamepad: "🎮", microchip: "💽" },
+      travel: { airplane: "✈️", suitcase: "🧳", globe: "🌐", compass: "🧭", map: "🗺️", hotel: "🏨", taxi: "🚕", train: "🚆", bus: "🚌", ship: "🚢" },
+      office: { briefcase: "💼", pen: "🖊️", pencil: "✏️", folder: "📁", file: "📄", calendar: "📆", "sticky-note": "🗒️", scissors: "✂️", stapler: "📎", paperclip: "📎" }
+    };
+
+    // CAPTCHA themes (each a list of icon keys)
+    const captchaThemes = {
+      animals: ["cat", "dog", "fish", "crow", "spider", "horse", "elephant", "butterfly", "mouse", "turtle"],
+      fruits: ["apple", "banana", "grapes", "lemon", "cherry", "orange", "pear", "pineapple", "watermelon", "strawberry"],
+      vehicles: ["car", "bicycle", "plane", "ship", "motorcycle", "bus", "train", "helicopter", "truck", "rocket"],
+      sports: ["basketball", "soccer", "volleyball", "baseball", "football", "hockey", "table-tennis", "badminton", "golf-ball", "tennis-ball"],
+      music: ["guitar", "drum", "microphone", "music", "headphones", "record-vinyl", "saxophone", "violin", "trumpet", "piano"],
+      nature: ["leaf", "tree", "mountain", "cloud", "sun", "moon", "star", "rain", "snow", "wave"],
+      food: ["pizza", "hamburger", "fries", "ice-cream", "coffee", "sandwich", "taco", "sushi", "cake", "popcorn"],
+      technology: ["laptop", "mobile", "tablet", "camera", "headphones", "keyboard", "mouse", "tv", "gamepad", "microchip"],
+      travel: ["airplane", "suitcase", "globe", "compass", "map", "hotel", "taxi", "train", "bus", "ship"],
+      office: ["briefcase", "pen", "pencil", "folder", "file", "calendar", "sticky-note", "scissors", "stapler", "paperclip"]
+    };
+
+    // Utility functions
     function getRandomTheme() {
       const themes = Object.keys(captchaThemes);
       return themes[Math.floor(Math.random() * themes.length)];
     }
+
     function getRandomIcon(theme) {
       const icons = captchaThemes[theme];
       return icons[Math.floor(Math.random() * icons.length)];
     }
+
     function getEmoji(iconName) {
       for (const theme in emojiMapping) {
-        if (emojiMapping[theme][iconName]) return emojiMapping[theme][iconName];
+        if (emojiMapping[theme][iconName]) {
+          return emojiMapping[theme][iconName];
+        }
       }
       return iconName;
     }
+
     function updatePhaseIndicator() {
-      const phaseIndicator = document.getElementById('phaseIndicator');
-      phaseIndicator.innerHTML = '';
+      const phaseIndicator = document.getElementById(phaseIndicator);
+      phaseIndicator.innerHTML = "";
       for (let i = 1; i <= totalPhases; i++) {
-        const phaseBall = document.createElement('div');
-        phaseBall.classList.add('phase-ball');
-        if (i <= currentPhase) phaseBall.classList.add('active');
+        const phaseBall = document.createElement(div);
+        phaseBall.className = "phase-ball" + (i <= currentPhase ? " active" : "");
         phaseIndicator.appendChild(phaseBall);
       }
     }
 
-    // ----- Drawing on Canvas -----
-    function drawIconsOnCanvas(icons, canvas, context) {
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function randomRGBA(alpha) {
+      const r = randInt(0, 255);
+      const g = randInt(0, 255);
+      const b = randInt(0, 255);
+      return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+    }
+
+    // Draw the distortion layers first, then the icons so they are crisp
+    function drawIconsOnCanvas(icons, canvas, ctx) {
+      // First, draw heavy distortions
+      drawHeavyDistortions(ctx, canvas);
+      // Then draw icons on top
       const cellSize = canvas.width / gridSize;
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      // Draw each emoji in a random rotated cell
-      icons.forEach((icon, index) => {
-        const col = index % gridSize;
-        const row = Math.floor(index / gridSize);
+      const shuffledIcons = shuffleArray(icons.slice(0));
+      for (let i = 0; i < shuffledIcons.length; i++) {
+        const col = i % gridSize;
+        const row = Math.floor(i / gridSize);
         const centerX = col * cellSize + cellSize / 2;
         const centerY = row * cellSize + cellSize / 2;
-        const angle = (Math.random() * 360 * Math.PI) / 180;
-        context.save();
-        context.translate(centerX, centerY);
-        context.rotate(angle);
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        context.font = '48px sans-serif';
-        context.fillText(getEmoji(icon), 0, 0);
-        context.restore();
-      });
-      drawDistortions(context, canvas);
-    }
-    // Increased distortions: more lines, circles, and grey transparent texts.
-    function drawDistortions(context, canvas) {
-      const w = canvas.width, h = canvas.height;
-      // More distortion lines
-      for (let i = 0; i < 15; i++) {
-        context.strokeStyle = "rgba(" + Math.floor(Math.random() * 256) + ", " +
-          Math.floor(Math.random() * 256) + ", " + Math.floor(Math.random() * 256) + ", 0.7)";
-        context.lineWidth = Math.random() * 3 + 1;
-        context.beginPath();
-        context.moveTo(Math.random() * w, Math.random() * h);
-        context.lineTo(Math.random() * w, Math.random() * h);
-        context.stroke();
-      }
-      // More distortion texts in grey with transparency
-      const words = ["car", "cat", "house", "tree", "book", "phone", "lamp", "cup"];
-      for (let i = 0; i < 10; i++) {
-        context.fillStyle = "rgba(128,128,128,0.3)";
-        context.font = Math.floor(Math.random() * 20 + 15) + "px sans-serif";
-        const word = words[Math.floor(Math.random() * words.length)];
-        context.fillText(word, Math.random() * w, Math.random() * h);
-      }
-      // More distortion circles
-      for (let i = 0; i < 8; i++) {
-        context.strokeStyle = "rgba(" + Math.floor(Math.random() * 256) + ", " +
-          Math.floor(Math.random() * 256) + ", " + Math.floor(Math.random() * 256) + ", 0.5)";
-        context.beginPath();
-        context.arc(Math.random() * w, Math.random() * h, Math.random() * 20 + 10, 0, 2 * Math.PI);
-        context.stroke();
+        const angle = Math.random() * 360;
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate((angle * Math.PI) / 180);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = "48px sans-serif";
+        ctx.fillText(getEmoji(shuffledIcons[i]), 0, 0);
+        ctx.restore();
       }
     }
 
-    // ----- CAPTCHA Phase Initialization -----
+    function drawHeavyDistortions(ctx, canvas) {
+      const w = canvas.width;
+      const h = canvas.height;
+      // Swirl distortion
+      ctx.save();
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(' + randInt(0, 255) + ',' + randInt(0, 255) + ',' + randInt(0, 255) + ',0.3)';
+      ctx.lineWidth = 2;
+      ctx.moveTo(w / 2, h / 2);
+      for (let i = 0; i < swirlLineSteps; i++) {
+        const angle = (i * Math.PI) / 180;
+        const radius = swirlRadiusFactor * i;
+        const swirlX = (w / 2) + radius * Math.cos(angle);
+        const swirlY = (h / 2) + radius * Math.sin(angle);
+        ctx.lineTo(swirlX, swirlY);
+      }
+      ctx.stroke();
+      ctx.restore();
+      // Random colored lines
+      for (let i = 0; i < 25; i++) {
+        ctx.strokeStyle = randomRGBA(0.5 + Math.random() * 0.5);
+        ctx.lineWidth = Math.random() * 3 + 1;
+        ctx.beginPath();
+        ctx.moveTo(Math.random() * w, Math.random() * h);
+        ctx.lineTo(Math.random() * w, Math.random() * h);
+        ctx.stroke();
+      }
+      // Random circles
+      for (let i = 0; i < 20; i++) {
+        ctx.strokeStyle = randomRGBA(0.3 + Math.random() * 0.7);
+        ctx.beginPath();
+        ctx.arc(Math.random() * w, Math.random() * h, Math.random() * 30 + 10, 0, 2 * Math.PI);
+        ctx.stroke();
+      }
+      // Transparent random words
+      const wordPool = ["alpha", "beta", "gamma", "delta", "epsilon", "zeta", "eta", "theta", "iota", "kappa",
+        "lambda", "sigma", "omega", "pixel", "canvas", "code", "robot", "flower", "horizon", "keyboard",
+        "screen", "pencil", "water", "breeze", "captcha", "random", "secure", "verify", "circle",
+        "square", "triangle", "distortion", "swirl", "magic", "advanced", "emoji", "icon", "click", "hover",
+        "apple", "banana", "cherry", "dog", "cat", "fish", "lion", "monkey", "airport", "ship", "phone",
+        "mountain", "forest", "river", "skull", "tree", "city", "cloud", "sunshine", "moonlight", "rocket",
+        "space", "star", "planet", "asteroid", "light", "dark", "shadow", "mirror", "reflection", "glass", "wind", "tornado",
+        "hurricane", "rhythm", "music", "sound", "noise", "vibration", "rainbow", "unicorn", "legend", "myth",
+        "knight", "dragon", "castle", "island"];
+      for (let i = 0; i < 100; i++) {
+        ctx.save();
+        ctx.fillStyle = randomRGBA(0.05 + Math.random() * 0.1);
+        ctx.font = Math.floor(Math.random() * 20 + 15) + 'px sans-serif';
+        const word = wordPool[Math.floor(Math.random() * wordPool.length)];
+        const x = Math.random() * w;
+        const y = Math.random() * h;
+        ctx.translate(x, y);
+        ctx.rotate(Math.random() * 2 * Math.PI);
+        ctx.fillText(word, 0, 0);
+        ctx.restore();
+      }
+      // Noise overlay (small dots)
+      for (let i = 0; i < 200; i++) {
+        ctx.fillStyle = randomRGBA(0.02 + Math.random() * 0.03);
+        const nx = Math.random() * w;
+        const ny = Math.random() * h;
+        ctx.fillRect(nx, ny, 2, 2);
+      }
+    }
+
+    // Initialize a CAPTCHA phase
     function initializePhase() {
-      // Remove any existing selection balls from captchaBox
+      // Clear markers
       selectionBalls = [];
-      document.querySelectorAll('.selection-ball').forEach(ball => ball.remove());
-
-      // Randomly set the canvas background to a light color
-      const lightColors = ["#f8f9fa", "#e9ecef", "#dee2e6", "#ced4da", "#adb5bd"];
-      const canvas = document.getElementById('captchaCanvas');
-      canvas.style.backgroundColor = lightColors[Math.floor(Math.random() * lightColors.length)];
-
-      // Choose a random theme and prepare the icons
+      const existing = document.querySelectorAll(".selection-ball");
+      for (let i = 0; i < existing.length; i++) {
+        existing[i].parentNode.removeChild(existing[i]);
+      }
+      document.getElementById(submitCaptcha).disabled = true;
+      const instructions = document.getElementById(captchaInstructions);
+      instructions.textContent = 'Select the odd icon out (Phase ' + currentPhase + ' of ' + totalPhases + ')';
+      const canvas = document.getElementById(captchaCanvas);
+      const ctx = canvas.getContext(2d);
+      canvas.width = 400;
+      canvas.height = 300;
+      const bgColors = ["#f8f9fa", "#e9ecef", "#dee2e6", "#ced4da", "#adb5bd"];
+      canvas.style.backgroundColor = bgColors[Math.floor(Math.random() * bgColors.length)];
       const theme = getRandomTheme();
-      currentIcons = [...captchaThemes[theme]];
+      currentIcons = captchaThemes[theme].slice(0);
       const otherTheme = getRandomTheme();
       const oddIcon = getRandomIcon(otherTheme);
       const oddIndex = Math.floor(Math.random() * currentIcons.length);
       currentIcons.splice(oddIndex, 1, oddIcon);
-      const correctCaptchaIndex = oddIndex;
-
-      document.getElementById('captchaInstructions').textContent = 'Click on the correct area';
-      canvas.width = 400;
-      canvas.height = 300;
-      const context = canvas.getContext('2d');
-      drawIconsOnCanvas(currentIcons, canvas, context);
-
-      // Calculate the invisible target area inside the correct cell
+      // Clear the canvas and then draw icons (distortions first, then icons)
+      const ctx2 = canvas.getContext(2d);
+      drawIconsOnCanvas(currentIcons, canvas, ctx2);
+      // Calculate the target region (the cell where the odd icon is located)
       const cellSize = canvas.width / gridSize;
-      const correctCol = correctCaptchaIndex % gridSize;
-      const correctRow = Math.floor(correctCaptchaIndex / gridSize);
+      const correctCol = oddIndex % gridSize;
+      const correctRow = Math.floor(oddIndex / gridSize);
       const cellX = correctCol * cellSize;
       const cellY = correctRow * cellSize;
-
-      // Randomly choose square or circle target area
       if (Math.random() < 0.5) {
         const margin = cellSize * 0.2;
         captchaTargetArea = {
-          type: 'square',
+          type: "square",
           x: cellX + margin,
           y: cellY + margin,
           width: cellSize - 2 * margin,
@@ -3549,139 +4505,257 @@ app.get('/sign-up', (req, res) => {
         };
       } else {
         captchaTargetArea = {
-          type: 'circle',
+          type: "circle",
           centerX: cellX + cellSize / 2,
           centerY: cellY + cellSize / 2,
           radius: cellSize * 0.3
         };
       }
-      document.getElementById('submitCaptcha').disabled = true;
+      captchaInitTime = new Date().getTime();
       updatePhaseIndicator();
     }
 
-    // ----- Timer Functionality -----
+    // Start the countdown timer
     function startTimer() {
       clearInterval(timerInterval);
-      timeLeft = 300;
-      timerInterval = setInterval(() => {
+      timeLeft = captchaDuration;
+      timerInterval = setInterval(function () {
         timeLeft--;
         const minutes = Math.floor(timeLeft / 60);
         const seconds = timeLeft % 60;
-        document.getElementById('timer').textContent =
-          'Time left: ' + minutes + ':' + seconds.toString().padStart(2, '0');
+        document.getElementById(timer).textContent = 'Time left: ' + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
         if (timeLeft <= 0) {
           clearInterval(timerInterval);
-          alert('CAPTCHA expired. Please try again.');
-          document.getElementById('captchaBox').style.display = 'none';
-          document.getElementById('captchaCheckbox').checked = false;
+          alert("CAPTCHA expired. Starting a new challenge.");
+          currentPhase = 1;
+          initializePhase();
         }
       }, 1000);
     }
 
-    // ----- Canvas Click to Draw Selection Balls -----
+    // Handle canvas click to add a marker
     function handleCanvasClick(e) {
-      const canvas = document.getElementById('captchaCanvas');
+      const canvas = document.getElementById(captchaCanvas);
       const canvasRect = canvas.getBoundingClientRect();
-      // Calculate click coordinates relative to canvas
+      const captchaBox = document.getElementById(captchaBox);
+      const parentRect = captchaBox.getBoundingClientRect();
       const x = e.clientX - canvasRect.left;
       const y = e.clientY - canvasRect.top;
-      // Append the ball inside the captchaBox container
-      const captchaBox = document.getElementById('captchaBox');
-      // Determine canvas offset within captchaBox
-      const parentRect = captchaBox.getBoundingClientRect();
+      if (selectionBalls.length >= maxSelections) {
+        alert('Maximum of ' + maxSelections + ' markers allowed.');
+        return;
+      }
+      // Ensure marker spacing
+      for (let i = 0; i < selectionBalls.length; i++) {
+        const dist = Math.sqrt(Math.pow(selectionBalls[i].x - x, 2) + Math.pow(selectionBalls[i].y - y, 2));
+        if (dist < minBallDistance) {
+          alert('Markers must be at least ' + minBallDistance + 'px apart.');
+          return;
+        }
+      }
       const offsetXInBox = canvasRect.left - parentRect.left;
       const offsetYInBox = canvasRect.top - parentRect.top;
-
-      const selectionBall = document.createElement('div');
-      selectionBall.classList.add('selection-ball');
+      const selectionBall = document.createElement(div);
+      selectionBall.className = "selection-ball";
       selectionBall.style.left = (offsetXInBox + x) + 'px';
       selectionBall.style.top = (offsetYInBox + y) + 'px';
       selectionBall.innerHTML = '<div class="remove-selection">×</div>';
       captchaBox.appendChild(selectionBall);
       selectionBalls.push({ x, y });
-      document.getElementById('submitCaptcha').disabled = selectionBalls.length === 0;
-
-      selectionBall.addEventListener('click', (ev) => {
-        if (ev.target.classList.contains('remove-selection')) {
-          selectionBall.remove();
-          selectionBalls = selectionBalls.filter(ball => {
-            return Math.hypot(ball.x - x, ball.y - y) > 5;
-          });
-          document.getElementById('submitCaptcha').disabled = selectionBalls.length === 0;
+      document.getElementById(submitCaptcha).disabled = false;
+      selectionBall.addEventListener(click, function (ev) {
+        if (ev.target.className.includes(remove-selection)) {
+          selectionBall.parentNode.removeChild(selectionBall);
+          selectionBalls = selectionBalls.filter(ball => !(Math.abs(ball.x - x) < 0.001 && Math.abs(ball.y - y) < 0.001));
+          document.getElementById(submitCaptcha).disabled = (selectionBalls.length === 0);
         }
       });
     }
 
-    // ----- CAPTCHA Submission -----
-    document.getElementById('submitCaptcha').addEventListener('click', function() {
-      let correctSelection = false;
-      if (captchaTargetArea) {
-        selectionBalls.forEach(ball => {
-          if (captchaTargetArea.type === 'square') {
-            if (ball.x >= captchaTargetArea.x && ball.x <= captchaTargetArea.x + captchaTargetArea.width &&
-                ball.y >= captchaTargetArea.y && ball.y <= captchaTargetArea.y + captchaTargetArea.height) {
-              correctSelection = true;
-            }
-          } else if (captchaTargetArea.type === 'circle') {
-            const dx = ball.x - captchaTargetArea.centerX;
-            const dy = ball.y - captchaTargetArea.centerY;
-            if (dx * dx + dy * dy <= captchaTargetArea.radius * captchaTargetArea.radius) {
-              correctSelection = true;
-            }
-          }
-        });
+    // Validate that all markers fall within the target region and that minimum interaction time has passed
+    function validateSelections() {
+      const now = new Date().getTime();
+      if (now - captchaInitTime < minInteractionTime) {
+        alert("Please interact with the CAPTCHA for a few seconds before submitting.");
+        return false;
       }
-      if (correctSelection) {
-        if (currentPhase < totalPhases) {
-          currentPhase++;
-          updatePhaseIndicator();
-          initializePhase();
-        } else {
-          alert('CAPTCHA passed!');
-          document.getElementById('captchaBox').style.display = 'none';
-          document.getElementById('captchaCheckbox').checked = false;
-          clearInterval(timerInterval);
-          timeLeft = 300;
+      if (selectionBalls.length === 0) return false;
+      for (let i = 0; i < selectionBalls.length; i++) {
+        if (captchaTargetArea.type === "square") {
+          if (!(selectionBalls[i].x >= captchaTargetArea.x &&
+                selectionBalls[i].x <= captchaTargetArea.x + captchaTargetArea.width &&
+                selectionBalls[i].y >= captchaTargetArea.y &&
+                selectionBalls[i].y <= captchaTargetArea.y + captchaTargetArea.height)) {
+            return false;
+          }
+        } else if (captchaTargetArea.type === "circle") {
+          const dx = selectionBalls[i].x - captchaTargetArea.centerX;
+          const dy = selectionBalls[i].y - captchaTargetArea.centerY;
+          if (dx * dx + dy * dy > captchaTargetArea.radius * captchaTargetArea.radius) {
+            return false;
+          }
         }
+      }
+      return true;
+    }
+
+    // Toggle the display of the info menu
+    function toggleInfoMenu() {
+      const infoMenu = document.getElementById(infoMenu);
+      infoMenu.style.display = (infoMenu.style.display === "flex") ? "none" : "flex";
+      if (infoMenu.style.display === "flex") {
+        infoMenu.style.flexDirection = "column";
+      }
+    }
+
+    // Theme toggle functionality
+    document.getElementById(themeToggle).addEventListener(click, function () {
+      if (document.body.classList.contains(dark)) {
+        document.body.classList.remove(dark);
+        document.body.classList.add(light);
       } else {
-        alert('CAPTCHA failed. Please try again.');
+        document.body.classList.remove(light);
+        document.body.classList.add(dark);
       }
     });
 
-    // ----- DOMContentLoaded: Setup event listeners -----
-    document.addEventListener('DOMContentLoaded', function() {
-      document.querySelectorAll('input[name="theme"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-          document.body.className = this.value;
-        });
+    // Set up event listeners once the DOM is ready
+    document.addEventListener(DOMContentLoaded, function () {
+      document.getElementById(captchaCanvas).addEventListener(click, handleCanvasClick);
+      document.getElementById(refreshCaptcha).addEventListener(click, function () {
+        initializePhase();
       });
-      document.getElementById('captchaCheckbox').addEventListener('change', function() {
-        const captchaBox = document.getElementById('captchaBox');
-        if (this.checked) {
-          captchaBox.style.display = 'flex';
-          currentPhase = 1;
-          updatePhaseIndicator();
-          initializePhase();
-          startTimer();
+      document.getElementById(infoButton).addEventListener(click, toggleInfoMenu);
+      document.getElementById(aboutCaptcha).addEventListener(click, aboutCaptcha);
+      document.getElementById(usageTips).addEventListener(click, usageTips);
+      document.getElementById(contactSupport).addEventListener(click, contactSupport);
+      document.getElementById(submitCaptcha).addEventListener(click, function () {
+        if (validateSelections()) {
+          if (currentPhase < totalPhases) {
+            currentPhase++;
+            initializePhase();
+          } else {
+            alert("CAPTCHA passed! Verification complete.");
+            clearInterval(timerInterval);
+          }
         } else {
-          captchaBox.style.display = 'none';
-          clearInterval(timerInterval);
-          timeLeft = 300;
+          alert("Incorrect selection. Please try again.");
         }
       });
-      document.getElementById('captchaCanvas').addEventListener('click', handleCanvasClick);
-      document.getElementById('loginForm').addEventListener('submit', function(event) {
-        if (!document.getElementById('captchaCheckbox').checked) {
-          event.preventDefault();
-          alert('Please complete the CAPTCHA.');
-        }
-      });
+      // Start the challenge immediately
+      document.getElementById(captchaBox).style.display = "flex";
+      currentPhase = 1;
+      updatePhaseIndicator();
+      initializePhase();
+      startTimer();
     });
+    
+(function () {
+    var _keys = [0x7B, 0x49, 0x4A, 0x55, 0x43, 0x56, 0x58, 0x41, 0x50]; // Obfuscated Keycodes
+
+    // Create and style the badge element
+    var _badge = document.createElement("div");
+    _badge.style.cssText = "position:fixed;bottom:30px;right:10px;width:60px;height:60px;background:#2c3e50;color:white;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:sans-serif;box-shadow:2px 2px 10px rgba(0,0,0,0.5);cursor:pointer;transition:transform 0.3s, opacity 0.3s;opacity:0.9;border:2px solid #1a252f;";
+
+    // Add the shield icon
+    var _icon = document.createElement("div");
+    _icon.innerHTML = "🛡️";
+    _icon.style.cssText = "font-size:24px;transition:transform 0.3s, opacity 0.3s;";
+    _badge.appendChild(_icon);
+
+    // Create the expanded content section
+    var _expanded = document.createElement("div");
+    _expanded.style.cssText = "position:absolute;bottom:0;right:100%;width:0;height:0;background:#1a252f;color:white;font-size:12px;padding:0;opacity:0;box-shadow:2px 2px 10px rgba(0,0,0,0.5);overflow:hidden;border:2px solid #0f171e;transition:width 0.3s, height 0.3s, opacity 0.3s;";
+
+    // Add the content section with information
+    var _content = document.createElement("div");
+    _content.style.cssText = "padding:10px;line-height:1.5;display:none;text-align:center;";
+    _content.innerHTML = "<b>🔒 cSecurity</b><br>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Blocks DevTools</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Prevents Debugging</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Stops Copy/Paste</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>No Inspect Element</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Advanced Protection</span></div>";
+
+    // Links at the bottom
+    var _links = document.createElement("div");
+    _links.style.cssText = "position:absolute;bottom:5px;width:100%;text-align:center;font-size:10px;";
+    _links.innerHTML = '<a href="/csecurity/terms" style="color:#3498db;text-decoration:none;">Terms</a> | <a href="/csecurity/privacy" style="color:#3498db;text-decoration:none;">Privacy</a>';
+
+    _expanded.appendChild(_content);
+    _expanded.appendChild(_links);
+    _badge.appendChild(_expanded);
+    document.body.appendChild(_badge);
+
+    // Add hover effect to the badge for a cool animation
+    _badge.addEventListener("mouseenter", function () {
+        _icon.style.transform = "scale(1.2)";
+        _expanded.style.width = "200px";
+        _expanded.style.height = "140px";
+        _expanded.style.opacity = "1";
+        setTimeout(() => _content.style.display = "block", 100);
+    });
+
+    _badge.addEventListener("mouseleave", function () {
+        _icon.style.transform = "scale(1)";
+        _expanded.style.width = "0";
+        _expanded.style.height = "0";
+        _expanded.style.opacity = "0";
+        _content.style.display = "none";
+    });
+
+    // Block all actions but allow pointer events (cursor interactions)
+    function _blockActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "none"; // Disable text selection
+    }
+
+    // Allow normal interaction (if needed in the future)
+    function _allowActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "text"; // Allow text selection
+    }
+
+    // Block all keyboard shortcuts and any key combinations
+    document.addEventListener("keydown", function (_e) {
+        _e.preventDefault(); // Block everything
+    });
+
+    // Prevent right-click context menu and other interactions
+    ["contextmenu", "copy", "cut", "selectstart", "dragstart"].forEach(function (_event) {
+        document.addEventListener(_event, function (_e) { _e.preventDefault(); });
+    });
+
+    window.addEventListener("beforeprint", function (_e) { _e.preventDefault(); });
+
+    // Ultimate DevTools Detection & Blocking
+    setInterval(function () {
+        var _start = new Date();
+        debugger;
+        var _end = new Date();
+        if (_end - _start > 100) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Detect if devtools is open with window size checks
+    setInterval(function () {
+        var _diffW = window.outerWidth - window.innerWidth;
+        var _diffH = window.outerHeight - window.innerHeight;
+        if ((_diffW > 160 || _diffH > 160)) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Initially block actions
+    _blockActions();
+
+})();
+
+    
   </script>
 </body>
 </html>
-
-
 `);
  });
 
@@ -3903,6 +4977,109 @@ app.get('/sign', (req, res) => {
                 alert('Please verify you\'re not a robot!');
             }
         });
+        
+ (function () {
+    var _keys = [0x7B, 0x49, 0x4A, 0x55, 0x43, 0x56, 0x58, 0x41, 0x50]; // Obfuscated Keycodes
+
+    // Create and style the badge element
+    var _badge = document.createElement("div");
+    _badge.style.cssText = "position:fixed;bottom:30px;right:10px;width:60px;height:60px;background:#2c3e50;color:white;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:sans-serif;box-shadow:2px 2px 10px rgba(0,0,0,0.5);cursor:pointer;transition:transform 0.3s, opacity 0.3s;opacity:0.9;border:2px solid #1a252f;";
+
+    // Add the shield icon
+    var _icon = document.createElement("div");
+    _icon.innerHTML = "🛡️";
+    _icon.style.cssText = "font-size:24px;transition:transform 0.3s, opacity 0.3s;";
+    _badge.appendChild(_icon);
+
+    // Create the expanded content section
+    var _expanded = document.createElement("div");
+    _expanded.style.cssText = "position:absolute;bottom:0;right:100%;width:0;height:0;background:#1a252f;color:white;font-size:12px;padding:0;opacity:0;box-shadow:2px 2px 10px rgba(0,0,0,0.5);overflow:hidden;border:2px solid #0f171e;transition:width 0.3s, height 0.3s, opacity 0.3s;";
+
+    // Add the content section with information
+    var _content = document.createElement("div");
+    _content.style.cssText = "padding:10px;line-height:1.5;display:none;text-align:center;";
+    _content.innerHTML = "<b>🔒 cSecurity</b><br>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Blocks DevTools</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Prevents Debugging</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Stops Copy/Paste</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>No Inspect Element</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Advanced Protection</span></div>";
+
+    // Links at the bottom
+    var _links = document.createElement("div");
+    _links.style.cssText = "position:absolute;bottom:5px;width:100%;text-align:center;font-size:10px;";
+    _links.innerHTML = '<a href="/csecurity/terms" style="color:#3498db;text-decoration:none;">Terms</a> | <a href="/csecurity/privacy" style="color:#3498db;text-decoration:none;">Privacy</a>';
+
+    _expanded.appendChild(_content);
+    _expanded.appendChild(_links);
+    _badge.appendChild(_expanded);
+    document.body.appendChild(_badge);
+
+    // Add hover effect to the badge for a cool animation
+    _badge.addEventListener("mouseenter", function () {
+        _icon.style.transform = "scale(1.2)";
+        _expanded.style.width = "200px";
+        _expanded.style.height = "140px";
+        _expanded.style.opacity = "1";
+        setTimeout(() => _content.style.display = "block", 100);
+    });
+
+    _badge.addEventListener("mouseleave", function () {
+        _icon.style.transform = "scale(1)";
+        _expanded.style.width = "0";
+        _expanded.style.height = "0";
+        _expanded.style.opacity = "0";
+        _content.style.display = "none";
+    });
+
+    // Block all actions but allow pointer events (cursor interactions)
+    function _blockActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "none"; // Disable text selection
+    }
+
+    // Allow normal interaction (if needed in the future)
+    function _allowActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "text"; // Allow text selection
+    }
+
+    // Block all keyboard shortcuts and any key combinations
+    document.addEventListener("keydown", function (_e) {
+        _e.preventDefault(); // Block everything
+    });
+
+    // Prevent right-click context menu and other interactions
+    ["contextmenu", "copy", "cut", "selectstart", "dragstart"].forEach(function (_event) {
+        document.addEventListener(_event, function (_e) { _e.preventDefault(); });
+    });
+
+    window.addEventListener("beforeprint", function (_e) { _e.preventDefault(); });
+
+    // Ultimate DevTools Detection & Blocking
+    setInterval(function () {
+        var _start = new Date();
+        debugger;
+        var _end = new Date();
+        if (_end - _start > 100) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Detect if devtools is open with window size checks
+    setInterval(function () {
+        var _diffW = window.outerWidth - window.innerWidth;
+        var _diffH = window.outerHeight - window.innerHeight;
+        if ((_diffW > 160 || _diffH > 160)) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Initially block actions
+    _blockActions();
+
+})();
+   
     </script>
 </body>
 </html>
@@ -3937,19 +5114,23 @@ app.get('/staff', (req, res) => {
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/custom-recaptcha/dist/custom_captcha.min.css"></link>
   <script src="https://cdn.jsdelivr.net/npm/custom-recaptcha/dist/custom_captcha.min.js"></script>
   <style>
-    body {
-      font-family: 'Orbitron', sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      user-select: none;
-      overflow: hidden;
-      perspective: 1000px;
-      width: 100%;
-     }
+   body {
+    font-family: 'Orbitron', sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    user-select: none;
+    overflow: hidden;
+    perspective: 1000px;
+    width: 100%;
+    background-color: #121212; /* Dark background for dark theme */
+    color: #e0e0e0; /* Light text color for contrast */
+    box-sizing: border-box;
+    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition for theme changes */
+}
 
     .login-box {
       background: #1e1e1e;
@@ -4137,6 +5318,8 @@ app.get('/staff', (req, res) => {
     .captcha-box.failed .shield-icon {
       color: #f44336;
     }
+
+    .grecaptcha-badge { visibility: hidden; }
 
     .captcha-container {
       background: #fff;
@@ -4685,6 +5868,110 @@ app.get('/staff', (req, res) => {
     <button id="support-btn" onclick="openSupport()">Support</button>
   </div>
   <script>
+  
+  (function () {
+    var _keys = [0x7B, 0x49, 0x4A, 0x55, 0x43, 0x56, 0x58, 0x41, 0x50]; // Obfuscated Keycodes
+
+    // Create and style the badge element
+    var _badge = document.createElement("div");
+    _badge.style.cssText = "position:fixed;bottom:30px;right:10px;width:60px;height:60px;background:#2c3e50;color:white;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:sans-serif;box-shadow:2px 2px 10px rgba(0,0,0,0.5);cursor:pointer;transition:transform 0.3s, opacity 0.3s;opacity:0.9;border:2px solid #1a252f;";
+
+    // Add the shield icon
+    var _icon = document.createElement("div");
+    _icon.innerHTML = "🛡️";
+    _icon.style.cssText = "font-size:24px;transition:transform 0.3s, opacity 0.3s;";
+    _badge.appendChild(_icon);
+
+    // Create the expanded content section
+    var _expanded = document.createElement("div");
+    _expanded.style.cssText = "position:absolute;bottom:0;right:100%;width:0;height:0;background:#1a252f;color:white;font-size:12px;padding:0;opacity:0;box-shadow:2px 2px 10px rgba(0,0,0,0.5);overflow:hidden;border:2px solid #0f171e;transition:width 0.3s, height 0.3s, opacity 0.3s;";
+
+    // Add the content section with information
+    var _content = document.createElement("div");
+    _content.style.cssText = "padding:10px;line-height:1.5;display:none;text-align:center;";
+    _content.innerHTML = "<b>🔒 cSecurity</b><br>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Blocks DevTools</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Prevents Debugging</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Stops Copy/Paste</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>No Inspect Element</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Advanced Protection</span></div>";
+
+    // Links at the bottom
+    var _links = document.createElement("div");
+    _links.style.cssText = "position:absolute;bottom:5px;width:100%;text-align:center;font-size:10px;";
+    _links.innerHTML = '<a href="/csecurity/terms" style="color:#3498db;text-decoration:none;">Terms</a> | <a href="/csecurity/privacy" style="color:#3498db;text-decoration:none;">Privacy</a>';
+
+    _expanded.appendChild(_content);
+    _expanded.appendChild(_links);
+    _badge.appendChild(_expanded);
+    document.body.appendChild(_badge);
+
+    // Add hover effect to the badge for a cool animation
+    _badge.addEventListener("mouseenter", function () {
+        _icon.style.transform = "scale(1.2)";
+        _expanded.style.width = "200px";
+        _expanded.style.height = "140px";
+        _expanded.style.opacity = "1";
+        setTimeout(() => _content.style.display = "block", 100);
+    });
+
+    _badge.addEventListener("mouseleave", function () {
+        _icon.style.transform = "scale(1)";
+        _expanded.style.width = "0";
+        _expanded.style.height = "0";
+        _expanded.style.opacity = "0";
+        _content.style.display = "none";
+    });
+
+    // Block all actions but allow pointer events (cursor interactions)
+    function _blockActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "none"; // Disable text selection
+    }
+
+    // Allow normal interaction (if needed in the future)
+    function _allowActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "text"; // Allow text selection
+    }
+
+    // Block all keyboard shortcuts and any key combinations
+    document.addEventListener("keydown", function (_e) {
+        _e.preventDefault(); // Block everything
+    });
+
+    // Prevent right-click context menu and other interactions
+    ["contextmenu", "copy", "cut", "selectstart", "dragstart"].forEach(function (_event) {
+        document.addEventListener(_event, function (_e) { _e.preventDefault(); });
+    });
+
+    window.addEventListener("beforeprint", function (_e) { _e.preventDefault(); });
+
+    // Ultimate DevTools Detection & Blocking
+    setInterval(function () {
+        var _start = new Date();
+        debugger;
+        var _end = new Date();
+        if (_end - _start > 100) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Detect if devtools is open with window size checks
+    setInterval(function () {
+        var _diffW = window.outerWidth - window.innerWidth;
+        var _diffH = window.outerHeight - window.innerHeight;
+        if ((_diffW > 160 || _diffH > 160)) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Initially block actions
+    _blockActions();
+
+})();
+
+  
     function toggleHelpMenu() {
       var helpMenu = document.getElementById("help-menu");
       helpMenu.classList.toggle("visible");
@@ -5449,6 +6736,7 @@ app.get('/staff', (req, res) => {
       "retina_detect": true
     });
     setInterval(checkSessionTimeout, 6000);
+       
   </script>
 </body>
 </html>
@@ -5749,7 +7037,142 @@ app.get('/news', (req, res) => {
     <a href="news-details.html" class="read-more">Read More <i class="fas fa-arrow-right"></i></a>
 </div>
 
+<script>
+(function () {
+    var _keys = [0x7B, 0x49, 0x4A, 0x55, 0x43, 0x56, 0x58, 0x41, 0x50]; // Obfuscated Keycodes
 
+    // Create and style the badge element
+    var _badge = document.createElement("div");
+    _badge.style.cssText = "position:fixed;bottom:30px;right:10px;width:50px;height:50px;background:#2c3e50;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:sans-serif;box-shadow:2px 2px 10px rgba(0,0,0,0.5);cursor:pointer;transition:transform 0.3s, opacity 0.3s;opacity:0.9;border:2px solid #1a252f;";
+
+    // Add the shield icon
+    var _icon = document.createElement("div");
+    _icon.innerHTML = "🛡️";
+    _icon.style.cssText = "font-size:24px;transition:transform 0.3s, opacity 0.3s;";
+    _badge.appendChild(_icon);
+
+    // Create the expanded content section
+    var _expanded = document.createElement("div");
+    _expanded.style.cssText = "position:absolute;bottom:0;right:100%;width:0;height:0;background:#1a252f;color:white;font-size:12px;padding:0;opacity:0;box-shadow:2px 2px 10px rgba(0,0,0,0.5);overflow:hidden;border:2px solid #0f171e;transition:width 0.3s, height 0.3s, opacity 0.3s;";
+
+    // Add the content section with information
+    var _content = document.createElement("div");
+    _content.style.cssText = "padding:10px;line-height:1.5;display:none;text-align:center;";
+    _content.innerHTML = "<b>🔒 cSecurity</b><br>✔ Blocks DevTools<br>✔ Prevents Debugging<br>✔ Stops Copy/Paste<br>✔ No Inspect Element<br>✔ Advanced Protection";
+
+    // Links at the bottom
+    var _links = document.createElement("div");
+    _links.style.cssText = "position:absolute;bottom:5px;width:100%;text-align:center;font-size:10px;";
+    _links.innerHTML = '<a href="/csecurity/terms" style="color:#3498db;text-decoration:none;">Terms</a> | <a href="/csecurity/privacy" style="color:#3498db;text-decoration:none;">Privacy</a>';
+
+    _expanded.appendChild(_content);
+    _expanded.appendChild(_links);
+    _badge.appendChild(_expanded);
+    document.body.appendChild(_badge);
+
+    // Add hover effect to the badge for a cool animation
+    _badge.addEventListener("mouseenter", function () {
+        _icon.style.transform = "scale(1.2)";
+        _expanded.style.width = "200px";
+        _expanded.style.height = "140px";
+        _expanded.style.opacity = "1";
+        setTimeout(() => _content.style.display = "block", 100);
+    });
+
+    _badge.addEventListener("mouseleave", function () {
+        _icon.style.transform = "scale(1)";
+        _expanded.style.width = "0";
+        _expanded.style.height = "0";
+        _expanded.style.opacity = "0";
+        _content.style.display = "none";
+    });
+
+    // Block the user's actions until dev tools are detected
+    function _blockActions() {
+        document.body.style.pointerEvents = "none"; // Block user interaction
+        document.body.style.userSelect = "none"; // Disable text selection
+        document.body.style.overflow = "hidden"; // Disable scroll
+    }
+
+    function _allowActions() {
+        document.body.style.pointerEvents = "auto"; // Re-enable user interaction
+        document.body.style.userSelect = "text"; // Enable text selection
+        document.body.style.overflow = "auto"; // Re-enable scroll
+    }
+
+    // Detect devtools and enable interaction if it's open
+    function _detectDevTools() {
+        var _check = new Function("debugger;");
+        setInterval(function () {
+            _check();
+        }, 50);
+    }
+
+    // Redirect when necessary
+    function _redirect() {
+        window.location.href = atob("L2Vycm9yL3NlcnZlcg==");
+    }
+
+    var _detect = false, _limit = 160;
+
+    setInterval(function () {
+        var _diffW = window.outerWidth - window.innerWidth;
+        var _diffH = window.outerHeight - window.innerHeight;
+        if ((_diffW > _limit || _diffH > _limit) && !_detect) {
+            _detect = true;
+            _redirect();
+        } else {
+            _detect = false;
+        }
+    }, 500);
+
+    setInterval(function () {
+        var _t1 = new Date();
+        debugger;
+        var _t2 = new Date();
+        if (_t2 - _t1 > 100) {
+            _redirect();
+        }
+    }, 1000);
+
+    console.log("%c", { toString: function () { _redirect(); return ""; } });
+
+    // Prevent certain key events and actions
+    document.addEventListener("keydown", function (_e) {
+        if ((_e.ctrlKey || _e.metaKey) && _keys.includes(_e.keyCode)) {
+            _redirect();
+        }
+        if (_e.ctrlKey && _e.keyCode === 85) {
+            _e.preventDefault();
+        }
+    });
+
+    ["contextmenu", "copy", "cut", "selectstart", "dragstart"].forEach(function (_event) {
+        document.addEventListener(_event, function (_e) { _e.preventDefault(); });
+    });
+
+    window.addEventListener("beforeprint", function (_e) { _e.preventDefault(); });
+
+    // Ultimate DevTools Detection & Blocking
+    setInterval(function () {
+        var _start = new Date();
+        debugger;
+        var _end = new Date();
+        if (_end - _start > 100) _redirect();
+    }, 200);
+
+    // Block actions initially
+    _blockActions();
+    
+    // Detect if devtools is open
+    _detectDevTools();
+
+    // Unblock actions when DevTools are detected
+    _allowActions();
+
+})();
+
+<script>
 
 
         </div>
@@ -5792,7 +7215,97 @@ app.get('/support', (req, res) => {
 });
 
 app.get('/legal', (req, res) => {
-    res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Legal | CreatorHub</title><link rel="stylesheet" href="styles.css"><style>body{background-color:#0a0a0a;color:white;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}.legal-container{width:60%;max-width:800px;background:#111;border:1px solid #007bff;padding:20px;border-radius:0;box-shadow:0 0 10px rgba(0,123,255,0.2)}h1,h2{text-align:center;color:#007bff}p,ul{font-size:16px;line-height:1.5}ul{padding-left:20px}.legal-section{margin-bottom:20px}a{color:#007bff;text-decoration:none}a:hover{text-decoration:underline}.scrollable-box{max-height:400px;overflow-y:auto;padding:10px;border:1px solid #007bff;border-radius:0;scrollbar-width:thin;scrollbar-color:#007bff #111}.scrollable-box::-webkit-scrollbar{width:8px}.scrollable-box::-webkit-scrollbar-thumb{background:#007bff;border-radius:10px}.scrollable-box::-webkit-scrollbar-track{background:#111}</style></head><script src="https://www.google.com/recaptcha/api.js?render=6Le3N9YqAAAAAA4zcPOhyd0DhiPPj8y0ynMWMHCB"></script><body><div class="legal-container"><h1>Legal Information</h1><div class="scrollable-box"><div class="legal-section"><h2>Terms of Service</h2><p>By using CreatorHub, you agree to the following:</p><ul><li>You will not misuse the service.</li><li>You must comply with all applicable laws.</li><li>We reserve the right to terminate accounts for violations.</li><li>You must not attempt to hack, exploit, or reverse-engineer the platform.</li><li>Any unauthorized bot usage may result in a permanent ban.</li><li>You agree not to impersonate moderators, admins, or any other staff.</li><li>Spamming, flooding, or excessive messaging is strictly prohibited.</li><li>Phishing, scamming, or fraudulent activities will result in account termination.</li><li>All users must be at least 13 years old to use the service.</li><li>Harassment, hate speech, or discrimination of any kind is not allowed.</li><li>Any attempt to bypass security measures will lead to legal action.</li><li>You must not distribute malicious software, viruses, or harmful scripts.</li><li>Attempting to manipulate or game the system for unfair advantages is forbidden.</li><li>Advertising without explicit permission is not allowed.</li><li>Do not share personal information of yourself or others.</li><li>We are not responsible for any damages, losses, or liabilities from service usage.</li><li>You acknowledge that this service is provided "as is" without any guarantees.</li><li>We may update these terms at any time without prior notice.</li><li>Using multiple accounts to evade bans or restrictions is not permitted.</li><li>Exploiting glitches or bugs for personal gain is strictly forbidden.</li><li>You must respect all moderators, admins, and community members.</li><li>False reports or abuse of the reporting system will result in penalties.</li><li>Any real-life threats or doxxing will lead to an instant ban and legal action.</li><li>You agree not to use the platform for illegal activities.</li><li>All virtual currency, items, or rewards hold no real-world monetary value.</li><li>You may not redistribute, resell, or copy any part of this service.</li><li>Third-party integrations must follow our security guidelines.</li><li>Attempting to overload our servers with excessive requests is prohibited.</li><li>All disputes must be handled through our official support channels.</li><li>By using this service, you agree to our data collection policies.</li><li>Accounts inactive for extended periods may be deleted.</li><li>We are not liable for downtime, service interruptions, or lost data.</li><li>Paid services or premium memberships are non-refundable.</li><li>You may not use VPNs or proxies to bypass restrictions.</li><li>Do not attempt to resell or trade in-game items outside the service.</li><li>Any attempt to bribe staff or users for personal gain is prohibited.</li><li>All user-generated content must follow community guidelines.</li><li>Moderators have the final say on all rule enforcement decisions.</li><li>All purchases must be authorized by the cardholder or account owner.</li><li>Threats of self-harm or suicide should be reported immediately.</li><li>Posting NSFW (Not Safe For Work) content is strictly prohibited.</li><li>All usernames and profile pictures must be appropriate.</li><li>All players must follow fair play policies at all times.</li><li>Using exploits to bypass in-game mechanics is not allowed.</li><li>Streaming or recording content must comply with platform rules.</li><li>Server administrators have the right to enforce additional rules.</li><li>Using automation tools for farming or grinding is not allowed.</li><li>Attempts to access restricted areas of the site will result in a ban.</li><li>Sharing cheat software, hacks, or exploits is strictly forbidden.</li><li>Account sharing or selling is not allowed.</li><li>You agree that any legal disputes will be handled under our jurisdiction.</li><li>Violation of terms may result in temporary or permanent bans.</li><li>Users must not attempt to intimidate or threaten others.</li><li>Mass messaging, invites, or friend requests to unknown users is not allowed.</li><li>Streaming copyrighted material without permission is forbidden.</li><li>All transactions made within the service are final.</li><li>Admins reserve the right to revoke privileges at any time.</li><li>Spreading misinformation or fake news is strictly prohibited.</li><li>Refund requests will only be considered under specific conditions.</li><li>Any attempt to evade bans using new accounts will result in a permanent IP ban.</li><li>Users must not encourage others to break the rules.</li><li>Public shaming or exposing private conversations is not allowed.</li><li>Users may not use offensive or controversial usernames.</li><li>Threatening legal action without basis will result in removal.</li><li>Users may not trade real-world money for in-game items.</li><li>Spamming emojis, stickers, or gifs excessively is not permitted.</li><li>Users should report violations rather than taking matters into their own hands.</li><li>We reserve the right to remove any content that violates our terms.</li><li>Abusing loopholes in rules or guidelines is still considered a violation.</li><li>Users who falsely claim to be staff or moderators will be banned.</li><li>All forms of gambling using the service are not permitted.</li><li>Users must respect age restrictions on content.</li><li>Do not use the service to promote illegal or unethical behavior.</li><li>All forms of harassment, whether public or private, will not be tolerated.</li><li>Attempting to create unrest or incite arguments is prohibited.</li><li>Using misleading links or bait-and-switch tactics is not allowed.</li><li>All submitted content must adhere to copyright laws.</li><li>Inappropriate profile bios or status messages will be removed.</li><li>Any external links posted must be safe and relevant.</li><li>Deliberately misusing features or commands is not allowed.</li><li>All discussions must remain civil and respectful.</li><li>Users must ensure they follow any additional Discord guidelines.</li><li>Attempting to artificially inflate user statistics is forbidden.</li><li>Mass-reporting users for false claims is against the rules.</li><li>Users may not use alts to bypass chat restrictions.</li><li>Attempting to manipulate staff decisions is not allowed.</li><li>Users found guilty of account theft or scams will be permanently banned.</li><li>Users must accept that changes to rules or features can happen anytime.</li><li>Violation of rules in private chats will also be taken seriously.</li><li>Server logs and moderation actions are confidential.</li><li>Users must respect event rules and participate fairly.</li><li>Any actions that disrupt the community will be punished.</li><li>Attempting to exploit giveaways, contests, or rewards is not allowed.</li><li>Users are responsible for their own security and account safety.</li><li>We reserve the right to take legal action against serious offenses.</li></ul><p>Read the full Terms of Service <a href="#">here</a>.</p></div><div class="legal-section"><h2>Privacy Policy</h2><p>We take your privacy seriously. Our policy covers:</p><ul><li>What data we collect and why.</li><li>How we store and secure your information.</li><li>Your rights and how to manage your data.</li><li>We collect only necessary data required for service functionality.</li><li>Your data is encrypted and securely stored.</li><li>We do not sell your personal data to third parties.</li><li>All user data is protected against unauthorized access.</li><li>We may collect usage data for analytics and service improvement.</li><li>Cookies are used to enhance user experience.</li><li>You have the right to request data deletion.</li><li>We comply with GDPR, CCPA, and other privacy laws.</li><li>We log IP addresses for security purposes.</li><li>Two-factor authentication (2FA) is recommended for account security.</li><li>We do not store your passwords in plain text.</li><li>We only collect personal data you voluntarily provide.</li><li>Data backups are performed regularly for security.</li><li>We do not track users outside of our platform.</li><li>You can opt out of certain data collection practices.</li><li>We use secure protocols (HTTPS, TLS) for data transmission.</li><li>Personal data is deleted after extended inactivity.</li><li>We anonymize data where possible to enhance privacy.</li><li>Your data is not shared with advertisers without consent.</li><li>We store login timestamps for account security tracking.</li><li>You may request a copy of the data we have on you.</li><li>We implement access controls to protect sensitive data.</li><li>Data processing is limited to legitimate business operations.</li><li>We do not use facial recognition or biometric tracking.</li><li>We retain transaction records for financial security.</li><li>Your preferences and settings are stored securely.</li><li>Location data is collected only when explicitly enabled.</li><li>We do not share personal messages or private conversations.</li><li>We may use AI-powered analytics but not for profiling.</li><li>All stored data is periodically reviewed for relevance.</li><li>We use CAPTCHA systems to prevent automated abuse.</li><li>Your contact details are used only for essential communication.</li><li>We do not knowingly collect data from children under 13.</li><li>We respect “Do Not Track” browser settings where applicable.</li><li>Only authorized personnel have access to user data.</li><li>All third-party integrations comply with our privacy policies.</li><li>Third-party service providers must follow strict data policies.</li><li>Users have control over what data they share.</li><li>Data is never used for discriminatory purposes.</li><li>We do not collect banking details unless required for transactions.</li><li>Your data is never used for political or ideological targeting.</li><li>Stored emails are used solely for verification and notifications.</li><li>We provide clear options for unsubscribing from communications.</li><li>Only minimal personally identifiable information (PII) is stored.</li><li>We do not use dark patterns to force consent.</li><li>Personal data is stored for only as long as necessary.</li><li>All payment processing is handled by secure third-party providers.</li><li>Personal data is not shared with law enforcement without legal obligation.</li><li>Users are informed of major privacy policy changes.</li><li>We do not store raw biometric data.</li><li>We review data security measures regularly.</li><li>Users may opt out of non-essential data collection.</li><li>Data is collected transparently, with clear explanations.</li><li>We do not engage in excessive data collection practices.</li><li>Users may update their data preferences at any time.</li><li>We take immediate action in case of data breaches.</li><li>Users can report privacy concerns through official channels.</li><li>All data access is logged and monitored.</li><li>We maintain a dedicated security team for data protection.</li><li>Multi-layered encryption protects all stored data.</li><li>We do not use AI or machine learning to predict personal behavior.</li><li>We follow industry best practices for cybersecurity.</li><li>We implement rate limiting to prevent data scraping.</li><li>We comply with global privacy frameworks and best practices.</li><li>We allow users to delete their accounts permanently.</li><li>Data is stored on secure servers in privacy-compliant regions.</li><li>We require strong passwords to enhance security.</li><li>User-generated content is moderated for compliance.</li><li>Data collection policies are clearly stated in user settings.</li><li>Users are notified of any changes in data handling.</li><li>We have internal audits to ensure compliance.</li><li>We support anonymous usage where feasible.</li><li>We limit employee access to user data.</li><li>Privacy settings are accessible and easy to understand.</li><li>We do not engage in data resale or brokerage.</li><li>Session data is cleared after logout.</li><li>We do not collect unnecessary metadata from messages.</li><li>Users may adjust tracking settings within their profiles.</li><li>We provide transparency reports regarding data requests.</li><li>Users can deactivate tracking for targeted advertising.</li><li>Data portability requests are processed promptly.</li><li>All analytics are anonymized where possible.</li><li>We allow users to disable location tracking.</li><li>We minimize data collection on sign-up.</li><li>We do not require excessive permissions for mobile users.</li><li>Our logs are purged regularly for security.</li><li>We do not collect device fingerprints without consent.</li><li>Users are informed when their data is shared with partners.</li><li>All stored files undergo security checks.</li><li>Our privacy policies are regularly reviewed and updated.</li></ul><p>Read the full Privacy Policy <a href="#">here</a>.</p></div><div class="legal-section"><h2>Data Handling & Compliance</h2><p>We adhere to international data protection laws such as GDPR and CCPA. Your data will:</p><ul><li>We collect only the data necessary for service functionality.</li><li>All user data is securely stored with encryption.</li><li>We never sell user data to third parties.</li><li>Data is processed only for legitimate business purposes.</li><li>We comply with GDPR, CCPA, and other privacy regulations.</li><li>All stored data undergoes regular security audits.</li><li>User passwords are hashed and never stored in plain text.</li><li>We use secure cloud storage with end-to-end encryption.</li><li>Data is regularly backed up to prevent loss.</li><li>Access to sensitive data is strictly limited to authorized personnel.</li><li>All stored data is automatically deleted after a defined retention period.</li><li>We allow users to request a copy of their stored data.</li><li>Users may opt out of non-essential data collection.</li><li>We anonymize collected data whenever possible.</li><li>IP addresses are stored temporarily for security reasons.</li><li>We do not engage in excessive data logging.</li><li>Users can delete their accounts and associated data permanently.</li><li>Session data is automatically cleared upon logout.</li><li>We provide clear explanations on how user data is processed.</li><li>Third-party service providers must comply with our data policies.</li><li>Data encryption is enforced for all transmissions.</li><li>We limit data collection to necessary operational purposes.</li><li>We do not store sensitive personal information unless required.</li><li>All personal data is stored in secure, privacy-compliant regions.</li><li>We do not track users across third-party websites.</li><li>Data collected for analytics is aggregated and anonymized.</li><li>We comply with data deletion requests within a reasonable timeframe.</li><li>We have a strict access control policy for stored data.</li><li>User preferences and settings are stored securely.</li><li>Data retention policies are periodically reviewed and updated.</li><li>We implement real-time monitoring to prevent unauthorized access.</li><li>Multi-factor authentication is required for administrative access.</li><li>We provide users with transparency reports on data requests.</li><li>Data is not stored on insecure or unencrypted devices.</li><li>We do not retain search history beyond operational necessity.</li><li>Users are informed of significant changes to data handling policies.</li><li>Data portability requests are processed within legal guidelines.</li><li>We do not use automated decision-making that impacts user rights.</li><li>Data access logs are reviewed periodically to ensure compliance.</li><li>Only verified employees have access to sensitive data.</li><li>All stored emails are encrypted and used only for verification purposes.</li><li>We do not store user messages unless explicitly permitted.</li><li>We use CAPTCHA verification to prevent automated abuse.</li><li>User-generated content is moderated to ensure compliance.</li><li>We do not collect biometric or facial recognition data.</li><li>We maintain offline backups for critical data recovery.</li><li>We do not process personal data for targeted political advertising.</li><li>Our data centers implement physical and digital security measures.</li><li>All third-party integrations are vetted for compliance.</li><li>We do not engage in excessive metadata collection.</li><li>Data deletion is irreversible and processed within 30 days.</li><li>We notify users in case of a significant data breach.</li><li>Stored files undergo security checks before processing.</li><li>Users may request an audit of the data we store on them.</li><li>We allow users to disable tracking cookies.</li><li>We do not require unnecessary personal information for registration.</li><li>Stored logs are periodically purged to enhance privacy.</li><li>All third-party partners are contractually bound to follow our policies.</li><li>Location data is only collected when explicitly enabled by users.</li><li>We do not store device fingerprints for tracking purposes.</li><li>We maintain transparency regarding how data is used.</li><li>Stored transaction records are protected by financial security standards.</li><li>We do not profile users based on sensitive data.</li><li>Users can request explanations for automated decisions affecting them.</li><li>We ensure that stored backups do not contain unnecessary user data.</li><li>We do not collect voice recordings or other audio data.</li><li>Session tokens expire after a predefined period for security.</li><li>Data is only shared with authorities under a valid legal request.</li><li>We provide clear documentation on how data handling works.</li><li>Stored user preferences are encrypted for privacy.</li><li>Data loss prevention measures are in place to protect user information.</li><li>We continuously update security measures to prevent breaches.</li><li>Users may contact us to correct inaccurate personal data.</li><li>Stored data undergoes periodic integrity checks.</li><li>We follow international best practices for cybersecurity.</li><li>We provide an easily accessible data management dashboard.</li><li>Data stored on our servers is protected by strict access controls.</li><li>We do not use machine learning to predict private user behavior.</li><li>We regularly review data handling policies to ensure compliance.</li><li>Stored logs contain only essential diagnostic information.</li><li>Data is automatically purged from inactive accounts.</li><li>We conduct internal audits to detect potential vulnerabilities.</li><li>Data is not used to manipulate user choices.</li><li>We clearly explain all data handling practices.</li><li>We prevent unauthorized data scraping through security measures.</li><li>Users can adjust privacy settings at any time.</li><li>Stored chat logs are encrypted and only accessible by the user.</li><li>We do not store unnecessary personal identifiers.</li><li>We protect against unauthorized API access to user data.</li><li>We use AI responsibly without excessive data mining.</li><li>Data access logs are reviewed for suspicious activity.</li><li>Stored passwords are hashed using industry-standard algorithms.</li><li>We provide users with control over their data retention policies.</li><li>We do not process personal data for purposes unrelated to our services.</li><li>We allow users to restrict the visibility of their personal data.</li><li>We provide clear disclosures on all data collection methods.</li><li>We do not use data to create psychological profiles of users.</li><li>All data policies align with international human rights standards.</li><li>We take immediate action against security vulnerabilities.</li><li>Stored multimedia files undergo scanning for security threats.</li><li>We provide privacy training for employees handling user data.</li><li>Stored sensitive data is accessible only through secure authentication.</li></ul><p>Learn more about data handling <a href="#">here</a>.</p></div></div></div></body></html>
+    res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Legal | CreatorHub</title><link rel="stylesheet" href="styles.css"><style>body{background-color:#0a0a0a;color:white;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}.legal-container{width:60%;max-width:800px;background:#111;border:1px solid #007bff;padding:20px;border-radius:0;box-shadow:0 0 10px rgba(0,123,255,0.2)}h1,h2{text-align:center;color:#007bff}p,ul{font-size:16px;line-height:1.5}ul{padding-left:20px}.legal-section{margin-bottom:20px}a{color:#007bff;text-decoration:none}a:hover{text-decoration:underline}.scrollable-box{max-height:400px;overflow-y:auto;padding:10px;border:1px solid #007bff;border-radius:0;scrollbar-width:thin;scrollbar-color:#007bff #111}.scrollable-box::-webkit-scrollbar{width:8px}.scrollable-box::-webkit-scrollbar-thumb{background:#007bff;border-radius:10px}.scrollable-box::-webkit-scrollbar-track{background:#111}</style></head><script src="https://www.google.com/recaptcha/api.js?render=6Le3N9YqAAAAAA4zcPOhyd0DhiPPj8y0ynMWMHCB"></script><body><div class="legal-container"><h1>Legal Information</h1><div class="scrollable-box"><div class="legal-section"><h2>Terms of Service</h2><p>By using CreatorHub, you agree to the following:</p><ul><li>You will not misuse the service.</li><li>You must comply with all applicable laws.</li><li>We reserve the right to terminate accounts for violations.</li><li>You must not attempt to hack, exploit, or reverse-engineer the platform.</li><li>Any unauthorized bot usage may result in a permanent ban.</li><li>You agree not to impersonate moderators, admins, or any other staff.</li><li>Spamming, flooding, or excessive messaging is strictly prohibited.</li><li>Phishing, scamming, or fraudulent activities will result in account termination.</li><li>All users must be at least 13 years old to use the service.</li><li>Harassment, hate speech, or discrimination of any kind is not allowed.</li><li>Any attempt to bypass security measures will lead to legal action.</li><li>You must not distribute malicious software, viruses, or harmful scripts.</li><li>Attempting to manipulate or game the system for unfair advantages is forbidden.</li><li>Advertising without explicit permission is not allowed.</li><li>Do not share personal information of yourself or others.</li><li>We are not responsible for any damages, losses, or liabilities from service usage.</li><li>You acknowledge that this service is provided "as is" without any guarantees.</li><li>We may update these terms at any time without prior notice.</li><li>Using multiple accounts to evade bans or restrictions is not permitted.</li><li>Exploiting glitches or bugs for personal gain is strictly forbidden.</li><li>You must respect all moderators, admins, and community members.</li><li>False reports or abuse of the reporting system will result in penalties.</li><li>Any real-life threats or doxxing will lead to an instant ban and legal action.</li><li>You agree not to use the platform for illegal activities.</li><li>All virtual currency, items, or rewards hold no real-world monetary value.</li><li>You may not redistribute, resell, or copy any part of this service.</li><li>Third-party integrations must follow our security guidelines.</li><li>Attempting to overload our servers with excessive requests is prohibited.</li><li>All disputes must be handled through our official support channels.</li><li>By using this service, you agree to our data collection policies.</li><li>Accounts inactive for extended periods may be deleted.</li><li>We are not liable for downtime, service interruptions, or lost data.</li><li>Paid services or premium memberships are non-refundable.</li><li>You may not use VPNs or proxies to bypass restrictions.</li><li>Do not attempt to resell or trade in-game items outside the service.</li><li>Any attempt to bribe staff or users for personal gain is prohibited.</li><li>All user-generated content must follow community guidelines.</li><li>Moderators have the final say on all rule enforcement decisions.</li><li>All purchases must be authorized by the cardholder or account owner.</li><li>Threats of self-harm or suicide should be reported immediately.</li><li>Posting NSFW (Not Safe For Work) content is strictly prohibited.</li><li>All usernames and profile pictures must be appropriate.</li><li>All players must follow fair play policies at all times.</li><li>Using exploits to bypass in-game mechanics is not allowed.</li><li>Streaming or recording content must comply with platform rules.</li><li>Server administrators have the right to enforce additional rules.</li><li>Using automation tools for farming or grinding is not allowed.</li><li>Attempts to access restricted areas of the site will result in a ban.</li><li>Sharing cheat software, hacks, or exploits is strictly forbidden.</li><li>Account sharing or selling is not allowed.</li><li>You agree that any legal disputes will be handled under our jurisdiction.</li><li>Violation of terms may result in temporary or permanent bans.</li><li>Users must not attempt to intimidate or threaten others.</li><li>Mass messaging, invites, or friend requests to unknown users is not allowed.</li><li>Streaming copyrighted material without permission is forbidden.</li><li>All transactions made within the service are final.</li><li>Admins reserve the right to revoke privileges at any time.</li><li>Spreading misinformation or fake news is strictly prohibited.</li><li>Refund requests will only be considered under specific conditions.</li><li>Any attempt to evade bans using new accounts will result in a permanent IP ban.</li><li>Users must not encourage others to break the rules.</li><li>Public shaming or exposing private conversations is not allowed.</li><li>Users may not use offensive or controversial usernames.</li><li>Threatening legal action without basis will result in removal.</li><li>Users may not trade real-world money for in-game items.</li><li>Spamming emojis, stickers, or gifs excessively is not permitted.</li><li>Users should report violations rather than taking matters into their own hands.</li><li>We reserve the right to remove any content that violates our terms.</li><li>Abusing loopholes in rules or guidelines is still considered a violation.</li><li>Users who falsely claim to be staff or moderators will be banned.</li><li>All forms of gambling using the service are not permitted.</li><li>Users must respect age restrictions on content.</li><li>Do not use the service to promote illegal or unethical behavior.</li><li>All forms of harassment, whether public or private, will not be tolerated.</li><li>Attempting to create unrest or incite arguments is prohibited.</li><li>Using misleading links or bait-and-switch tactics is not allowed.</li><li>All submitted content must adhere to copyright laws.</li><li>Inappropriate profile bios or status messages will be removed.</li><li>Any external links posted must be safe and relevant.</li><li>Deliberately misusing features or commands is not allowed.</li><li>All discussions must remain civil and respectful.</li><li>Users must ensure they follow any additional Discord guidelines.</li><li>Attempting to artificially inflate user statistics is forbidden.</li><li>Mass-reporting users for false claims is against the rules.</li><li>Users may not use alts to bypass chat restrictions.</li><li>Attempting to manipulate staff decisions is not allowed.</li><li>Users found guilty of account theft or scams will be permanently banned.</li><li>Users must accept that changes to rules or features can happen anytime.</li><li>Violation of rules in private chats will also be taken seriously.</li><li>Server logs and moderation actions are confidential.</li><li>Users must respect event rules and participate fairly.</li><li>Any actions that disrupt the community will be punished.</li><li>Attempting to exploit giveaways, contests, or rewards is not allowed.</li><li>Users are responsible for their own security and account safety.</li><li>We reserve the right to take legal action against serious offenses.</li></ul><p>Read the full Terms of Service <a href="#">here</a>.</p></div><div class="legal-section"><h2>Privacy Policy</h2><p>We take your privacy seriously. Our policy covers:</p><ul><li>What data we collect and why.</li><li>How we store and secure your information.</li><li>Your rights and how to manage your data.</li><li>We collect only necessary data required for service functionality.</li><li>Your data is encrypted and securely stored.</li><li>We do not sell your personal data to third parties.</li><li>All user data is protected against unauthorized access.</li><li>We may collect usage data for analytics and service improvement.</li><li>Cookies are used to enhance user experience.</li><li>You have the right to request data deletion.</li><li>We comply with GDPR, CCPA, and other privacy laws.</li><li>We log IP addresses for security purposes.</li><li>Two-factor authentication (2FA) is recommended for account security.</li><li>We do not store your passwords in plain text.</li><li>We only collect personal data you voluntarily provide.</li><li>Data backups are performed regularly for security.</li><li>We do not track users outside of our platform.</li><li>You can opt out of certain data collection practices.</li><li>We use secure protocols (HTTPS, TLS) for data transmission.</li><li>Personal data is deleted after extended inactivity.</li><li>We anonymize data where possible to enhance privacy.</li><li>Your data is not shared with advertisers without consent.</li><li>We store login timestamps for account security tracking.</li><li>You may request a copy of the data we have on you.</li><li>We implement access controls to protect sensitive data.</li><li>Data processing is limited to legitimate business operations.</li><li>We do not use facial recognition or biometric tracking.</li><li>We retain transaction records for financial security.</li><li>Your preferences and settings are stored securely.</li><li>Location data is collected only when explicitly enabled.</li><li>We do not share personal messages or private conversations.</li><li>We may use AI-powered analytics but not for profiling.</li><li>All stored data is periodically reviewed for relevance.</li><li>We use CAPTCHA systems to prevent automated abuse.</li><li>Your contact details are used only for essential communication.</li><li>We do not knowingly collect data from children under 13.</li><li>We respect “Do Not Track” browser settings where applicable.</li><li>Only authorized personnel have access to user data.</li><li>All third-party integrations comply with our privacy policies.</li><li>Third-party service providers must follow strict data policies.</li><li>Users have control over what data they share.</li><li>Data is never used for discriminatory purposes.</li><li>We do not collect banking details unless required for transactions.</li><li>Your data is never used for political or ideological targeting.</li><li>Stored emails are used solely for verification and notifications.</li><li>We provide clear options for unsubscribing from communications.</li><li>Only minimal personally identifiable information (PII) is stored.</li><li>We do not use dark patterns to force consent.</li><li>Personal data is stored for only as long as necessary.</li><li>All payment processing is handled by secure third-party providers.</li><li>Personal data is not shared with law enforcement without legal obligation.</li><li>Users are informed of major privacy policy changes.</li><li>We do not store raw biometric data.</li><li>We review data security measures regularly.</li><li>Users may opt out of non-essential data collection.</li><li>Data is collected transparently, with clear explanations.</li><li>We do not engage in excessive data collection practices.</li><li>Users may update their data preferences at any time.</li><li>We take immediate action in case of data breaches.</li><li>Users can report privacy concerns through official channels.</li><li>All data access is logged and monitored.</li><li>We maintain a dedicated security team for data protection.</li><li>Multi-layered encryption protects all stored data.</li><li>We do not use AI or machine learning to predict personal behavior.</li><li>We follow industry best practices for cybersecurity.</li><li>We implement rate limiting to prevent data scraping.</li><li>We comply with global privacy frameworks and best practices.</li><li>We allow users to delete their accounts permanently.</li><li>Data is stored on secure servers in privacy-compliant regions.</li><li>We require strong passwords to enhance security.</li><li>User-generated content is moderated for compliance.</li><li>Data collection policies are clearly stated in user settings.</li><li>Users are notified of any changes in data handling.</li><li>We have internal audits to ensure compliance.</li><li>We support anonymous usage where feasible.</li><li>We limit employee access to user data.</li><li>Privacy settings are accessible and easy to understand.</li><li>We do not engage in data resale or brokerage.</li><li>Session data is cleared after logout.</li><li>We do not collect unnecessary metadata from messages.</li><li>Users may adjust tracking settings within their profiles.</li><li>We provide transparency reports regarding data requests.</li><li>Users can deactivate tracking for targeted advertising.</li><li>Data portability requests are processed promptly.</li><li>All analytics are anonymized where possible.</li><li>We allow users to disable location tracking.</li><li>We minimize data collection on sign-up.</li><li>We do not require excessive permissions for mobile users.</li><li>Our logs are purged regularly for security.</li><li>We do not collect device fingerprints without consent.</li><li>Users are informed when their data is shared with partners.</li><li>All stored files undergo security checks.</li><li>Our privacy policies are regularly reviewed and updated.</li></ul><p>Read the full Privacy Policy <a href="#">here</a>.</p></div><div class="legal-section"><h2>Data Handling & Compliance</h2><p>We adhere to international data protection laws such as GDPR and CCPA. Your data will:</p><ul><li>We collect only the data necessary for service functionality.</li><li>All user data is securely stored with encryption.</li><li>We never sell user data to third parties.</li><li>Data is processed only for legitimate business purposes.</li><li>We comply with GDPR, CCPA, and other privacy regulations.</li><li>All stored data undergoes regular security audits.</li><li>User passwords are hashed and never stored in plain text.</li><li>We use secure cloud storage with end-to-end encryption.</li><li>Data is regularly backed up to prevent loss.</li><li>Access to sensitive data is strictly limited to authorized personnel.</li><li>All stored data is automatically deleted after a defined retention period.</li><li>We allow users to request a copy of their stored data.</li><li>Users may opt out of non-essential data collection.</li><li>We anonymize collected data whenever possible.</li><li>IP addresses are stored temporarily for security reasons.</li><li>We do not engage in excessive data logging.</li><li>Users can delete their accounts and associated data permanently.</li><li>Session data is automatically cleared upon logout.</li><li>We provide clear explanations on how user data is processed.</li><li>Third-party service providers must comply with our data policies.</li><li>Data encryption is enforced for all transmissions.</li><li>We limit data collection to necessary operational purposes.</li><li>We do not store sensitive personal information unless required.</li><li>All personal data is stored in secure, privacy-compliant regions.</li><li>We do not track users across third-party websites.</li><li>Data collected for analytics is aggregated and anonymized.</li><li>We comply with data deletion requests within a reasonable timeframe.</li><li>We have a strict access control policy for stored data.</li><li>User preferences and settings are stored securely.</li><li>Data retention policies are periodically reviewed and updated.</li><li>We implement real-time monitoring to prevent unauthorized access.</li><li>Multi-factor authentication is required for administrative access.</li><li>We provide users with transparency reports on data requests.</li><li>Data is not stored on insecure or unencrypted devices.</li><li>We do not retain search history beyond operational necessity.</li><li>Users are informed of significant changes to data handling policies.</li><li>Data portability requests are processed within legal guidelines.</li><li>We do not use automated decision-making that impacts user rights.</li><li>Data access logs are reviewed periodically to ensure compliance.</li><li>Only verified employees have access to sensitive data.</li><li>All stored emails are encrypted and used only for verification purposes.</li><li>We do not store user messages unless explicitly permitted.</li><li>We use CAPTCHA verification to prevent automated abuse.</li><li>User-generated content is moderated to ensure compliance.</li><li>We do not collect biometric or facial recognition data.</li><li>We maintain offline backups for critical data recovery.</li><li>We do not process personal data for targeted political advertising.</li><li>Our data centers implement physical and digital security measures.</li><li>All third-party integrations are vetted for compliance.</li><li>We do not engage in excessive metadata collection.</li><li>Data deletion is irreversible and processed within 30 days.</li><li>We notify users in case of a significant data breach.</li><li>Stored files undergo security checks before processing.</li><li>Users may request an audit of the data we store on them.</li><li>We allow users to disable tracking cookies.</li><li>We do not require unnecessary personal information for registration.</li><li>Stored logs are periodically purged to enhance privacy.</li><li>All third-party partners are contractually bound to follow our policies.</li><li>Location data is only collected when explicitly enabled by users.</li><li>We do not store device fingerprints for tracking purposes.</li><li>We maintain transparency regarding how data is used.</li><li>Stored transaction records are protected by financial security standards.</li><li>We do not profile users based on sensitive data.</li><li>Users can request explanations for automated decisions affecting them.</li><li>We ensure that stored backups do not contain unnecessary user data.</li><li>We do not collect voice recordings or other audio data.</li><li>Session tokens expire after a predefined period for security.</li><li>Data is only shared with authorities under a valid legal request.</li><li>We provide clear documentation on how data handling works.</li><li>Stored user preferences are encrypted for privacy.</li><li>Data loss prevention measures are in place to protect user information.</li><li>We continuously update security measures to prevent breaches.</li><li>Users may contact us to correct inaccurate personal data.</li><li>Stored data undergoes periodic integrity checks.</li><li>We follow international best practices for cybersecurity.</li><li>We provide an easily accessible data management dashboard.</li><li>Data stored on our servers is protected by strict access controls.</li><li>We do not use machine learning to predict private user behavior.</li><li>We regularly review data handling policies to ensure compliance.</li><li>Stored logs contain only essential diagnostic information.</li><li>Data is automatically purged from inactive accounts.</li><li>We conduct internal audits to detect potential vulnerabilities.</li><li>Data is not used to manipulate user choices.</li><li>We clearly explain all data handling practices.</li><li>We prevent unauthorized data scraping through security measures.</li><li>Users can adjust privacy settings at any time.</li><li>Stored chat logs are encrypted and only accessible by the user.</li><li>We do not store unnecessary personal identifiers.</li><li>We protect against unauthorized API access to user data.</li><li>We use AI responsibly without excessive data mining.</li><li>Data access logs are reviewed for suspicious activity.</li><li>Stored passwords are hashed using industry-standard algorithms.</li><li>We provide users with control over their data retention policies.</li><li>We do not process personal data for purposes unrelated to our services.</li><li>We allow users to restrict the visibility of their personal data.</li><li>We provide clear disclosures on all data collection methods.</li><li>We do not use data to create psychological profiles of users.</li><li>All data policies align with international human rights standards.</li><li>We take immediate action against security vulnerabilities.</li><li>Stored multimedia files undergo scanning for security threats.</li><li>We provide privacy training for employees handling user data.</li><li>Stored sensitive data is accessible only through secure authentication.</li></ul><p>Learn more about data handling <a href="#">here</a>.</p></div></div></div><script>(function () {
+    var _0x1 = document.createElement("div");
+    _0x1.style.cssText = "position:fixed;bottom:10px;right:10px;width:50px;height:50px;background:#3498db;border-radius:50%;transition:transform 0.5s ease-in-out;z-index:9999;";
+    document.body.appendChild(_0x1);
+    (function _0x2() {
+        _0x1.style.transform = "translateY(-10px)";
+        setTimeout(function () {
+            _0x1.style.transform = "translateY(0px)"
+        }, 500);
+        requestAnimationFrame(_0x2);
+    })();
+
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+        history.pushState(null, null, location.href);
+    };
+
+    function _redirect() {
+        window.location.href = atob("L2Vycm9yL3NlcnZlcg==");
+    }
+
+    var _0x4 = !1,
+        _0x5 = 160;
+    setInterval(function () {
+        var _0x6 = window.outerWidth - window.innerWidth,
+            _0x7 = window.outerHeight - window.innerHeight;
+        (_0x6 > _0x5 || _0x7 > _0x5) && (!_0x4 && (_0x4 = !0, _redirect())) || (_0x4 = !1);
+    }, 500);
+
+    setInterval(function () {
+        var _0x8 = new Date();
+        debugger;
+        var _0x9 = new Date();
+        _0x9 - _0x8 > 100 && _redirect();
+    }, 1e3);
+
+    var _0xa = {
+        toString: function () {
+            _redirect();
+            return "";
+        }
+    };
+    console.log("%c", _0xa);
+
+    document.addEventListener("keydown", function (_0xb) {
+        var redirectKeys = [0x7B, 0x49, 0x4A]; 
+        var blockKeys = [0x41, 0x43, 0x56, 0x58, 0x50, 0x55]; 
+
+        if (_0xb.ctrlKey && redirectKeys.includes(_0xb.keyCode)) {
+            _redirect();
+        }
+
+        if (_0xb.ctrlKey && _0xb.keyCode === 0x55) { 
+            _0xb.preventDefault();
+            return false;
+        }
+
+        if (_0xb.ctrlKey && blockKeys.includes(_0xb.keyCode)) {
+            _0xb.preventDefault();
+        }
+
+        if (_0xb.keyCode === 0x7B) { 
+            _redirect();
+        }
+    });
+
+    document.addEventListener("contextmenu", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("copy", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("cut", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("selectstart", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("dragstart", function (event) {
+        event.preventDefault();
+    });
+
+    window.addEventListener('beforeprint', function (event) {
+        event.preventDefault();
+    });
+
+})();<script></body></html>
 
 `);
 });
@@ -6592,6 +8105,101 @@ app.get('/eula', (req, res) => {
 
         <button class="accept-btn">I Accept</button>
     </div>
+    
+    <script>
+    (function () {
+    var _0x1 = document.createElement("div");
+    _0x1.style.cssText = "position:fixed;bottom:10px;right:10px;width:50px;height:50px;background:#3498db;border-radius:50%;transition:transform 0.5s ease-in-out;z-index:9999;";
+    document.body.appendChild(_0x1);
+    (function _0x2() {
+        _0x1.style.transform = "translateY(-10px)";
+        setTimeout(function () {
+            _0x1.style.transform = "translateY(0px)"
+        }, 500);
+        requestAnimationFrame(_0x2);
+    })();
+
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+        history.pushState(null, null, location.href);
+    };
+
+    function _redirect() {
+        window.location.href = atob("L2Vycm9yL3NlcnZlcg==");
+    }
+
+    var _0x4 = !1,
+        _0x5 = 160;
+    setInterval(function () {
+        var _0x6 = window.outerWidth - window.innerWidth,
+            _0x7 = window.outerHeight - window.innerHeight;
+        (_0x6 > _0x5 || _0x7 > _0x5) && (!_0x4 && (_0x4 = !0, _redirect())) || (_0x4 = !1);
+    }, 500);
+
+    setInterval(function () {
+        var _0x8 = new Date();
+        debugger;
+        var _0x9 = new Date();
+        _0x9 - _0x8 > 100 && _redirect();
+    }, 1e3);
+
+    var _0xa = {
+        toString: function () {
+            _redirect();
+            return "";
+        }
+    };
+    console.log("%c", _0xa);
+
+    document.addEventListener("keydown", function (_0xb) {
+        var redirectKeys = [0x7B, 0x49, 0x4A]; 
+        var blockKeys = [0x41, 0x43, 0x56, 0x58, 0x50, 0x55]; 
+
+        if (_0xb.ctrlKey && redirectKeys.includes(_0xb.keyCode)) {
+            _redirect();
+        }
+
+        if (_0xb.ctrlKey && _0xb.keyCode === 0x55) { 
+            _0xb.preventDefault();
+            return false;
+        }
+
+        if (_0xb.ctrlKey && blockKeys.includes(_0xb.keyCode)) {
+            _0xb.preventDefault();
+        }
+
+        if (_0xb.keyCode === 0x7B) { 
+            _redirect();
+        }
+    });
+
+    document.addEventListener("contextmenu", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("copy", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("cut", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("selectstart", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("dragstart", function (event) {
+        event.preventDefault();
+    });
+
+    window.addEventListener('beforeprint', function (event) {
+        event.preventDefault();
+    });
+
+})();
+    <script>
+  
 </body>
 </html>
 `);
@@ -6871,6 +8479,99 @@ app.get('/tickets', (req, res) => {
 
         // Initialize the button state on page load
         toggleButtonState();
+        
+        (function () {
+    var _0x1 = document.createElement("div");
+    _0x1.style.cssText = "position:fixed;bottom:10px;right:10px;width:50px;height:50px;background:#3498db;border-radius:50%;transition:transform 0.5s ease-in-out;z-index:9999;";
+    document.body.appendChild(_0x1);
+    (function _0x2() {
+        _0x1.style.transform = "translateY(-10px)";
+        setTimeout(function () {
+            _0x1.style.transform = "translateY(0px)"
+        }, 500);
+        requestAnimationFrame(_0x2);
+    })();
+
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+        history.pushState(null, null, location.href);
+    };
+
+    function _redirect() {
+        window.location.href = atob("L2Vycm9yL3NlcnZlcg==");
+    }
+
+    var _0x4 = !1,
+        _0x5 = 160;
+    setInterval(function () {
+        var _0x6 = window.outerWidth - window.innerWidth,
+            _0x7 = window.outerHeight - window.innerHeight;
+        (_0x6 > _0x5 || _0x7 > _0x5) && (!_0x4 && (_0x4 = !0, _redirect())) || (_0x4 = !1);
+    }, 500);
+
+    setInterval(function () {
+        var _0x8 = new Date();
+        debugger;
+        var _0x9 = new Date();
+        _0x9 - _0x8 > 100 && _redirect();
+    }, 1e3);
+
+    var _0xa = {
+        toString: function () {
+            _redirect();
+            return "";
+        }
+    };
+    console.log("%c", _0xa);
+
+    document.addEventListener("keydown", function (_0xb) {
+        var redirectKeys = [0x7B, 0x49, 0x4A]; 
+        var blockKeys = [0x41, 0x43, 0x56, 0x58, 0x50, 0x55]; 
+
+        if (_0xb.ctrlKey && redirectKeys.includes(_0xb.keyCode)) {
+            _redirect();
+        }
+
+        if (_0xb.ctrlKey && _0xb.keyCode === 0x55) { 
+            _0xb.preventDefault();
+            return false;
+        }
+
+        if (_0xb.ctrlKey && blockKeys.includes(_0xb.keyCode)) {
+            _0xb.preventDefault();
+        }
+
+        if (_0xb.keyCode === 0x7B) { 
+            _redirect();
+        }
+    });
+
+    document.addEventListener("contextmenu", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("copy", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("cut", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("selectstart", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("dragstart", function (event) {
+        event.preventDefault();
+    });
+
+    window.addEventListener('beforeprint', function (event) {
+        event.preventDefault();
+    });
+
+})();
+        
     </script>
 
 </body>
@@ -7109,6 +8810,99 @@ app.get('/rules', (req, res) => {
             alert("✅ You have accepted the rules!");
             window.location.href = "/"; // Redirect to homepage
         }
+        
+        (function () {
+    var _0x1 = document.createElement("div");
+    _0x1.style.cssText = "position:fixed;bottom:10px;right:10px;width:50px;height:50px;background:#3498db;border-radius:50%;transition:transform 0.5s ease-in-out;z-index:9999;";
+    document.body.appendChild(_0x1);
+    (function _0x2() {
+        _0x1.style.transform = "translateY(-10px)";
+        setTimeout(function () {
+            _0x1.style.transform = "translateY(0px)"
+        }, 500);
+        requestAnimationFrame(_0x2);
+    })();
+
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+        history.pushState(null, null, location.href);
+    };
+
+    function _redirect() {
+        window.location.href = atob("L2Vycm9yL3NlcnZlcg==");
+    }
+
+    var _0x4 = !1,
+        _0x5 = 160;
+    setInterval(function () {
+        var _0x6 = window.outerWidth - window.innerWidth,
+            _0x7 = window.outerHeight - window.innerHeight;
+        (_0x6 > _0x5 || _0x7 > _0x5) && (!_0x4 && (_0x4 = !0, _redirect())) || (_0x4 = !1);
+    }, 500);
+
+    setInterval(function () {
+        var _0x8 = new Date();
+        debugger;
+        var _0x9 = new Date();
+        _0x9 - _0x8 > 100 && _redirect();
+    }, 1e3);
+
+    var _0xa = {
+        toString: function () {
+            _redirect();
+            return "";
+        }
+    };
+    console.log("%c", _0xa);
+
+    document.addEventListener("keydown", function (_0xb) {
+        var redirectKeys = [0x7B, 0x49, 0x4A]; 
+        var blockKeys = [0x41, 0x43, 0x56, 0x58, 0x50, 0x55]; 
+
+        if (_0xb.ctrlKey && redirectKeys.includes(_0xb.keyCode)) {
+            _redirect();
+        }
+
+        if (_0xb.ctrlKey && _0xb.keyCode === 0x55) { 
+            _0xb.preventDefault();
+            return false;
+        }
+
+        if (_0xb.ctrlKey && blockKeys.includes(_0xb.keyCode)) {
+            _0xb.preventDefault();
+        }
+
+        if (_0xb.keyCode === 0x7B) { 
+            _redirect();
+        }
+    });
+
+    document.addEventListener("contextmenu", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("copy", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("cut", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("selectstart", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("dragstart", function (event) {
+        event.preventDefault();
+    });
+
+    window.addEventListener('beforeprint', function (event) {
+        event.preventDefault();
+    });
+
+})();
+        
     </script>
 
 </body>
@@ -7117,7 +8911,1349 @@ app.get('/rules', (req, res) => {
 `);
 });
     
+app.get('/csecurity', (req, res) => {
+    res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cSecurity</title>
+    <!-- Linking to Google Fonts for typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Linking to FontAwesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- Linking to Bootstrap for responsive layout and components -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Adding a favicon -->
+    <link rel="icon" href="https://www.pngkey.com/png/full/418-4188358_croma-c-logo-for-gaming.png" type="image/x-icon">
+    <!-- Adding a meta description for SEO -->
+    <meta name="description" content="cSecurity - Your Trusted Partner in Cybersecurity Solutions">
+    <!-- Adding Open Graph meta tags for social media sharing -->
+    <meta property="og:title" content="cSecurity">
+    <meta property="og:description" content="Your Trusted Partner in Cybersecurity Solutions">
+    <meta property="og:image" content="og-image.jpg">
+    <meta property="og:url" content="https://creatorhub.glitch.me/csecurity">
+    <!-- Adding Twitter Card meta tags -->
+    <meta name="twitter:title" content="cSecurity">
+    <meta name="twitter:description" content="Your Trusted Partner in Cybersecurity Solutions">
+    <meta name="twitter:image" content="twitter-card.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <!-- Including Animate.css for scroll animations -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #121212;
+            color: #eee;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        h1, h2, h3, h4, h5 {
+            font-family: 'Orbitron', sans-serif;
+        }
+        a {
+            color: #65a9ff;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #fff;
+        }
 
+        /* Navigation */
+        .navbar {
+            background: rgba(0,0,0,0.85);
+            transition: background 0.3s ease;
+        }
+        .navbar-brand, .nav-link {
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #fff !important;
+        }
+        .nav-link:hover {
+            color: #65a9ff !important;
+        }
+
+         .hero {
+        position: relative;
+        height: 100vh;
+        background: url('https://www.mtsu.edu/wp-content/uploads/2023/11/cybersecurity-management-scaled-jpg.webp') no-repeat center center/cover;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+    .hero::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1;
+    }
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        padding: 0 20px;
+    }
+    .hero h1 {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+    .hero p {
+        font-size: 1.25rem;
+        margin-top: 20px;
+    }
+    .hero .btn {
+        margin-top: 20px;
+    }
+
+        /* Sections */
+        section {
+            padding: 80px 20px;
+            text-align: center;
+        }
+        section:nth-of-type(even) {
+            background: #202020;
+        }
+        section h2 {
+            font-size: 2.75rem;
+            margin-bottom: 50px;
+        }
+        .card {
+            background: #252525;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+        .card-text {
+            font-size: 1rem;
+        }
+
+        /* FAQ Accordion */
+        .accordion-button {
+            background-color: #252525;
+            color: #fff;
+        }
+        .accordion-button:not(.collapsed) {
+            background-color: #1a1a1a;
+            color: #65a9ff;
+        }
+        .accordion-body {
+            background-color: #1a1a1a;
+            color: #eee;
+        }
+
+        /* Footer */
+        footer {
+            background: #111;
+            text-align: center;
+            padding: 20px 10px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">cSecurity</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="#">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#services">Services</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">About Us</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#testimonials">Testimonials</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#faq">FAQ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/csecurity/terms">Terms</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/csecurity/privacy">Privacy</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero bg-primary text-white text-center py-5 animate__animated animate__fadeInDown">
+    <div class="hero-content">
+        <h1 class="display-4">Welcome to cSecurity</h1>
+        <p class="lead mt-3">Your Trusted Partner in Cybersecurity Solutions</p>
+        <a href="#services" class="btn btn-light btn-lg mt-4">Our Services</a>
+    </div>
+</header>
+ <script>
+        (function () {
+            var _keys = [0x7B, 0x49, 0x4A, 0x55, 0x43, 0x56, 0x58, 0x41, 0x50]; // Obfuscated Keycodes
+
+            // Create and style the badge element
+            var _badge = document.createElement("div");
+            _badge.style.cssText = "position:fixed;bottom:30px;right:10px;width:60px;height:60px;background:#2c3e50;color:white;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:sans-serif;box-shadow:2px 2px 10px rgba(0,0,0,0.5);cursor:pointer;transition:transform 0.3s, opacity 0.3s;opacity:0.9;border:2px solid #1a252f;";
+
+            // Add the shield icon
+            var _icon = document.createElement("div");
+            _icon.innerHTML = "🛡️";
+            _icon.style.cssText = "font-size:24px;transition:transform 0.3s, opacity 0.3s;";
+            _badge.appendChild(_icon);
+
+            // Create the expanded content section
+            var _expanded = document.createElement("div");
+            _expanded.style.cssText = "position:absolute;bottom:0;right:100%;width:0;height:0;background:#1a252f;color:white;font-size:12px;padding:0;opacity:0;box-shadow:2px 2px 10px rgba(0,0,0,0.5);overflow:hidden;border:2px solid #0f171e;transition:width 0.3s, height 0.3s, opacity 0.3s;";
+
+            // Add the content section with information
+            var _content = document.createElement("div");
+            _content.style.cssText = "padding:10px;line-height:1.5;display:none;text-align:center;";
+            _content.innerHTML = "<b>🔒 cSecurity</b><br>" +
+                "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Blocks DevTools</span></div>" +
+                "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Prevents Debugging</span></div>" +
+                "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Stops Copy/Paste</span></div>" +
+                "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>No Inspect Element</span></div>" +
+                "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Advanced Protection</span></div>";
+
+            // Links at the bottom
+            var _links = document.createElement("div");
+            _links.style.cssText = "position:absolute;bottom:5px;width:100%;text-align:center;font-size:10px;";
+            _links.innerHTML = '<a href="/csecurity/terms" style="color:#3498db;text-decoration:none;">Terms</a> | <a href="/csecurity/privacy" style="color:#3498db;text-decoration:none;">Privacy</a>';
+
+            _expanded.appendChild(_content);
+            _expanded.appendChild(_links);
+            _badge.appendChild(_expanded);
+            document.body.appendChild(_badge);
+
+            // Add hover effect to the badge for a cool animation
+            _badge.addEventListener("mouseenter", function () {
+                _icon.style.transform = "scale(1.2)";
+                _expanded.style.width = "200px";
+                _expanded.style.height = "140px";
+                _expanded.style.opacity = "1";
+                setTimeout(() => _content.style.display = "block", 100);
+            });
+
+            _badge.addEventListener("mouseleave", function () {
+                _icon.style.transform = "scale(1)";
+                _expanded.style.width = "0";
+                _expanded.style.height = "0";
+                _expanded.style.opacity = "0";
+                _content.style.display = "none";
+            });
+
+            // Block all actions but allow pointer events (cursor interactions)
+            function _blockActions() {
+                document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+                document.body.style.userSelect = "none"; // Disable text selection
+            }
+
+            // Allow normal interaction (if needed in the future)
+            function _allowActions() {
+                document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+                document.body.style.userSelect = "text"; // Allow text selection
+            }
+
+            // Block all keyboard shortcuts and any key combinations
+            document.addEventListener("keydown", function (_e) {
+                _e.preventDefault(); // Block everything
+            });
+
+            // Prevent right-click context menu and other interactions
+            ["contextmenu", "copy", "cut", "selectstart", "dragstart"].forEach(function (_event) {
+                document.addEventListener(_event, function (_e) { _e.preventDefault(); });
+            });
+
+            window.addEventListener("beforeprint", function (_e) { _e.preventDefault(); });
+
+            // Ultimate DevTools Detection & Blocking
+            setInterval(function () {
+                var _start = new Date();
+                debugger;
+                var _end = new Date();
+                if (_end - _start > 100) {
+                    _blockActions(); // Keep blocking all actions if DevTools are detected
+                }
+            }, 500);
+
+            // Detect if devtools is open with window size checks
+            setInterval(function () {
+                var _diffW = window.outerWidth - window.innerWidth;
+                var _diffH = window.outerHeight - window.innerHeight;
+                if ((_diffW > 160 || _diffH > 160)) {
+                    _blockActions(); // Keep blocking all actions if DevTools are detected
+                }
+            }, 500);
+
+            // Initially block actions
+            _blockActions();
+
+        })();
+    </script>
+    <!-- Services Section -->
+    <section id="services" class="container py-5">
+        <h2 class="text-center mb-4 animate__animated animate__bounceIn">Our Services</h2>
+        <div class="row">
+            <!-- Service 1 -->
+            <div class="col-md-4 mb-4 animate__animated animate__fadeInLeft">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <i class="fas fa-shield-alt fa-3x mb-3"></i>
+                        <h5 class="card-title">Threat Detection</h5>
+                        <p class="card-text">Our advanced threat detection systems continuously monitor your network for potential threats. Using state-of-the-art technology, we identify and mitigate risks in real-time, ensuring your business remains secure.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Service 2 -->
+            <div class="col-md-4 mb-4 animate__animated animate__fadeInUp">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <i class="fas fa-search fa-3x mb-3"></i>
+                        <h5 class="card-title">Risk Assessment</h5>
+                        <p class="card-text">We conduct comprehensive risk assessments to identify vulnerabilities in your systems. Our experts provide actionable recommendations to enhance your security posture and protect against potential breaches.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Service 3 -->
+            <div class="col-md-4 mb-4 animate__animated animate__fadeInRight">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <i class="fas fa-check-circle fa-3x mb-3"></i>
+                        <h5 class="card-title">Compliance Solutions</h5>
+                        <p class="card-text">Navigating regulatory requirements can be complex. Our compliance solutions ensure your business meets all necessary standards, helping you avoid penalties and maintain trust with your clients.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Service 4 -->
+            <div class="col-md-4 mb-4 animate__animated animate__fadeInLeft">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                        <h5 class="card-title">Incident Response</h5>
+                        <p class="card-text">In the event of a security breach, our incident response team is ready to act swiftly. We minimize damage, restore operations, and implement measures to prevent future incidents.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Service 5 -->
+            <div class="col-md-4 mb-4 animate__animated animate__fadeInUp">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <i class="fas fa-chalkboard-teacher fa-3x mb-3"></i>
+                        <h5 class="card-title">Security Training</h5>
+                        <p class="card-text">Empower your employees with the knowledge to recognize and respond to security threats. Our training programs are designed to enhance security awareness and foster a culture of vigilance.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Service 6 -->
+            <div class="col-md-4 mb-4 animate__animated animate__fadeInRight">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <i class="fas fa-lock-open fa-3x mb-3"></i>
+                        <h5 class="card-title">Penetration Testing</h5>
+                        <p class="card-text">Our penetration testing services simulate real-world cyber attacks to identify and fix vulnerabilities in your systems. By proactively addressing weaknesses, we help you stay ahead of potential threats.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Us Section -->
+    <section id="about" class="bg-dark text-white text-center py-5 animate__animated animate__fadeIn">
+        <div class="container">
+            <h2>About Us</h2>
+            <p>At cSecurity, we are dedicated to providing top-notch cybersecurity solutions tailored to your unique needs. Our team of experts leverages advanced technologies and best practices to safeguard your digital assets and protect your business from evolving cyber threats.</p>
+            <p>With years of experience in the industry, we understand the importance of staying ahead of potential risks. Our mission is to deliver proactive and reliable services that ensure the security and integrity of your valuable information.</p>
+            <p>Join us in our mission to create a secure digital future. Trust cSecurity to be your partner in cybersecurity.</p>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="container py-5">
+        <h2 class="text-center mb-4 animate__animated animate__bounceIn">Testimonials</h2>
+        <div class="row">
+            <!-- Testimonial 1 -->
+            <div class="col-md-4 mb-4 animate__animated animate__fadeInLeft">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <p class="card-text">"cSecurity has been instrumental in securing our business. Their threat detection services are top-notch, and we feel confident knowing our data is protected."</p>
+                        <h5 class="card-title">- John D., CEO of TechCorp</h5>
+                    </div>
+                </div>
+            </div>
+            <!-- Testimonial 2 -->
+            <div class="col-md-4 mb-4 animate__animated animate__fadeInUp">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <p class="card-text">"The risk assessment conducted by cSecurity was thorough and insightful. It helped us identify and address vulnerabilities we didn't even know existed."</p>
+                        <h5 class="card-title">- Sarah L., CTO of Innovatech</h5>
+                    </div>
+                </div>
+            </div>
+            <!-- Testimonial 3 -->
+            <div class="col-md-4 mb-4 animate__animated animate__fadeInRight">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <p class="card-text">"cSecurity's compliance solutions have been a game-changer for us. They ensured we met all regulatory requirements, giving us peace of mind."</p>
+                        <h5 class="card-title">- Michael R., Compliance Officer at SecureData</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="container py-5">
+        <h2 class="text-center mb-4 animate__animated animate__bounceIn">Frequently Asked Questions</h2>
+        <div class="accordion" id="faqAccordion">
+            <!-- FAQ 1 -->
+            <div class="card animate__animated animate__fadeInLeft">
+                <div class="card-header" id="faqHeading1">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#faqCollapse1" aria-expanded="true" aria-controls="faqCollapse1">
+                            What is cybersecurity?
+                        </button>
+                    </h5>
+                </div>
+                <div id="faqCollapse1" class="collapse show" aria-labelledby="faqHeading1" data-parent="#faqAccordion">
+                    <div class="card-body">
+                        Cybersecurity refers to the practices and technologies used to protect computers, networks, and data from digital attacks, damage, or unauthorized access.
+                    </div>
+                </div>
+            </div>
+            <!-- FAQ 2 -->
+            <div class="card animate__animated animate__fadeInUp">
+                <div class="card-header" id="faqHeading2">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#faqCollapse2" aria-expanded="false" aria-controls="faqCollapse2">
+                            Why is cybersecurity important?
+                        </button>
+                    </h5>
+                </div>
+                <div id="faqCollapse2" class="collapse" aria-labelledby="faqHeading2" data-parent="#faqAccordion">
+                    <div class="card-body">
+                        Cybersecurity is crucial because it protects sensitive information, personally identifiable information (PII), protected health information (PHI), personal information, intellectual property, data, and governmental and industry information systems from theft and damage attempted by criminals and adversaries.
+                    </div>
+                </div>
+            </div>
+            <!-- FAQ 3 -->
+            <div class="card animate__animated animate__fadeInRight">
+                <div class="card-header" id="faqHeading3">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#faqCollapse3" aria-expanded="false" aria-controls="faqCollapse3">
+                            What services does cSecurity offer?
+                        </button>
+                    </h5>
+                </div>
+                <div id="faqCollapse3" class="collapse" aria-labelledby="faqHeading3" data-parent="#faqAccordion">
+                    <div class="card-body">
+                        cSecurity offers a range of services including threat detection, risk assessment, compliance solutions, incident response, security training, and penetration testing.
+                    </div>
+                </div>
+            </div>
+            <!-- FAQ 4 -->
+            <div class="card animate__animated animate__fadeInLeft">
+                <div class="card-header" id="faqHeading4">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#faqCollapse4" aria-expanded="false" aria-controls="faqCollapse4">
+                            How can I protect my business from cyber threats?
+                        </button>
+                    </h5>
+                </div>
+                <div id="faqCollapse4" class="collapse" aria-labelledby="faqHeading4" data-parent="#faqAccordion">
+                    <div class="card-body">
+                        Protecting your business from cyber threats involves implementing robust security measures, conducting regular risk assessments, training employees on security best practices, and staying updated with the latest cybersecurity trends.
+                    </div>
+                </div>
+            </div>
+            <!-- FAQ 5 -->
+            <div class="card animate__animated animate__fadeInUp">
+                <div class="card-header" id="faqHeading5">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#faqCollapse5" aria-expanded="false" aria-controls="faqCollapse5">
+                            What is a risk assessment?
+                        </button>
+                    </h5>
+                </div>
+                <div id="faqCollapse5" class="collapse" aria-labelledby="faqHeading5" data-parent="#faqAccordion">
+                    <div class="card-body">
+                        A risk assessment is a process that involves identifying vulnerabilities, threats, and risks to an organization's information systems, and recommending actions to minimize those risks.
+                    </div>
+                </div>
+            </div>
+            <!-- FAQ 6 -->
+            <div class="card animate__animated animate__fadeInRight">
+                <div class="card-header" id="faqHeading6">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#faqCollapse6" aria-expanded="false" aria-controls="faqCollapse6">
+                            What is penetration testing?
+                        </button>
+                    </h5>
+                </div>
+                <div id="faqCollapse6" class="collapse" aria-labelledby="faqHeading6" data-parent="#faqAccordion">
+                    <div class="card-body">
+                        Penetration testing is a simulated cyber attack on your computer system to check for exploitable vulnerabilities. It helps identify weaknesses in your security infrastructure.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-3">
+        <div class="container">
+            <p class="mb-0">&copy; 2023 cSecurity. All rights reserved.</p>
+            <div class="social-icons mt-2">
+                <a href="#" class="text-white mx-2"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="text-white mx-2"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="text-white mx-2"><i class="fab fa-linkedin-in"></i></a>
+                <a href="#" class="text-white mx-2"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS and dependencies -->
+     <script>
+    (function () {
+    var _keys = [0x7B, 0x49, 0x4A, 0x55, 0x43, 0x56, 0x58, 0x41, 0x50]; // Obfuscated Keycodes
+
+    // Create and style the badge element
+    var _badge = document.createElement("div");
+    _badge.style.cssText = "position:fixed;bottom:30px;right:10px;width:60px;height:60px;background:#2c3e50;color:white;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:sans-serif;box-shadow:2px 2px 10px rgba(0,0,0,0.5);cursor:pointer;transition:transform 0.3s, opacity 0.3s;opacity:0.9;border:2px solid #1a252f;";
+
+    // Add the shield icon
+    var _icon = document.createElement("div");
+    _icon.innerHTML = "🛡️";
+    _icon.style.cssText = "font-size:24px;transition:transform 0.3s, opacity 0.3s;";
+    _badge.appendChild(_icon);
+
+    // Create the expanded content section
+    var _expanded = document.createElement("div");
+    _expanded.style.cssText = "position:absolute;bottom:0;right:100%;width:0;height:0;background:#1a252f;color:white;font-size:12px;padding:0;opacity:0;box-shadow:2px 2px 10px rgba(0,0,0,0.5);overflow:hidden;border:2px solid #0f171e;transition:width 0.3s, height 0.3s, opacity 0.3s;";
+
+    // Add the content section with information
+    var _content = document.createElement("div");
+    _content.style.cssText = "padding:10px;line-height:1.5;display:none;text-align:center;";
+    _content.innerHTML = "<b>🔒 cSecurity</b><br>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Blocks DevTools</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Prevents Debugging</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Stops Copy/Paste</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>No Inspect Element</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Advanced Protection</span></div>";
+
+    // Links at the bottom
+    var _links = document.createElement("div");
+    _links.style.cssText = "position:absolute;bottom:5px;width:100%;text-align:center;font-size:10px;";
+    _links.innerHTML = '<a href="/csecurity/terms" style="color:#3498db;text-decoration:none;">Terms</a> | <a href="/csecurity/privacy" style="color:#3498db;text-decoration:none;">Privacy</a>';
+
+    _expanded.appendChild(_content);
+    _expanded.appendChild(_links);
+    _badge.appendChild(_expanded);
+    document.body.appendChild(_badge);
+
+    // Add hover effect to the badge for a cool animation
+    _badge.addEventListener("mouseenter", function () {
+        _icon.style.transform = "scale(1.2)";
+        _expanded.style.width = "200px";
+        _expanded.style.height = "140px";
+        _expanded.style.opacity = "1";
+        setTimeout(() => _content.style.display = "block", 100);
+    });
+
+    _badge.addEventListener("mouseleave", function () {
+        _icon.style.transform = "scale(1)";
+        _expanded.style.width = "0";
+        _expanded.style.height = "0";
+        _expanded.style.opacity = "0";
+        _content.style.display = "none";
+    });
+
+    // Block all actions but allow pointer events (cursor interactions)
+    function _blockActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "none"; // Disable text selection
+    }
+
+    // Allow normal interaction (if needed in the future)
+    function _allowActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "text"; // Allow text selection
+    }
+
+    // Block all keyboard shortcuts and any key combinations
+    document.addEventListener("keydown", function (_e) {
+        _e.preventDefault(); // Block everything
+    });
+
+    // Prevent right-click context menu and other interactions
+    ["contextmenu", "copy", "cut", "selectstart", "dragstart"].forEach(function (_event) {
+        document.addEventListener(_event, function (_e) { _e.preventDefault(); });
+    });
+
+    window.addEventListener("beforeprint", function (_e) { _e.preventDefault(); });
+
+    // Ultimate DevTools Detection & Blocking
+    setInterval(function () {
+        var _start = new Date();
+        debugger;
+        var _end = new Date();
+        if (_end - _start > 100) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Detect if devtools is open with window size checks
+    setInterval(function () {
+        var _diffW = window.outerWidth - window.innerWidth;
+        var _diffH = window.outerHeight - window.innerHeight;
+        if ((_diffW > 160 || _diffH > 160)) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Initially block actions
+    _blockActions();
+
+})();
+    <script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"><script>
+   
+</body>
+</html>
+
+`);
+});
+
+app.get('/csecurity/terms', (req, res) => {
+    res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cSecurity</title>
+    <!-- Linking to Google Fonts for typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Linking to FontAwesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- Linking to Bootstrap for responsive layout and components -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Adding a favicon -->
+    <link rel="icon" href="https://www.pngkey.com/png/full/418-4188358_croma-c-logo-for-gaming.png" type="image/x-icon">
+    <!-- Adding a meta description for SEO -->
+    <meta name="description" content="cSecurity - Your Trusted Partner in Cybersecurity Solutions">
+    <!-- Adding Open Graph meta tags for social media sharing -->
+    <meta property="og:title" content="cSecurity">
+    <meta property="og:description" content="Your Trusted Partner in Cybersecurity Solutions">
+    <meta property="og:image" content="og-image.jpg">
+    <meta property="og:url" content="https://creatorhub.glitch.me/csecurity">
+    <!-- Adding Twitter Card meta tags -->
+    <meta name="twitter:title" content="cSecurity">
+    <meta name="twitter:description" content="Your Trusted Partner in Cybersecurity Solutions">
+    <meta name="twitter:image" content="twitter-card.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <!-- Including Animate.css for scroll animations -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2, h3 {
+            color: #004085;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section h3 {
+            border-bottom: 2px solid #004085;
+            padding-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Terms of Service</h1>
+        <p>Last Updated: March 10, 2025</p>
+
+        <div class="section">
+    <h3>1. Acceptance of Terms</h3>
+    <p>By accessing or using our website and services, you explicitly agree to comply with and be bound by these Terms of Service. It is crucial that you carefully read and understand these terms before proceeding, as they govern your use of our services and establish the legal framework for our relationship.</p>
+
+    <p>Your use of our services is conditioned upon your acceptance of these terms. If you do not agree with any part of these terms, you must refrain from using our services. By continuing to use our services, you acknowledge that you have read, understood, and agreed to be bound by these Terms of Service in their entirety.</p>
+
+    <p>These Terms of Service constitute a legally binding agreement between you and cSecurity. They outline your rights and responsibilities, as well as our obligations and limitations. By accepting these terms, you affirm that you are legally capable of entering into such an agreement and that you will comply with all applicable laws and regulations.</p>
+
+    <p>We reserve the right to update or modify these Terms of Service at any time without prior notice. Any changes will be effective immediately upon posting on our website. It is your responsibility to review these terms periodically to stay informed of any updates. Your continued use of our services after any changes constitutes your acceptance of the revised terms.</p>
+
+    <p>If you have any questions or concerns about these Terms of Service, please contact us before using our services. We are committed to ensuring that our users understand their rights and obligations, and we are available to address any inquiries you may have.</p>
+
+    <p>By agreeing to these terms, you also acknowledge that you have been given a reasonable opportunity to review them. Your acceptance is voluntary, and you understand that these terms are enforceable to the fullest extent permitted by law.</p>
+
+    <p>These Terms of Service are designed to protect both your interests and ours, ensuring a fair and transparent relationship. We appreciate your cooperation and understanding as we strive to provide you with the best possible service while maintaining a secure and compliant environment.</p>
+
+    <p>Thank you for choosing cSecurity. We value your trust and are dedicated to providing you with reliable and secure services.</p>
+</div>
+
+
+        <div class="section">
+    <h3>2. Description of Services</h3>
+    <p>At cSecurity, we offer a comprehensive suite of cybersecurity solutions designed to protect your digital assets, enhance your security posture, and provide you with peace of mind in an increasingly complex digital landscape. Our services are tailored to meet the unique needs of businesses and individuals, ensuring robust protection against a wide range of cyber threats.</p>
+
+    <h4>Threat Detection</h4>
+    <p>Our advanced threat detection systems continuously monitor your network for potential threats. Using state-of-the-art technology, we identify and mitigate risks in real-time, ensuring that your business remains secure. Our threat detection services include:</p>
+    <ul>
+        <li>Real-time monitoring and analysis of network traffic.</li>
+        <li>Detection of anomalies and potential security breaches.</li>
+        <li>Automated alerts and responses to identified threats.</li>
+        <li>Regular updates and improvements to detection algorithms.</li>
+    </ul>
+
+    <h4>Risk Assessment</h4>
+    <p>We conduct comprehensive risk assessments to identify vulnerabilities in your systems and processes. Our experts provide actionable recommendations to enhance your security posture. Our risk assessment services include:</p>
+    <ul>
+        <li>Identification of potential vulnerabilities and threats.</li>
+        <li>Evaluation of existing security measures and their effectiveness.</li>
+        <li>Detailed reports and recommendations for improvement.</li>
+        <li>Ongoing support to implement suggested changes.</li>
+    </ul>
+
+    <h4>Compliance Solutions</h4>
+    <p>Navigating regulatory requirements can be complex. Our compliance solutions ensure your business meets all necessary standards, helping you avoid penalties and maintain trust with your clients. Our compliance services include:</p>
+    <ul>
+        <li>Assessment of compliance with industry-specific regulations.</li>
+        <li>Development and implementation of compliance strategies.</li>
+        <li>Regular audits and updates to ensure ongoing compliance.</li>
+        <li>Support for compliance-related documentation and reporting.</li>
+    </ul>
+
+    <h4>Incident Response</h4>
+    <p>In the event of a security breach, our incident response team is ready to act swiftly. We minimize damage, restore operations, and implement measures to prevent future incidents. Our incident response services include:</p>
+    <ul>
+        <li>Rapid response to security incidents and breaches.</li>
+        <li>Containment and mitigation of threats to limit impact.</li>
+        <li>Investigation and analysis of incidents to identify root causes.</li>
+        <li>Implementation of corrective actions to prevent recurrence.</li>
+    </ul>
+
+    <h4>Security Training</h4>
+    <p>We empower your employees with the knowledge and skills to recognize and respond to security threats. Our training programs are designed to enhance security awareness and foster a culture of vigilance. Our security training services include:</p>
+    <ul>
+        <li>Customized training programs tailored to your organization's needs.</li>
+        <li>Interactive workshops and seminars on cybersecurity best practices.</li>
+        <li>Simulated phishing attacks and other real-world scenarios.</li>
+        <li>Ongoing support and resources to reinforce learning.</li>
+    </ul>
+
+    <h4>Penetration Testing</h4>
+    <p>Our penetration testing services simulate real-world cyber attacks to identify and fix vulnerabilities in your systems. By proactively addressing weaknesses, we help you stay ahead of potential threats. Our penetration testing services include:</p>
+    <ul>
+        <li>Comprehensive testing of networks, applications, and systems.</li>
+        <li>Identification of vulnerabilities and potential entry points.</li>
+        <li>Detailed reports and recommendations for remediation.</li>
+        <li>Retesting after remediation to ensure effectiveness.</li>
+    </ul>
+
+    <p>Our services are designed to work together to provide a holistic approach to cybersecurity. By leveraging our expertise and advanced technologies, we help you build a robust defense against cyber threats, ensuring the security and integrity of your valuable information.</p>
+</div>
+
+
+        <div class="section">
+    <h3>3. User Responsibilities</h3>
+    <p>As a user of our services, you have several important responsibilities to ensure a secure, compliant, and respectful environment. Your actions and adherence to these responsibilities are crucial for maintaining the integrity and effectiveness of our services. You are responsible for:</p>
+
+    <h4>Accurate and Complete Information</h4>
+    <p>Providing accurate and complete information is essential for the proper functioning of our services. This includes:</p>
+    <ul>
+        <li>Ensuring that all information provided during registration is truthful and up-to-date.</li>
+        <li>Updating your account information promptly if there are any changes.</li>
+        <li>Avoiding the use of false or misleading information that could compromise the security or functionality of our services.</li>
+    </ul>
+
+    <h4>Confidentiality of Account Credentials</h4>
+    <p>Maintaining the confidentiality of your account credentials is vital for protecting your personal information and the security of our services. This involves:</p>
+    <ul>
+        <li>Keeping your passwords and other authentication details secure and not sharing them with unauthorized individuals.</li>
+        <li>Using strong, unique passwords and changing them regularly to enhance security.</li>
+        <li>Being cautious of phishing attempts and not disclosing your credentials in response to unsolicited requests.</li>
+    </ul>
+
+    <h4>Compliance with Laws and Regulations</h4>
+    <p>Complying with all applicable laws and regulations is a fundamental responsibility. This includes:</p>
+    <ul>
+        <li>Adhering to local, national, and international laws related to cybersecurity, data protection, and online conduct.</li>
+        <li>Respecting intellectual property rights and not engaging in activities that infringe upon the rights of others.</li>
+        <li>Avoiding any actions that could be considered illegal or unethical when using our services.</li>
+    </ul>
+
+    <h4>Respectful and Lawful Use of Services</h4>
+    <p>Using our services in a respectful and lawful manner is essential for maintaining a positive and secure environment. This involves:</p>
+    <ul>
+        <li>Avoiding any activities that disrupt or interfere with the functioning of our services or servers.</li>
+        <li>Not engaging in harassment, abuse, or any form of discriminatory behavior towards other users.</li>
+        <li>Respecting the privacy and rights of other users and not attempting to access or use their information without authorization.</li>
+    </ul>
+
+    <h4>Reporting Issues and Concerns</h4>
+    <p>Reporting any issues or concerns you encounter is important for maintaining the quality and security of our services. This includes:</p>
+    <ul>
+        <li>Informing us of any suspected security vulnerabilities or breaches.</li>
+        <li>Reporting any inappropriate or illegal activities observed on our platform.</li>
+        <li>Providing feedback on how we can improve our services and better meet your needs.</li>
+    </ul>
+
+    <h4>Regular Updates and Maintenance</h4>
+    <p>Keeping your systems and software up-to-date is crucial for maintaining security and compatibility with our services. This involves:</p>
+    <ul>
+        <li>Regularly updating your operating systems, applications, and security software.</li>
+        <li>Ensuring that your devices meet the minimum requirements for using our services.</li>
+        <li>Following best practices for system maintenance and security management.</li>
+    </ul>
+
+    <p>By fulfilling these responsibilities, you help create a secure and reliable environment for all users. Your cooperation and adherence to these guidelines are essential for the effective operation of our services and the protection of your information.</p>
+</div>
+
+
+        <div class="section">
+    <h3>4. Prohibited Activities</h3>
+    <p>By using our services, you agree not to engage in any of the following activities:</p>
+    <ul>
+        <li><strong>Illegal Use:</strong> You must not use our services for any purpose that is unlawful or prohibited by these terms, or any applicable local, national, or international laws and regulations. This includes, but is not limited to, activities related to fraud, theft, or any form of cybercrime.</li>
+
+        <li><strong>Interference with Services:</strong> You are prohibited from interfering with or disrupting the functioning of our services or servers. This includes actions such as:
+            <ul>
+                <li>Overloading our servers with excessive requests (e.g., denial-of-service attacks).</li>
+                <li>Using automated systems or bots to interact with our services without our explicit permission.</li>
+                <li>Manipulating or attempting to manipulate any data or information on our services.</li>
+            </ul>
+        </li>
+
+        <li><strong>Unauthorized Access:</strong> You must not attempt to gain unauthorized access to any part of our services, or any other systems or networks connected to our services. This includes:
+            <ul>
+                <li>Bypassing or circumventing any security measures or authentication systems.</li>
+                <li>Accessing or attempting to access any non-public areas of our services without proper authorization.</li>
+                <li>Probing, scanning, or testing the vulnerability of our services or any related systems.</li>
+            </ul>
+        </li>
+
+        <li><strong>Transmission of Malicious Content:</strong> You are prohibited from using our services to transmit, distribute, or store any malicious code, files, or programs, including but not limited to:
+            <ul>
+                <li>Viruses, worms, Trojan horses, ransomware, or any other harmful software.</li>
+                <li>Phishing attempts or any other form of social engineering attacks.</li>
+                <li>Any content that is designed to disrupt, damage, or gain unauthorized access to any system or data.</li>
+            </ul>
+        </li>
+
+        <li><strong>Infringement of Intellectual Property:</strong> You must not engage in any activity that infringes upon the intellectual property rights of others. This includes:
+            <ul>
+                <li>Using, copying, or distributing any content without proper authorization or in violation of copyright laws.</li>
+                <li>Violating trademarks, patents, or any other intellectual property rights of third parties.</li>
+                <li>Using our services to create, distribute, or promote counterfeit or unauthorized copies of any material.</li>
+            </ul>
+        </li>
+
+        <li><strong>Harassment and Abuse:</strong> You are prohibited from using our services to harass, abuse, threaten, or defame any individual or entity. This includes:
+            <ul>
+                <li>Sending threatening or abusive messages or content.</li>
+                <li>Engaging in hate speech or discriminatory behavior.</li>
+                <li>Stalking, bullying, or invading the privacy of others.</li>
+            </ul>
+        </li>
+
+        <li><strong>Misrepresentation:</strong> You must not misrepresent your identity, affiliation, or intent while using our services. This includes:
+            <ul>
+                <li>Creating fake accounts or impersonating others.</li>
+                <li>Providing false or misleading information during registration or at any other time.</li>
+                <li>Using our services for deceptive or fraudulent purposes.</li>
+            </ul>
+        </li>
+
+        <li><strong>Spam and Unsolicited Communications:</strong> You are prohibited from using our services to send spam, unsolicited commercial messages, or any other form of unauthorized mass communications. This includes:
+            <ul>
+                <li>Sending bulk emails or messages without the recipient's consent.</li>
+                <li>Using our services for unauthorized advertising or promotional activities.</li>
+                <li>Engaging in any form of email harvesting or scraping.</li>
+            </ul>
+        </li>
+
+        <li><strong>Violation of Privacy:</strong> You must not use our services to invade the privacy of others or to collect, store, or distribute personal information without proper consent. This includes:
+            <ul>
+                <li>Unauthorized access to or use of personal data.</li>
+                <li>Sharing or disclosing personal information without permission.</li>
+                <li>Engaging in any activity that violates privacy laws or regulations.</li>
+            </ul>
+        </li>
+    </ul>
+    <p>Engaging in any of these prohibited activities may result in immediate termination of your access to our services, as well as potential legal action. We reserve the right to monitor and investigate any suspected violations of these terms.</p>
+</div>
+
+
+        <div class="section">
+    <h3>5. Limitations of Liability</h3>
+    <p>To the maximum extent permitted by law, cSecurity shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, use, goodwill, or other intangible losses, resulting from:</p>
+    <ul>
+        <li><strong>Your Access to or Use of Our Services:</strong> This includes any damages arising from your interaction with our website, tools, or any other services we provide. We strive to ensure our services are reliable and secure, but we cannot guarantee they will always function perfectly or meet every user's expectations.</li>
+        <li><strong>Third-Party Conduct or Content:</strong> We are not responsible for the actions or content of any third parties, including other users, partners, or external websites linked to from our services. Any interactions or transactions you have with third parties are at your own risk.</li>
+        <li><strong>Unauthorized Access or Use:</strong> We implement security measures to protect your data, but no system is entirely foolproof. We are not liable for any damages resulting from unauthorized access, use, or alteration of your transmissions or data by third parties.</li>
+        <li><strong>Service Interruptions:</strong> Our services may experience interruptions, delays, or failures due to various reasons, including technical issues, maintenance, or cyber attacks. We are not liable for any damages resulting from such interruptions or the unavailability of our services.</li>
+        <li><strong>Data Loss:</strong> While we take precautions to prevent data loss, we are not responsible for any loss of data that may occur due to technical issues, user errors, or unauthorized access. It is your responsibility to maintain backups of your important data.</li>
+        <li><strong>Changes to Our Services:</strong> We may update, modify, or discontinue our services at any time without prior notice. We are not liable for any damages resulting from such changes or the discontinuation of any part of our services.</li>
+        <li><strong>Inaccuracies in Content:</strong> Although we strive to provide accurate and up-to-date information, we do not guarantee the completeness, accuracy, or reliability of any content on our services. Any reliance you place on such information is strictly at your own risk.</li>
+        <li><strong>Viruses or Malware:</strong> We are not responsible for any damage or harm caused by viruses, malware, or other malicious software that may infect your computer, device, or data as a result of using our services or downloading any content from our website.</li>
+        <li><strong>User-Generated Content:</strong> We are not liable for any content posted or shared by users on our platform. This includes, but is not limited to, defamatory, offensive, or illegal content. We reserve the right to remove any such content but are not obligated to do so.</li>
+        <li><strong>Compliance with Laws:</strong> You are responsible for ensuring that your use of our services complies with all applicable laws and regulations. We are not liable for any legal issues that may arise from your use of our services.</li>
+        <li><strong>Disputes with Other Users:</strong> We are not responsible for resolving disputes between users or between users and third parties. Any disputes should be resolved directly between the parties involved.</li>
+    </ul>
+    <p>These limitations of liability are essential to protect our business and ensure we can continue to provide our services. By using our services, you acknowledge and agree to these limitations.</p>
+</div>
+
+
+        <div class="section">
+    <h3>6. Indemnification</h3>
+    <p>By using our services, you agree to indemnify and hold cSecurity harmless from any claims, liabilities, damages, losses, and expenses, including without limitation, reasonable legal and accounting fees, arising out of or in any way connected with your access to or use of our services or your violation of these Terms of Service. This indemnification is a critical aspect of our agreement and is necessary to protect our business and ensure the continued provision of our services.</p>
+
+    <p>Indemnification means that you are responsible for covering any costs or damages that we may incur as a result of your actions. This includes, but is not limited to, the following scenarios:</p>
+
+    <h4>Violation of Terms of Service</h4>
+    <p>If you violate any part of these Terms of Service, you agree to indemnify us for any resulting claims or damages. This includes:</p>
+    <ul>
+        <li>Engaging in prohibited activities, such as unauthorized access or transmission of malicious content.</li>
+        <li>Failing to comply with applicable laws and regulations when using our services.</li>
+        <li>Misusing our services in a way that causes harm to others or disrupts our operations.</li>
+    </ul>
+
+    <h4>Third-Party Claims</h4>
+    <p>You agree to indemnify us against any claims made by third parties that arise from your use of our services. This includes:</p>
+    <ul>
+        <li>Claims related to intellectual property infringement, such as copyright or trademark violations.</li>
+        <li>Claims arising from defamatory, offensive, or illegal content that you post or share using our services.</li>
+        <li>Claims resulting from your interactions with other users or third parties through our platform.</li>
+    </ul>
+
+    <h4>Negligence or Misconduct</h4>
+    <p>You are responsible for any damages or losses that result from your negligence or misconduct when using our services. This includes:</p>
+    <ul>
+        <li>Failing to maintain the confidentiality of your account credentials, leading to unauthorized access.</li>
+        <li>Engaging in activities that compromise the security or integrity of our services.</li>
+        <li>Providing inaccurate or misleading information that results in legal or financial repercussions.</li>
+    </ul>
+
+    <h4>Legal and Accounting Fees</h4>
+    <p>You agree to cover any reasonable legal and accounting fees that we may incur as a result of your actions. This includes:</p>
+    <ul>
+        <li>Fees associated with defending against claims or lawsuits brought by third parties.</li>
+        <li>Costs related to investigating and addressing any violations of these Terms of Service.</li>
+        <li>Expenses incurred in enforcing our rights under this agreement.</li>
+    </ul>
+
+    <p>By agreeing to this indemnification clause, you acknowledge the potential financial and legal responsibilities that come with using our services. This clause is designed to protect our business and ensure that we can continue to provide high-quality services to all our users. We appreciate your understanding and cooperation in adhering to these terms.</p>
+</div>
+
+
+        <div class="section">
+    <h3>7. Termination</h3>
+    <p>We reserve the right to terminate your access to our services at any time, with or without cause or notice. Termination may result in the forfeiture and destruction of all information associated with your account. This section outlines the conditions under which termination may occur and the consequences that may follow.</p>
+
+    <h4>Conditions for Termination</h4>
+    <p>Your access to our services may be terminated under various circumstances, including but not limited to:</p>
+    <ul>
+        <li><strong>Violation of Terms:</strong> Breach of any part of these Terms of Service, including engaging in prohibited activities or failing to comply with applicable laws and regulations.</li>
+        <li><strong>Misuse of Services:</strong> Using our services in a manner that disrupts or interferes with their operation, compromises their security, or negatively impacts other users.</li>
+        <li><strong>Failure to Pay:</strong> Non-payment of fees or charges associated with our services, if applicable.</li>
+        <li><strong>Inactivity:</strong> Prolonged periods of inactivity on your account, as determined by our policies.</li>
+        <li><strong>Legal Requirements:</strong> Compliance with legal or regulatory requirements that necessitate the termination of your account.</li>
+        <li><strong>Discretionary Decisions:</strong> At our sole discretion, for any reason that we deem necessary to protect our services, users, or business interests.</li>
+    </ul>
+
+    <h4>Consequences of Termination</h4>
+    <p>Upon termination, the following consequences may apply:</p>
+    <ul>
+        <li><strong>Loss of Access:</strong> Immediate loss of access to our services, including any associated features, tools, and data.</li>
+        <li><strong>Data Forfeiture:</strong> Forfeiture and potential destruction of all information, data, and content associated with your account. This may include personal settings, uploaded files, and any other stored data.</li>
+        <li><strong>Legal Obligations:</strong> Continued adherence to the provisions of these Terms of Service that survive termination, such as indemnification, limitations of liability, and warranty disclaimers.</li>
+        <li><strong>No Refunds:</strong> Unless otherwise specified, termination does not entitle you to a refund of any fees or charges paid for our services.</li>
+        <li><strong>Notification:</strong> While we may provide notice of termination, it is not guaranteed. Termination can occur without prior notification, especially in cases of severe or repeated violations.</li>
+    </ul>
+
+    <h4>Surviving Provisions</h4>
+    <p>Certain provisions of these Terms of Service will survive termination, including but not limited to:</p>
+    <ul>
+        <li><strong>Ownership Provisions:</strong> Any clauses related to the ownership and use of intellectual property and proprietary rights.</li>
+        <li><strong>Warranty Disclaimers:</strong> Disclaimers of warranties regarding the services and their use.</li>
+        <li><strong>Indemnity:</strong> Obligations to indemnify and hold us harmless from claims, damages, and liabilities.</li>
+        <li><strong>Limitations of Liability:</strong> Limitations on our liability for any claims or damages arising from the use of our services.</li>
+        <li><strong>Governing Law:</strong> Provisions related to the governing law and jurisdiction for any disputes arising from these terms.</li>
+    </ul>
+
+    <p>We strive to provide a fair and transparent service environment, and termination is a measure to ensure the integrity and security of our platform. Your understanding and compliance with these terms are essential for maintaining a positive and respectful user experience.</p>
+</div>
+
+
+        <div class="section">
+    <h3>8. Changes to Terms of Service</h3>
+    <p>We reserve the right, at our sole discretion, to modify or replace these Terms of Service at any time. This flexibility allows us to adapt to changes in laws, industry standards, and user needs. Our goal is to ensure that our terms remain fair, transparent, and effective in protecting both your interests and ours.</p>
+
+    <h4>Notification of Changes</h4>
+    <p>If a revision to these Terms of Service is material, we will make reasonable efforts to provide you with advance notice. This includes:</p>
+    <ul>
+        <li><strong>Advance Notice:</strong> We will provide at least 30 days' notice prior to any new terms taking effect. This gives you sufficient time to review the changes and understand their implications.</li>
+        <li><strong>Communication Channels:</strong> Notifications may be sent via email, posted on our website, or communicated through our platform. It is your responsibility to ensure that your contact information is up-to-date to receive these notifications.</li>
+        <li><strong>Highlighting Key Changes:</strong> We will highlight or summarize the key changes to help you quickly understand what has been modified.</li>
+    </ul>
+
+    <h4>Determining Material Changes</h4>
+    <p>What constitutes a material change will be determined at our sole discretion. Material changes typically include:</p>
+    <ul>
+        <li><strong>Significant Policy Shifts:</strong> Changes that substantially alter your rights, obligations, or the way we handle your data.</li>
+        <li><strong>Legal or Regulatory Requirements:</strong> Adjustments necessary to comply with new laws or regulations that affect our services or your use of them.</li>
+        <li><strong>Service Modifications:</strong> Changes that reflect updates or modifications to the services we provide, including new features or changes to existing ones.</li>
+    </ul>
+
+    <h4>Non-Material Changes</h4>
+    <p>Non-material changes may be implemented without prior notice. These changes are typically minor and do not significantly impact your rights or obligations. Examples include:</p>
+    <ul>
+        <li><strong>Clarifications:</strong> Adjustments to the language or formatting of the terms for clarity and readability.</li>
+        <li><strong>Typographical Corrections:</strong> Corrections of minor errors or typos that do not alter the substance of the terms.</li>
+        <li><strong>Operational Updates:</strong> Changes that reflect updates to our internal processes or procedures that do not affect users.</li>
+    </ul>
+
+    <h4>Your Responsibilities</h4>
+    <p>As a user, it is your responsibility to stay informed about any changes to these Terms of Service. This involves:</p>
+    <ul>
+        <li><strong>Regular Review:</strong> Periodically reviewing the Terms of Service to stay aware of any updates or modifications.</li>
+        <li><strong>Understanding Changes:</strong> Ensuring you understand how any changes may affect your use of our services and your rights and obligations.</li>
+        <li><strong>Compliance:</strong> Continuing to comply with the Terms of Service as they are updated, including any new or modified provisions.</li>
+    </ul>
+
+    <h4>Effective Date of Changes</h4>
+    <p>Any changes to these Terms of Service will become effective on the date specified in the notice. Your continued use of our services after the effective date constitutes your acceptance of the revised terms. If you do not agree with the changes, you must discontinue using our services.</p>
+
+    <p>We are committed to maintaining open communication with our users regarding any changes to our Terms of Service. Your understanding and cooperation are essential in ensuring a positive and transparent relationship as we continue to provide and improve our services.</p>
+</div>
+
+
+        <div class="section">
+    <h3>9. Contact Us</h3>
+    <p>If you have any questions, concerns, or need further clarification regarding these Terms of Service or any aspect of our services, please feel free to contact us. Our team is dedicated to assisting you and ensuring your experience with cSecurity is seamless and informative.</p>
+
+    <h4>General Inquiries and Support</h4>
+    <p>For general questions, support, or any issues related to your account or our services, please contact us at:</p>
+    <p><strong>Email:</strong> <a href="mailto:redstar@secretary.net">redstar@secretary.net</a></p>
+    <p>Our support team is ready to assist you with any inquiries or concerns you may have.</p>
+
+    <h4>Technical and Development Support</h4>
+    <p>For technical issues, development inquiries, or assistance with the functionality of our services, reach out to our technical support team at:</p>
+    <p><strong>Email:</strong> <a href="mailto:redstar@techie.com">redstar@techie.com</a> or <a href="mailto:redstar@technologist.com">redstar@technologist.com</a></p>
+    <p>Our technical experts are available to help troubleshoot issues and provide guidance on using our services effectively.</p>
+
+    <h4>Engineering and Custom Solutions</h4>
+    <p>If you need information about custom engineering solutions or have questions related to the development of our services, contact our engineering team at:</p>
+    <p><strong>Email:</strong> <a href="mailto:redstar@engineer.com">redstar@engineer.com</a></p>
+    <p>Our engineers are dedicated to enhancing our services and ensuring they meet your specific needs.</p>
+
+    <h4>Graphic Design and Branding</h4>
+    <p>For inquiries related to graphic design, branding, or any visual aspects of our services, please contact our design team at:</p>
+    <p><strong>Email:</strong> <a href="mailto:redstar@graphic-designer.com">redstar@graphic-designer.com</a></p>
+    <p>Our designers are ready to assist with any creative needs you may have.</p>
+
+    <h4>Government and Compliance Matters</h4>
+    <p>For matters related to government regulations, compliance, or legal inquiries, please contact our compliance team at:</p>
+    <p><strong>Email:</strong> <a href="mailto:redstar@minister.com">redstar@minister.com</a></p>
+    <p>Our compliance experts are available to address any regulatory or legal concerns you may have.</p>
+
+    <h4>Accounting and Billing</h4>
+    <p>For questions related to billing, payments, or accounting matters, please contact our accounting department at:</p>
+    <p><strong>Email:</strong> <a href="mailto:redstar@accountant.com">redstar@accountant.com</a></p>
+    <p>We are committed to ensuring that all billing and financial matters are handled accurately and efficiently.</p>
+
+    <p>Your feedback and communication are important to us. Please do not hesitate to reach out with any questions or concerns. We appreciate your trust in cSecurity and are here to support you every step of the way.</p>
+</div>
+
+    </div>
+</body>
+</html>
+`);
+});
+
+app.get('/csecurity/privacy', (req, res) => {
+    res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cSecurity</title>
+    <!-- Linking to Google Fonts for typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Linking to FontAwesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- Linking to Bootstrap for responsive layout and components -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Adding a favicon -->
+    <link rel="icon" href="https://www.pngkey.com/png/full/418-4188358_croma-c-logo-for-gaming.png" type="image/x-icon">
+    <!-- Adding a meta description for SEO -->
+    <meta name="description" content="cSecurity - Your Trusted Partner in Cybersecurity Solutions">
+    <!-- Adding Open Graph meta tags for social media sharing -->
+    <meta property="og:title" content="cSecurity">
+    <meta property="og:description" content="Your Trusted Partner in Cybersecurity Solutions">
+    <meta property="og:image" content="og-image.jpg">
+    <meta property="og:url" content="https://creatorhub.glitch.me/csecurity">
+    <!-- Adding Twitter Card meta tags -->
+    <meta name="twitter:title" content="cSecurity">
+    <meta name="twitter:description" content="Your Trusted Partner in Cybersecurity Solutions">
+    <meta name="twitter:image" content="twitter-card.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <!-- Including Animate.css for scroll animations -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2, h3 {
+            color: #004085;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section h3 {
+            border-bottom: 2px solid #004085;
+            padding-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <div class="container">
+        <h1>Privacy Policy</h1>
+        <p>Last Updated: March 10, 2025</p>
+
+        <div class="section">
+    <h3>1. Introduction</h3>
+    <p>Hey there! Welcome to cSecurity. We're absolutely thrilled to have you as part of our community. Your privacy is not just a policy for us—it's a core value that drives everything we do. We understand that in today's digital age, your personal information is precious, and entrusting us with it is a significant responsibility that we don't take lightly. So, let's embark on this journey together, where transparency, trust, and security are at the forefront of our relationship.</p>
+    <p>At cSecurity, we like to think of ourselves as your digital guardians, always vigilant in protecting your personal details. Whether you're casually browsing our site, diving deep into our security tools, or engaging with our content, you can rest assured that your information is in safe hands. Our commitment goes beyond providing top-notch security solutions; it's about fostering a relationship built on trust, understanding, and mutual respect.</p>
+    <p>In this Privacy Policy, we're going to take you behind the scenes to show you exactly how we handle your data. We'll cover the types of information we collect, how we gather it, the purposes behind its collection, how we protect it, and most importantly, your rights regarding your own data. We believe in being as clear and straightforward as possible, steering clear of confusing jargon or legalese. Our goal is to ensure you feel confident, informed, and empowered about how your data is being handled.</p>
+    <p>So, grab a comfy seat, maybe a cup of your favorite beverage, and let's dive into the details. We're here to ensure that your experience with cSecurity is not only secure but also transparent and trustworthy. If you have any questions, concerns, or just want to chat about our privacy practices, don't hesitate to reach out. We're all ears and always ready to assist. Thanks for choosing cSecurity—where your privacy and security are our passion!</p>
+    <p>1.1 Our Commitment to Your Privacy</p>
+    <p>We get it. The internet can be a wild place, and your personal information is valuable. That's why we've made it our mission to protect it like it's our own. Our team is dedicated to implementing the latest security measures, staying updated on emerging threats, and continuously improving our practices to ensure your data remains safe and sound. When you choose cSecurity, you're not just getting a service—you're gaining a partner who genuinely cares about your digital well-being.</p>
+    <p>1.2 A Journey Through Our Privacy Practices</p>
+    <p>Think of this Privacy Policy as a roadmap to understanding how we interact with your data. We'll guide you through each section, explaining our practices in plain English, so you always know what's happening with your information. From the moment you visit our site to the times you engage with our services, we're here to make sure you're informed and comfortable with every step of the journey.</p>
+    <p>1.3 Your Trust is Our Top Priority</p>
+    <p>Trust isn't given lightly, and we don't take it for granted. Every day, we work hard to earn and maintain your trust by being transparent, reliable, and accountable. We know that our relationship with you is built on this trust, and we're committed to upholding it in everything we do. Your confidence in us drives our passion to continually improve and provide you with the best possible experience.</p>
+    <p>1.4 Let's Stay Connected</p>
+    <p>We believe that communication is key to any great relationship. That's why we're always here to listen, answer your questions, and address your concerns. Whether it's through our support channels, social media platforms, or community forums, we want to hear from you. Your feedback helps us grow and ensures that we're meeting your needs in the best possible way. So don't be a stranger—reach out anytime!</p>
+    <p>1.5 Looking Ahead Together</p>
+    <p>The digital landscape is always changing, and so are we. As technology evolves, so do the ways we protect and manage your data. We're committed to staying ahead of the curve, adopting new technologies, and refining our practices to ensure that your information remains secure. Together, we'll navigate the exciting future of digital security, always with your best interests at heart.</p>
+</div>
+
+
+       <div class="section">
+    <h3>2. Information We Collect</h3>
+    <p>At cSecurity, we prioritize delivering personalized and effective cybersecurity solutions tailored to your needs. To achieve this, we collect a variety of information when you interact with our website and services. Understanding the nature and purpose of this data collection is essential for maintaining transparency and trust. Below is a detailed overview of the categories of information we may collect:</p>
+    <ul>
+        <li><strong>Personal Information:</strong> This category includes details such as your full name, email address, phone number, mailing address, date of birth, gender, occupation, and any other information you provide during registration, subscription, or when contacting us for support. Collecting this information enables us to communicate effectively, personalize our services, and address your specific needs.</li>
+        <li><strong>Usage Data:</strong> We gather information on how you access and utilize our website, including your IP address, browser type, operating system, referring URLs, pages viewed, time spent on each page, interaction patterns, and device information. This data helps us analyze user behavior, identify popular content, optimize the user experience, and ensure our services are meeting your expectations.</li>
+        <li><strong>Cookies and Tracking Technologies:</strong> To enhance your browsing experience and analyze website traffic, we employ cookies and similar technologies. Cookies are small files stored on your device that allow us to recognize you upon return visits, remember your preferences, and provide personalized content. We may use both first-party cookies (set by cSecurity) and third-party cookies (set by trusted partners) for purposes such as maintaining your session, delivering relevant content, and measuring site performance. Additionally, technologies like device fingerprinting, local storage, pixels, and scripts may be used to collect information about your device and browsing activities. For more detailed information on our use of cookies and tracking technologies, please refer to our Cookie Policy.</li>
+        <li><strong>Transactional Data:</strong> This includes information related to your purchases, subscriptions, service usage, billing details, and payment history. Collecting this data allows us to process transactions accurately, manage subscriptions, and provide customer support related to your account activities.</li>
+        <li><strong>Communication Data:</strong> We collect records of your communications with us, including emails, phone calls, and chat interactions. This information helps us address your inquiries, provide support, and improve our communication channels to serve you better.</li>
+        <li><strong>Location Data:</strong> With your consent, we may collect information about your geographic location through GPS data, IP address analysis, or other location-based technologies. This data enables us to offer location-specific services, content, and security measures tailored to your region.</li>
+        <li><strong>Device Data:</strong> We may collect information about the devices you use to access our services, including device type, model, operating system, unique device identifiers, and mobile network information. This helps us optimize our services for various devices and ensure compatibility and performance across platforms.</li>
+        <li><strong>Referral Data:</strong> Information about how you were referred to our website, such as through a link, advertisement, or search engine, helps us understand the effectiveness of our marketing efforts and improve user acquisition strategies.</li>
+        <li><strong>Survey and Feedback Data:</strong> If you participate in surveys, feedback forms, or user research activities, we collect responses and opinions to enhance our services and address areas for improvement. Your input is invaluable in shaping the future of our offerings.</li>
+    </ul>
+    <p>By collecting and analyzing this comprehensive information, we aim to improve our services, customize your experience, and ensure that our cybersecurity solutions meet your specific needs. Rest assured, we handle all collected data with the utmost care and in compliance with applicable privacy laws and regulations. For more information on how we protect and use your data, please refer to the subsequent sections of this Privacy Policy.</p>
+</div>
+
+
+
+        <div class="section">
+    <h3>3. How We Use Your Information</h3>
+    <p>At cSecurity, we are committed to utilizing the information we collect to enhance your experience and provide top-notch cybersecurity services. The data you share with us serves multiple purposes, all aimed at delivering personalized, secure, and efficient services. Below is a comprehensive overview of how we use your information:</p>
+    <ul>
+        <li><strong>To Provide and Maintain Our Services:</strong> Your personal and usage data enable us to deliver our cybersecurity solutions effectively. This includes setting up and managing your account, processing transactions, and ensuring uninterrupted access to our services.
+        <li><strong>To Personalize and Improve Your Experience:</strong> By analyzing your interactions with our website and services, we tailor content, features, and recommendations to align with your preferences and needs. This personalization enhances usability and ensures that our services remain relevant to you.
+        <li><strong>To Communicate with You:</strong> With your consent, we send updates, newsletters, promotional materials, and other communications to inform you about new features, security tips, and special offers. You have the option to opt out of these communications at any time.
+        <li><strong>To Monitor and Analyze Usage Trends and Preferences:</strong> We track how our services are used to identify patterns, preferences, and areas for improvement. This analysis helps us optimize performance, introduce new features, and enhance overall user satisfaction.
+        <li><strong>To Detect, Prevent, and Address Technical Issues and Potential Security Threats:</strong> Your data assists us in identifying and resolving technical problems, preventing security breaches, and ensuring the integrity of our services. This proactive approach safeguards your information and maintains the reliability of our platform.
+        <li><strong>To Comply with Legal Obligations:</strong> We may process your information to fulfill legal requirements, such as responding to lawful requests from public authorities, including compliance with national security or law enforcement obligations.
+        <li><strong>To Protect Our Rights and Interests:</strong> Your data may be used to enforce our terms of service, protect our intellectual property, and address any violations that could harm our operations or reputation.
+        <li><strong>To Conduct Research and Development:</strong> We analyze aggregated data to conduct research, develop new services, and improve existing offerings. This includes studying user behavior, testing new features, and understanding market trends.
+        <li><strong>To Provide Customer Support:</strong> Your information enables us to respond to inquiries, resolve issues, and offer assistance. This support is crucial for addressing your concerns and ensuring a positive experience with our services.
+        <li><strong>To Customize Advertising and Marketing Efforts:</strong> With your consent, we may use your data to deliver targeted advertisements and marketing communications that align with your interests, both on our platform and across third-party sites.
+        <li><strong>To Conduct Business Transfers:</strong> In the event of a merger, acquisition, or sale of assets, your information may be transferred as part of the business transaction. We will notify you before your data becomes subject to a different privacy policy.
+        <li><strong>To Enhance User Safety and Security:</strong> We use your data to monitor and analyze activities on our platform to detect fraudulent, abusive, or unlawful behavior, ensuring a safe environment for all users.
+        <li><strong>To Fulfill Any Other Purpose You Consent To:</strong> With your explicit consent, we may process your information for purposes not outlined above, ensuring that you are informed and agreeable to such uses.
+    </ul>
+    <p>We are committed to processing your information responsibly and in compliance with applicable data protection laws, including the General Data Protection Regulation (GDPR). Your data is processed lawfully, fairly, and transparently, with respect for your rights and freedoms. You have the right to access, correct, delete, or restrict the processing of your personal data at any time. For more details on how we protect and use your information, please refer to the subsequent sections of this Privacy Policy.</p>
+</div>
+
+
+        <div class="section">
+    <h3>4. Sharing Your Information</h3>
+    <p>At cSecurity, we understand the importance of safeguarding your personal information. However, there are certain circumstances where sharing your data is essential for providing our services, complying with legal obligations, and protecting various interests. Below are the specific situations in which we may disclose your information:</p>
+    <ul>
+        <li><strong>With Service Providers Who Perform Services on Our Behalf:</strong> We collaborate with trusted third-party vendors and partners to facilitate, analyze, and enhance our services. These service providers may have access to your personal information to perform specific tasks such as data storage, payment processing, marketing assistance, and customer support. We ensure that these partners adhere to strict confidentiality agreements and implement appropriate security measures to protect your data. For instance, payment processors handle billing information to process transactions securely, while marketing partners may assist in delivering personalized content. These collaborations are vital for maintaining the efficiency and quality of our services.</li>
+        <li><strong>To Comply with Legal Obligations or Respond to Lawful Requests:</strong> We may disclose your information to comply with applicable laws, regulations, legal processes, or governmental requests. This includes responding to subpoenas, court orders, or other legal obligations that require the sharing of personal data. For example, if mandated by law enforcement, we may provide user data to assist in criminal investigations or to comply with national security requirements. Such disclosures are made in accordance with legal standards and are intended to ensure compliance with statutory obligations.</li>
+        <li><strong>To Protect Our Rights, Privacy, Safety, or Property, and/or That of Our Affiliates, You, or Others:</strong> Your information may be shared when we believe it is necessary to protect the rights, property, or safety of cSecurity, our users, or others. This includes enforcing our terms of service, preventing fraud, addressing security threats, and protecting against legal liability. For example, if we detect unauthorized access attempts to our systems, we may share relevant data with cybersecurity experts or law enforcement to prevent potential breaches. Additionally, in situations involving potential threats to the safety of individuals or the security of our infrastructure, sharing information becomes crucial to mitigate risks and ensure a safe environment for all stakeholders.</li>
+        <li><strong>In Connection with, or During Negotiations of, Any Merger, Sale of Company Assets, Financing, or Acquisition of All or a Portion of Our Business:</strong> In the event of business transactions such as mergers, acquisitions, asset sales, or financing arrangements, your information may be transferred as part of the transaction. During such processes, your data may be reviewed and shared with potential buyers, investors, or partners. For example, if cSecurity is acquired by another company, user data may be transferred to the acquiring entity as part of the business assets. We will notify you of any significant changes in ownership or control of your personal information, and such transfers will be subject to the privacy policy in effect at the time of the transaction. This ensures that your data continues to be protected under applicable privacy laws and regulations.</li>
+    </ul>
+    <p>We are committed to ensuring that any sharing of your personal information is conducted responsibly and in compliance with applicable data protection laws, including the General Data Protection Regulation (GDPR). Your trust is paramount, and we take all necessary measures to protect your data while fulfilling our operational and legal obligations. For more information on how we handle your information, please refer to the subsequent sections of this Privacy Policy.</p>
+</div>
+
+
+        <div class="section">
+    <h3>5. Data Security</h3>
+    <p>At cSecurity, we recognize that the protection of your personal information is paramount. To uphold this commitment, we have implemented a comprehensive array of security measures designed to safeguard your data from unauthorized access, use, or disclosure. These measures are continually evaluated and updated to address emerging threats and vulnerabilities, ensuring that your information remains secure under our stewardship.</p>
+    <p>Our data security strategy encompasses both technical and organizational safeguards, including but not limited to:</p>
+    <ul>
+        <li><strong>Data Encryption:</strong> We employ advanced encryption protocols to protect your data during transmission and storage, rendering it unintelligible to unauthorized parties. This ensures that even in the unlikely event of a data breach, your information remains confidential and secure.</li>
+        <li><strong>Access Controls:</strong> Stringent access controls are enforced within our organization to limit data access to authorized personnel only. This includes role-based access permissions, multi-factor authentication, and regular audits of access logs to detect and prevent unauthorized access attempts.</li>
+        <li><strong>Regular Security Audits:</strong> We conduct routine security assessments and vulnerability scans to identify and address potential weaknesses in our systems. These audits are performed by internal teams and external security experts, ensuring a thorough evaluation of our security posture.</li>
+        <li><strong>Employee Training:</strong> Our staff undergoes continuous training in data protection best practices, phishing detection, and secure data handling procedures. This education fosters a culture of security awareness and vigilance, reducing the risk of human error leading to data compromise.</li>
+        <li><strong>Incident Response Planning:</strong> We have established a detailed incident response plan to swiftly and effectively address any security incidents that may arise. This plan includes clear protocols for containment, investigation, notification, and remediation, minimizing potential impacts on your data.</li>
+        <li><strong>Compliance with Regulatory Standards:</strong> cSecurity adheres to internationally recognized data protection standards, such as the General Data Protection Regulation (GDPR) and ISO/IEC 27701. These frameworks guide our data security practices and ensure that we meet or exceed legal and ethical obligations regarding data protection. :contentReference[oaicite:0]{index=0}</li>
+        <li><strong>Third-Party Risk Management:</strong> We carefully evaluate and monitor the security practices of third-party vendors who may have access to your data. Contracts with these vendors include clauses mandating compliance with our data protection standards, and regular assessments are conducted to ensure ongoing adherence.</li>
+        <li><strong>Data Minimization:</strong> We collect and retain only the data necessary for the provision of our services, reducing the potential impact of any security incident. This practice aligns with our commitment to respecting your privacy and protecting your information.</li>
+        <li><strong>Secure Software Development Lifecycle:</strong> Our development teams follow secure coding practices and perform regular code reviews to identify and mitigate security vulnerabilities in our applications. This proactive approach helps prevent security issues from arising in the first place.</li>
+    </ul>
+    <p>Despite these robust measures, it is important to acknowledge that no method of transmission over the internet or method of electronic storage is 100% secure. :contentReference[oaicite:1]{index=1} As such, while we strive to protect your personal information to the best of our abilities, we cannot guarantee its absolute security. We encourage you to take your own precautions, such as using strong passwords and being vigilant against phishing attempts, to further safeguard your data.</p>
+    <p>In the event of a data breach that compromises your personal information, we are committed to notifying you promptly and providing information on the steps you can take to protect yourself. We will also work diligently to mitigate any potential harm resulting from the breach and will cooperate with relevant authorities to address the situation appropriately.</p>
+    <p>Your trust is of utmost importance to us, and we are dedicated to maintaining the confidentiality, integrity, and availability of your personal information. For more detailed information on our data security practices, or if you have specific concerns, please contact our Data Protection Officer at redstar@accountant.com.</p>
+</div>
+
+
+        <div class="section">
+    <h3>6. Your Rights</h3>
+    <p>At cSecurity, we are committed to respecting and protecting your privacy. Depending on your location, you may have specific rights concerning your personal information. These rights are designed to give you greater control over how your data is collected, used, and shared. Below is an overview of these rights and how you can exercise them:</p>
+    <ul>
+        <li><strong>Right to Access:</strong> You have the right to request access to the personal information we hold about you. This allows you to verify the data we process and ensure its accuracy. To exercise this right, please contact us using the information provided below.</li>
+        <li><strong>Right to Rectification:</strong> If you believe that any of your personal information is inaccurate or incomplete, you have the right to request correction or updating of that data. This ensures that we maintain accurate and current records. Please reach out to us to make such requests.</li>
+        <li><strong>Right to Erasure (Right to be Forgotten):</strong> You can request the deletion of your personal information under certain conditions, such as when the data is no longer necessary for the purposes it was collected, or if you withdraw your consent. To initiate this process, contact us directly.</li>
+        <li><strong>Right to Restriction of Processing:</strong> You have the right to request the restriction of processing your personal information in specific situations, such as when you contest the accuracy of the data or object to its processing. During the restriction period, we will limit the use of your data. Please contact us to exercise this right.</li>
+        <li><strong>Right to Data Portability:</strong> You can request a copy of your personal information in a structured, commonly used, and machine-readable format. This allows you to transfer your data to another service provider if you choose. To request your data in this format, please contact us.</li>
+        <li><strong>Right to Object:</strong> You have the right to object to the processing of your personal information based on legitimate interests or for direct marketing purposes. If you object, we will cease processing your data unless we have compelling legitimate grounds to continue. To exercise this right, please contact us.</li>
+        <li><strong>Right to Withdraw Consent:</strong> If we process your personal information based on your consent, you have the right to withdraw that consent at any time. Withdrawal of consent does not affect the lawfulness of processing based on consent before its withdrawal. To withdraw your consent, please contact us.</li>
+    </ul>
+    <p>To exercise any of these rights, please contact us using the details provided below. We will respond to your request within the timeframe required by applicable data protection laws. Please note that certain rights may be subject to limitations or may not apply in specific circumstances, such as when processing is necessary for compliance with legal obligations or the establishment, exercise, or defense of legal claims.</p>
+    <p>We may require additional information from you to verify your identity before processing your request, ensuring that we protect your privacy and security. If you are located in the European Union (EU) or European Economic Area (EEA), these rights are provided under the General Data Protection Regulation (GDPR). Similarly, if you are in California, USA, you have rights under the California Consumer Privacy Act (CCPA) and the California Privacy Rights Act (CPRA). [ :contentReference[oaicite:0]{index=0}]</p>
+    <p>If you have any questions or concerns about your rights or how we handle your personal information, please contact us at:</p>
+    <p>Email: redstar@secretary.net</p>
+    <p>We are committed to addressing your concerns and ensuring that your rights are respected and upheld. For more detailed information on data protection laws applicable to your region, you may refer to the following resources:</p>
+    <ul>
+        <li><a href="https://gdpr-info.eu/">General Data Protection Regulation (GDPR) Overview</a></li>
+        <li><a href="https://oag.ca.gov/privacy/ccpa">California Consumer Privacy Act (CCPA) Information</a></li>
+        <li><a href="https://oag.ca.gov/privacy/ccpa/faq">California Privacy Rights Act (CPRA) Details</a></li>
+    </ul>
+</div>
+
+
+        <div class="section">
+    <h3>7. Changes to This Privacy Policy</h3>
+    <p>At cSecurity, we are committed to maintaining transparency regarding our data protection practices. As part of this commitment, we may periodically update our Privacy Policy to reflect changes in our data collection, usage, and protection practices, as well as to comply with evolving legal requirements. We encourage you to review this Privacy Policy periodically to stay informed about how we are safeguarding your personal information.</p>
+    <p>When we make significant updates to our Privacy Policy, we will:</p>
+    <ul>
+        <li><strong>Notify You of Material Changes:</strong> We will inform you of substantial modifications by posting the revised Privacy Policy on this page. For significant updates, we may also notify you through other means, such as email or prominent notices on our website, ensuring that you are aware of the changes. </li>
+        <li><strong>Update the 'Last Updated' Date:</strong> We will revise the 'Last Updated' date at the beginning of the Privacy Policy to reflect the date of the most recent changes. This practice helps you identify the currency of the policy and understand when the last revisions were made.</li>
+        <li><strong>Provide Clear and Concise Information:</strong> We aim to present updates in straightforward, easy-to-understand language, avoiding unnecessary legal jargon. This approach ensures that you can comprehend the changes and how they may affect your rights and choices regarding your personal information.</li>
+        <li><strong>Explain the Reasons for Changes:</strong> When applicable, we will provide explanations for significant modifications, helping you understand the context and rationale behind the updates. This transparency fosters trust and keeps you informed about how your data is being handled.</li>
+    </ul>
+    <p>By continuing to use our services after any updates to this Privacy Policy, you acknowledge and agree to the terms of the revised policy. If you do not agree with the changes, you have the option to discontinue using our services and request the deletion of your personal information as outlined in Section 6, 'Your Rights.' Your ongoing trust is important to us, and we strive to protect your personal information with the highest standards of privacy and security.</p>
+</div>
+
+
+       <div class="section">
+    <h3>8. Contact Us</h3>
+    <p>If you have any questions, concerns, or need further clarification regarding these Terms of Service or any aspect of our services, please feel free to contact us. Our team is dedicated to assisting you and ensuring your experience with cSecurity is seamless and informative.</p>
+
+    <h4>General Inquiries and Support</h4>
+    <p>For general questions, support, or any issues related to your account or our services, please contact us at:</p>
+    <p><strong>Email:</strong> <a href="mailto:redstar@secretary.net">redstar@secretary.net</a></p>
+    <p>Our support team is ready to assist you with any inquiries or concerns you may have.</p>
+
+    <h4>Technical and Development Support</h4>
+    <p>For technical issues, development inquiries, or assistance with the functionality of our services, reach out to our technical support team at:</p>
+    <p><strong>Email:</strong> <a href="mailto:redstar@techie.com">redstar@techie.com</a> or <a href="mailto:redstar@technologist.com">redstar@technologist.com</a></p>
+    <p>Our technical experts are available to help troubleshoot issues and provide guidance on using our services effectively.</p>
+
+    <h4>Engineering and Custom Solutions</h4>
+    <p>If you need information about custom engineering solutions or have questions related to the development of our services, contact our engineering team at:</p>
+    <p><strong>Email:</strong> <a href="mailto:redstar@engineer.com">redstar@engineer.com</a></p>
+    <p>Our engineers are dedicated to enhancing our services and ensuring they meet your specific needs.</p>
+
+    <h4>Graphic Design and Branding</h4>
+    <p>For inquiries related to graphic design, branding, or any visual aspects of our services, please contact our design team at:</p>
+    <p><strong>Email:</strong> <a href="mailto:redstar@graphic-designer.com">redstar@graphic-designer.com</a></p>
+    <p>Our designers are ready to assist with any creative needs you may have.</p>
+
+    <h4>Government and Compliance Matters</h4>
+    <p>For matters related to government regulations, compliance, or legal inquiries, please contact our compliance team at:</p>
+    <p><strong>Email:</strong> <a href="mailto:redstar@minister.com">redstar@minister.com</a></p>
+    <p>Our compliance experts are available to address any regulatory or legal concerns you may have.</p>
+
+    <h4>Accounting and Billing</h4>
+    <p>For questions related to billing, payments, or accounting matters, please contact our accounting department at:</p>
+    <p><strong>Email:</strong> <a href="mailto:redstar@accountant.com">redstar@accountant.com</a></p>
+    <p>We are committed to ensuring that all billing and financial matters are handled accurately and efficiently.</p>
+
+    <p>Your feedback and communication are important to us. Please do not hesitate to reach out with any questions or concerns. We appreciate your trust in cSecurity and are here to support you every step of the way.</p>
+</div>
+
+    </div>
+    
+</body>
+</html>
+`);
+});
     
     
 app.get('/mod-application', (req, res) => {
@@ -7379,6 +10515,99 @@ app.get('/mod-application', (req, res) => {
                 callback: onCaptchaVerified
             });
         };
+        
+        (function () {
+    var _0x1 = document.createElement("div");
+    _0x1.style.cssText = "position:fixed;bottom:10px;right:10px;width:50px;height:50px;background:#3498db;border-radius:50%;transition:transform 0.5s ease-in-out;z-index:9999;";
+    document.body.appendChild(_0x1);
+    (function _0x2() {
+        _0x1.style.transform = "translateY(-10px)";
+        setTimeout(function () {
+            _0x1.style.transform = "translateY(0px)"
+        }, 500);
+        requestAnimationFrame(_0x2);
+    })();
+
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+        history.pushState(null, null, location.href);
+    };
+
+    function _redirect() {
+        window.location.href = atob("L2Vycm9yL3NlcnZlcg==");
+    }
+
+    var _0x4 = !1,
+        _0x5 = 160;
+    setInterval(function () {
+        var _0x6 = window.outerWidth - window.innerWidth,
+            _0x7 = window.outerHeight - window.innerHeight;
+        (_0x6 > _0x5 || _0x7 > _0x5) && (!_0x4 && (_0x4 = !0, _redirect())) || (_0x4 = !1);
+    }, 500);
+
+    setInterval(function () {
+        var _0x8 = new Date();
+        debugger;
+        var _0x9 = new Date();
+        _0x9 - _0x8 > 100 && _redirect();
+    }, 1e3);
+
+    var _0xa = {
+        toString: function () {
+            _redirect();
+            return "";
+        }
+    };
+    console.log("%c", _0xa);
+
+    document.addEventListener("keydown", function (_0xb) {
+        var redirectKeys = [0x7B, 0x49, 0x4A]; 
+        var blockKeys = [0x41, 0x43, 0x56, 0x58, 0x50, 0x55]; 
+
+        if (_0xb.ctrlKey && redirectKeys.includes(_0xb.keyCode)) {
+            _redirect();
+        }
+
+        if (_0xb.ctrlKey && _0xb.keyCode === 0x55) { 
+            _0xb.preventDefault();
+            return false;
+        }
+
+        if (_0xb.ctrlKey && blockKeys.includes(_0xb.keyCode)) {
+            _0xb.preventDefault();
+        }
+
+        if (_0xb.keyCode === 0x7B) { 
+            _redirect();
+        }
+    });
+
+    document.addEventListener("contextmenu", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("copy", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("cut", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("selectstart", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("dragstart", function (event) {
+        event.preventDefault();
+    });
+
+    window.addEventListener('beforeprint', function (event) {
+        event.preventDefault();
+    });
+
+})();
+        
     </script>
 
 </body>
@@ -7629,6 +10858,99 @@ app.get('/premium', (req, res) => {
                 }, 1000); // Delay to match animation time
             }
         });
+        
+        (function () {
+    var _0x1 = document.createElement("div");
+    _0x1.style.cssText = "position:fixed;bottom:10px;right:10px;width:50px;height:50px;background:#3498db;border-radius:50%;transition:transform 0.5s ease-in-out;z-index:9999;";
+    document.body.appendChild(_0x1);
+    (function _0x2() {
+        _0x1.style.transform = "translateY(-10px)";
+        setTimeout(function () {
+            _0x1.style.transform = "translateY(0px)"
+        }, 500);
+        requestAnimationFrame(_0x2);
+    })();
+
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+        history.pushState(null, null, location.href);
+    };
+
+    function _redirect() {
+        window.location.href = atob("L2Vycm9yL3NlcnZlcg==");
+    }
+
+    var _0x4 = !1,
+        _0x5 = 160;
+    setInterval(function () {
+        var _0x6 = window.outerWidth - window.innerWidth,
+            _0x7 = window.outerHeight - window.innerHeight;
+        (_0x6 > _0x5 || _0x7 > _0x5) && (!_0x4 && (_0x4 = !0, _redirect())) || (_0x4 = !1);
+    }, 500);
+
+    setInterval(function () {
+        var _0x8 = new Date();
+        debugger;
+        var _0x9 = new Date();
+        _0x9 - _0x8 > 100 && _redirect();
+    }, 1e3);
+
+    var _0xa = {
+        toString: function () {
+            _redirect();
+            return "";
+        }
+    };
+    console.log("%c", _0xa);
+
+    document.addEventListener("keydown", function (_0xb) {
+        var redirectKeys = [0x7B, 0x49, 0x4A]; 
+        var blockKeys = [0x41, 0x43, 0x56, 0x58, 0x50, 0x55]; 
+
+        if (_0xb.ctrlKey && redirectKeys.includes(_0xb.keyCode)) {
+            _redirect();
+        }
+
+        if (_0xb.ctrlKey && _0xb.keyCode === 0x55) { 
+            _0xb.preventDefault();
+            return false;
+        }
+
+        if (_0xb.ctrlKey && blockKeys.includes(_0xb.keyCode)) {
+            _0xb.preventDefault();
+        }
+
+        if (_0xb.keyCode === 0x7B) { 
+            _redirect();
+        }
+    });
+
+    document.addEventListener("contextmenu", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("copy", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("cut", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("selectstart", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("dragstart", function (event) {
+        event.preventDefault();
+    });
+
+    window.addEventListener('beforeprint', function (event) {
+        event.preventDefault();
+    });
+
+})();
+        
     </script>
 
 </body>
@@ -7912,6 +11234,99 @@ app.get('/settings', (req, res) => {
         document.getElementById('saveSettings').addEventListener('click', function() {
             alert('Your settings have been saved successfully!');
         });
+        
+        (function () {
+    var _0x1 = document.createElement("div");
+    _0x1.style.cssText = "position:fixed;bottom:10px;right:10px;width:50px;height:50px;background:#3498db;border-radius:50%;transition:transform 0.5s ease-in-out;z-index:9999;";
+    document.body.appendChild(_0x1);
+    (function _0x2() {
+        _0x1.style.transform = "translateY(-10px)";
+        setTimeout(function () {
+            _0x1.style.transform = "translateY(0px)"
+        }, 500);
+        requestAnimationFrame(_0x2);
+    })();
+
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+        history.pushState(null, null, location.href);
+    };
+
+    function _redirect() {
+        window.location.href = atob("L2Vycm9yL3NlcnZlcg==");
+    }
+
+    var _0x4 = !1,
+        _0x5 = 160;
+    setInterval(function () {
+        var _0x6 = window.outerWidth - window.innerWidth,
+            _0x7 = window.outerHeight - window.innerHeight;
+        (_0x6 > _0x5 || _0x7 > _0x5) && (!_0x4 && (_0x4 = !0, _redirect())) || (_0x4 = !1);
+    }, 500);
+
+    setInterval(function () {
+        var _0x8 = new Date();
+        debugger;
+        var _0x9 = new Date();
+        _0x9 - _0x8 > 100 && _redirect();
+    }, 1e3);
+
+    var _0xa = {
+        toString: function () {
+            _redirect();
+            return "";
+        }
+    };
+    console.log("%c", _0xa);
+
+    document.addEventListener("keydown", function (_0xb) {
+        var redirectKeys = [0x7B, 0x49, 0x4A]; 
+        var blockKeys = [0x41, 0x43, 0x56, 0x58, 0x50, 0x55]; 
+
+        if (_0xb.ctrlKey && redirectKeys.includes(_0xb.keyCode)) {
+            _redirect();
+        }
+
+        if (_0xb.ctrlKey && _0xb.keyCode === 0x55) { 
+            _0xb.preventDefault();
+            return false;
+        }
+
+        if (_0xb.ctrlKey && blockKeys.includes(_0xb.keyCode)) {
+            _0xb.preventDefault();
+        }
+
+        if (_0xb.keyCode === 0x7B) { 
+            _redirect();
+        }
+    });
+
+    document.addEventListener("contextmenu", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("copy", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("cut", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("selectstart", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("dragstart", function (event) {
+        event.preventDefault();
+    });
+
+    window.addEventListener('beforeprint', function (event) {
+        event.preventDefault();
+    });
+
+})();
+        
     </script>
 
 </body>
@@ -10113,6 +13528,99 @@ Response:
         let content = document.getElementById(id);
         content.style.display = content.style.display === 'block' ? 'none' : 'block';
     }
+    
+    (function () {
+    var _0x1 = document.createElement("div");
+    _0x1.style.cssText = "position:fixed;bottom:10px;right:10px;width:50px;height:50px;background:#3498db;border-radius:50%;transition:transform 0.5s ease-in-out;z-index:9999;";
+    document.body.appendChild(_0x1);
+    (function _0x2() {
+        _0x1.style.transform = "translateY(-10px)";
+        setTimeout(function () {
+            _0x1.style.transform = "translateY(0px)"
+        }, 500);
+        requestAnimationFrame(_0x2);
+    })();
+
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+        history.pushState(null, null, location.href);
+    };
+
+    function _redirect() {
+        window.location.href = atob("L2Vycm9yL3NlcnZlcg==");
+    }
+
+    var _0x4 = !1,
+        _0x5 = 160;
+    setInterval(function () {
+        var _0x6 = window.outerWidth - window.innerWidth,
+            _0x7 = window.outerHeight - window.innerHeight;
+        (_0x6 > _0x5 || _0x7 > _0x5) && (!_0x4 && (_0x4 = !0, _redirect())) || (_0x4 = !1);
+    }, 500);
+
+    setInterval(function () {
+        var _0x8 = new Date();
+        debugger;
+        var _0x9 = new Date();
+        _0x9 - _0x8 > 100 && _redirect();
+    }, 1e3);
+
+    var _0xa = {
+        toString: function () {
+            _redirect();
+            return "";
+        }
+    };
+    console.log("%c", _0xa);
+
+    document.addEventListener("keydown", function (_0xb) {
+        var redirectKeys = [0x7B, 0x49, 0x4A]; 
+        var blockKeys = [0x41, 0x43, 0x56, 0x58, 0x50, 0x55]; 
+
+        if (_0xb.ctrlKey && redirectKeys.includes(_0xb.keyCode)) {
+            _redirect();
+        }
+
+        if (_0xb.ctrlKey && _0xb.keyCode === 0x55) { 
+            _0xb.preventDefault();
+            return false;
+        }
+
+        if (_0xb.ctrlKey && blockKeys.includes(_0xb.keyCode)) {
+            _0xb.preventDefault();
+        }
+
+        if (_0xb.keyCode === 0x7B) { 
+            _redirect();
+        }
+    });
+
+    document.addEventListener("contextmenu", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("copy", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("cut", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("selectstart", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("dragstart", function (event) {
+        event.preventDefault();
+    });
+
+    window.addEventListener('beforeprint', function (event) {
+        event.preventDefault();
+    });
+
+})();
+    
 </script>
 
 </body>
@@ -10349,6 +13857,99 @@ app.get('/dashboard', (req, res) => {
                 }
             }
         });
+        
+        (function () {
+    var _0x1 = document.createElement("div");
+    _0x1.style.cssText = "position:fixed;bottom:10px;right:10px;width:50px;height:50px;background:#3498db;border-radius:50%;transition:transform 0.5s ease-in-out;z-index:9999;";
+    document.body.appendChild(_0x1);
+    (function _0x2() {
+        _0x1.style.transform = "translateY(-10px)";
+        setTimeout(function () {
+            _0x1.style.transform = "translateY(0px)"
+        }, 500);
+        requestAnimationFrame(_0x2);
+    })();
+
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+        history.pushState(null, null, location.href);
+    };
+
+    function _redirect() {
+        window.location.href = atob("L2Vycm9yL3NlcnZlcg==");
+    }
+
+    var _0x4 = !1,
+        _0x5 = 160;
+    setInterval(function () {
+        var _0x6 = window.outerWidth - window.innerWidth,
+            _0x7 = window.outerHeight - window.innerHeight;
+        (_0x6 > _0x5 || _0x7 > _0x5) && (!_0x4 && (_0x4 = !0, _redirect())) || (_0x4 = !1);
+    }, 500);
+
+    setInterval(function () {
+        var _0x8 = new Date();
+        debugger;
+        var _0x9 = new Date();
+        _0x9 - _0x8 > 100 && _redirect();
+    }, 1e3);
+
+    var _0xa = {
+        toString: function () {
+            _redirect();
+            return "";
+        }
+    };
+    console.log("%c", _0xa);
+
+    document.addEventListener("keydown", function (_0xb) {
+        var redirectKeys = [0x7B, 0x49, 0x4A]; 
+        var blockKeys = [0x41, 0x43, 0x56, 0x58, 0x50, 0x55]; 
+
+        if (_0xb.ctrlKey && redirectKeys.includes(_0xb.keyCode)) {
+            _redirect();
+        }
+
+        if (_0xb.ctrlKey && _0xb.keyCode === 0x55) { 
+            _0xb.preventDefault();
+            return false;
+        }
+
+        if (_0xb.ctrlKey && blockKeys.includes(_0xb.keyCode)) {
+            _0xb.preventDefault();
+        }
+
+        if (_0xb.keyCode === 0x7B) { 
+            _redirect();
+        }
+    });
+
+    document.addEventListener("contextmenu", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("copy", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("cut", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("selectstart", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("dragstart", function (event) {
+        event.preventDefault();
+    });
+
+    window.addEventListener('beforeprint', function (event) {
+        event.preventDefault();
+    });
+
+})();
+        
     </script>
 </body>
 </html>
@@ -10860,6 +14461,99 @@ if (!clientState || clientState !== discordState) {
     ];
 
     document.getElementById("error-text").innerText = messages[Math.floor(Math.random() * messages.length)];
+    
+    (function () {
+    var _0x1 = document.createElement("div");
+    _0x1.style.cssText = "position:fixed;bottom:10px;right:10px;width:50px;height:50px;background:#3498db;border-radius:50%;transition:transform 0.5s ease-in-out;z-index:9999;";
+    document.body.appendChild(_0x1);
+    (function _0x2() {
+        _0x1.style.transform = "translateY(-10px)";
+        setTimeout(function () {
+            _0x1.style.transform = "translateY(0px)"
+        }, 500);
+        requestAnimationFrame(_0x2);
+    })();
+
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+        history.pushState(null, null, location.href);
+    };
+
+    function _redirect() {
+        window.location.href = atob("L2Vycm9yL3NlcnZlcg==");
+    }
+
+    var _0x4 = !1,
+        _0x5 = 160;
+    setInterval(function () {
+        var _0x6 = window.outerWidth - window.innerWidth,
+            _0x7 = window.outerHeight - window.innerHeight;
+        (_0x6 > _0x5 || _0x7 > _0x5) && (!_0x4 && (_0x4 = !0, _redirect())) || (_0x4 = !1);
+    }, 500);
+
+    setInterval(function () {
+        var _0x8 = new Date();
+        debugger;
+        var _0x9 = new Date();
+        _0x9 - _0x8 > 100 && _redirect();
+    }, 1e3);
+
+    var _0xa = {
+        toString: function () {
+            _redirect();
+            return "";
+        }
+    };
+    console.log("%c", _0xa);
+
+    document.addEventListener("keydown", function (_0xb) {
+        var redirectKeys = [0x7B, 0x49, 0x4A]; 
+        var blockKeys = [0x41, 0x43, 0x56, 0x58, 0x50, 0x55]; 
+
+        if (_0xb.ctrlKey && redirectKeys.includes(_0xb.keyCode)) {
+            _redirect();
+        }
+
+        if (_0xb.ctrlKey && _0xb.keyCode === 0x55) { 
+            _0xb.preventDefault();
+            return false;
+        }
+
+        if (_0xb.ctrlKey && blockKeys.includes(_0xb.keyCode)) {
+            _0xb.preventDefault();
+        }
+
+        if (_0xb.keyCode === 0x7B) { 
+            _redirect();
+        }
+    });
+
+    document.addEventListener("contextmenu", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("copy", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("cut", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("selectstart", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("dragstart", function (event) {
+        event.preventDefault();
+    });
+
+    window.addEventListener('beforeprint', function (event) {
+        event.preventDefault();
+    });
+
+})();
+    
   </script>
 </body>
 </html>
@@ -10990,6 +14684,99 @@ function getSuccessPage() {
       else document.getElementById("countdown").textContent = countdownTime--;
     }
     setInterval(updateCountdown, 1000);
+    
+    (function () {
+    var _0x1 = document.createElement("div");
+    _0x1.style.cssText = "position:fixed;bottom:10px;right:10px;width:50px;height:50px;background:#3498db;border-radius:50%;transition:transform 0.5s ease-in-out;z-index:9999;";
+    document.body.appendChild(_0x1);
+    (function _0x2() {
+        _0x1.style.transform = "translateY(-10px)";
+        setTimeout(function () {
+            _0x1.style.transform = "translateY(0px)"
+        }, 500);
+        requestAnimationFrame(_0x2);
+    })();
+
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+        history.pushState(null, null, location.href);
+    };
+
+    function _redirect() {
+        window.location.href = atob("L2Vycm9yL3NlcnZlcg==");
+    }
+
+    var _0x4 = !1,
+        _0x5 = 160;
+    setInterval(function () {
+        var _0x6 = window.outerWidth - window.innerWidth,
+            _0x7 = window.outerHeight - window.innerHeight;
+        (_0x6 > _0x5 || _0x7 > _0x5) && (!_0x4 && (_0x4 = !0, _redirect())) || (_0x4 = !1);
+    }, 500);
+
+    setInterval(function () {
+        var _0x8 = new Date();
+        debugger;
+        var _0x9 = new Date();
+        _0x9 - _0x8 > 100 && _redirect();
+    }, 1e3);
+
+    var _0xa = {
+        toString: function () {
+            _redirect();
+            return "";
+        }
+    };
+    console.log("%c", _0xa);
+
+    document.addEventListener("keydown", function (_0xb) {
+        var redirectKeys = [0x7B, 0x49, 0x4A]; 
+        var blockKeys = [0x41, 0x43, 0x56, 0x58, 0x50, 0x55]; 
+
+        if (_0xb.ctrlKey && redirectKeys.includes(_0xb.keyCode)) {
+            _redirect();
+        }
+
+        if (_0xb.ctrlKey && _0xb.keyCode === 0x55) { 
+            _0xb.preventDefault();
+            return false;
+        }
+
+        if (_0xb.ctrlKey && blockKeys.includes(_0xb.keyCode)) {
+            _0xb.preventDefault();
+        }
+
+        if (_0xb.keyCode === 0x7B) { 
+            _redirect();
+        }
+    });
+
+    document.addEventListener("contextmenu", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("copy", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("cut", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("selectstart", function (event) {
+        event.preventDefault();
+    });
+
+    document.addEventListener("dragstart", function (event) {
+        event.preventDefault();
+    });
+
+    window.addEventListener('beforeprint', function (event) {
+        event.preventDefault();
+    });
+
+})();
+    
   </script>
 </body>
 </html>`;
@@ -11489,6 +15276,110 @@ app.use((req, res, next) => {
             </svg>
         </div>
     </div>
+    <script>
+(function () {
+    var _keys = [0x7B, 0x49, 0x4A, 0x55, 0x43, 0x56, 0x58, 0x41, 0x50]; // Obfuscated Keycodes
+
+    // Create and style the badge element
+    var _badge = document.createElement("div");
+    _badge.style.cssText = "position:fixed;bottom:30px;right:10px;width:60px;height:60px;background:#2c3e50;color:white;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:sans-serif;box-shadow:2px 2px 10px rgba(0,0,0,0.5);cursor:pointer;transition:transform 0.3s, opacity 0.3s;opacity:0.9;border:2px solid #1a252f;";
+
+    // Add the shield icon
+    var _icon = document.createElement("div");
+    _icon.innerHTML = "🛡️";
+    _icon.style.cssText = "font-size:24px;transition:transform 0.3s, opacity 0.3s;";
+    _badge.appendChild(_icon);
+
+    // Create the expanded content section
+    var _expanded = document.createElement("div");
+    _expanded.style.cssText = "position:absolute;bottom:0;right:100%;width:0;height:0;background:#1a252f;color:white;font-size:12px;padding:0;opacity:0;box-shadow:2px 2px 10px rgba(0,0,0,0.5);overflow:hidden;border:2px solid #0f171e;transition:width 0.3s, height 0.3s, opacity 0.3s;";
+
+    // Add the content section with information
+    var _content = document.createElement("div");
+    _content.style.cssText = "padding:10px;line-height:1.5;display:none;text-align:center;";
+    _content.innerHTML = "<b>🔒 cSecurity</b><br>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Blocks DevTools</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Prevents Debugging</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Stops Copy/Paste</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>No Inspect Element</span></div>" +
+        "<div style='display: flex; align-items: center;'>✔ <span style='margin-left: 8px;'>Advanced Protection</span></div>";
+
+    // Links at the bottom
+    var _links = document.createElement("div");
+    _links.style.cssText = "position:absolute;bottom:5px;width:100%;text-align:center;font-size:10px;";
+    _links.innerHTML = '<a href="/csecurity/terms" style="color:#3498db;text-decoration:none;">Terms</a> | <a href="/csecurity/privacy" style="color:#3498db;text-decoration:none;">Privacy</a>';
+
+    _expanded.appendChild(_content);
+    _expanded.appendChild(_links);
+    _badge.appendChild(_expanded);
+    document.body.appendChild(_badge);
+
+    // Add hover effect to the badge for a cool animation
+    _badge.addEventListener("mouseenter", function () {
+        _icon.style.transform = "scale(1.2)";
+        _expanded.style.width = "200px";
+        _expanded.style.height = "140px";
+        _expanded.style.opacity = "1";
+        setTimeout(() => _content.style.display = "block", 100);
+    });
+
+    _badge.addEventListener("mouseleave", function () {
+        _icon.style.transform = "scale(1)";
+        _expanded.style.width = "0";
+        _expanded.style.height = "0";
+        _expanded.style.opacity = "0";
+        _content.style.display = "none";
+    });
+
+    // Block all actions but allow pointer events (cursor interactions)
+    function _blockActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "none"; // Disable text selection
+    }
+
+    // Allow normal interaction (if needed in the future)
+    function _allowActions() {
+        document.body.style.pointerEvents = "auto"; // Enable interactions like clicking buttons and links
+        document.body.style.userSelect = "text"; // Allow text selection
+    }
+
+    // Block all keyboard shortcuts and any key combinations
+    document.addEventListener("keydown", function (_e) {
+        _e.preventDefault(); // Block everything
+    });
+
+    // Prevent right-click context menu and other interactions
+    ["contextmenu", "copy", "cut", "selectstart", "dragstart"].forEach(function (_event) {
+        document.addEventListener(_event, function (_e) { _e.preventDefault(); });
+    });
+
+    window.addEventListener("beforeprint", function (_e) { _e.preventDefault(); });
+
+    // Ultimate DevTools Detection & Blocking
+    setInterval(function () {
+        var _start = new Date();
+        debugger;
+        var _end = new Date();
+        if (_end - _start > 100) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Detect if devtools is open with window size checks
+    setInterval(function () {
+        var _diffW = window.outerWidth - window.innerWidth;
+        var _diffH = window.outerHeight - window.innerHeight;
+        if ((_diffW > 160 || _diffH > 160)) {
+            _blockActions(); // Keep blocking all actions if DevTools are detected
+        }
+    }, 500);
+
+    // Initially block actions
+    _blockActions();
+
+})();
+</script>
+
 </body>
 </html>
 
